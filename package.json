@@ -11,6 +11,7 @@
   },
   "packageManager": "pnpm@10.17.1",
   "dependencies": {
+    "convex": "^1.27.3",
     "next": "^15.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

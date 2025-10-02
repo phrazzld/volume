@@ -16,7 +16,7 @@
 
 ## Phase 1: Project Setup [1 hour]
 
-- [~] Initialize Next.js 15 project
+- [x] Initialize Next.js 15 project
   ```
   Command: pnpm create next-app@latest workout-tracker --typescript --tailwind --app --src-dir --import-alias "@/*"
   Command: cd workout-tracker
@@ -27,7 +27,7 @@
   Time: 15 minutes
   ```
 
-- [ ] Install and configure Convex
+- [~] Install and configure Convex
   ```
   Command: pnpm add convex
   Command: pnpm convex dev --once
