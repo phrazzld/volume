@@ -52,7 +52,7 @@
 
 ## Phase 2: Data Model & Convex Schema [30 minutes]
 
-- [~] Define Convex schema for exercises and sets
+- [x] Define Convex schema for exercises and sets
   ```
   Files: convex/schema.ts
 
@@ -86,7 +86,7 @@
 
 ## Phase 3: Backend - Convex Functions [1.5 hours]
 
-- [ ] Implement exercise mutations and queries
+- [~] Implement exercise mutations and queries
   ```
   Files: convex/exercises.ts
 
@@ -103,7 +103,7 @@
   Time: 45 minutes
   ```
 
-- [ ] Implement set mutations and queries
+- [~] Implement set mutations and queries
   ```
   Files: convex/sets.ts
 
