@@ -139,7 +139,7 @@
   Time: 45 minutes
   ```
 
-- [~] Add exercise selector component
+- [x] Add exercise selector component
   ```
   Files: src/components/exercises/exercise-selector.tsx
 
@@ -156,7 +156,7 @@
 
 ## Phase 5: UI - Set Logging [1.5 hours]
 
-- [ ] Create set logging form
+- [~] Create set logging form
   ```
   Files: src/app/log/page.tsx, src/components/sets/log-set-form.tsx
 
@@ -173,7 +173,7 @@
   Time: 1 hour
   ```
 
-- [ ] Add simple validation and feedback
+- [~] Add simple validation and feedback
   ```
   Files: src/components/sets/log-set-form.tsx
 
