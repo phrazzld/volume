@@ -27,7 +27,7 @@
   Time: 15 minutes
   ```
 
-- [~] Install and configure Convex
+- [x] Install and configure Convex
   ```
   Command: pnpm add convex
   Command: pnpm convex dev --once
@@ -38,7 +38,7 @@
   Time: 15 minutes
   ```
 
-- [ ] Install and configure Clerk authentication
+- [~] Install and configure Clerk authentication
   ```
   Command: pnpm add @clerk/nextjs
 

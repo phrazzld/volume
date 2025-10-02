@@ -18,7 +18,16 @@ This will:
 - Generate `.env.local` with your `NEXT_PUBLIC_CONVEX_URL`
 - Start the Convex dev server
 
-3. Run the development server:
+3. Set up Clerk:
+- Go to [Clerk Dashboard](https://dashboard.clerk.com)
+- Create a new application
+- Copy the API keys and add them to `.env.local`:
+  ```
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+  CLERK_SECRET_KEY=sk_test_...
+  ```
+
+4. Run the development server:
 ```bash
 pnpm dev
 ```
@@ -30,8 +39,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Next.js 15** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first styling
-- **Convex** - Backend-as-a-service (database, auth, real-time)
-- **Clerk** - Authentication (to be added)
+- **Convex** - Backend-as-a-service (database, real-time sync)
+- **Clerk** - Authentication and user management
 
 ## Project Structure
 
