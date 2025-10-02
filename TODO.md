@@ -38,7 +38,7 @@
   Time: 15 minutes
   ```
 
-- [~] Install and configure Clerk authentication
+- [x] Install and configure Clerk authentication
   ```
   Command: pnpm add @clerk/nextjs
 
@@ -52,7 +52,7 @@
 
 ## Phase 2: Data Model & Convex Schema [30 minutes]
 
-- [ ] Define Convex schema for exercises and sets
+- [~] Define Convex schema for exercises and sets
   ```
   Files: convex/schema.ts
 
