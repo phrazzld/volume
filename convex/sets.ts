@@ -57,7 +57,7 @@ export const listSets = query({
       // Filter by exercise
       sets = await ctx.db
         .query("sets")
-        .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId))
+        .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId!))
         .order("desc")
         .collect();
     } else {

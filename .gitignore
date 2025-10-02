@@ -28,8 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # env files
-.env*.local
-.env
+.env*
 
 # vercel
 .vercel
@@ -40,3 +39,6 @@ next-env.d.ts
 
 # convex
 .convex/
+
+# clerk configuration (can include secrets)
+/.clerk/

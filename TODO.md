@@ -242,7 +242,7 @@
   Time: 30 minutes
   ```
 
-- [~] Basic styling and responsive layout
+- [x] Basic styling and responsive layout
   ```
   Files: src/app/globals.css, various components
 
