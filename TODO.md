@@ -191,7 +191,7 @@
 
 ## Phase 6: UI - Set History [1 hour]
 
-- [~] Create set history timeline view
+- [x] Create set history timeline view
   ```
   Files: src/app/history/page.tsx, src/components/sets/set-list.tsx
 
@@ -225,7 +225,7 @@
 
 ## Phase 7: Navigation & Polish [1 hour]
 
-- [ ] Add navigation between pages
+- [~] Add navigation between pages
   ```
   Files: src/components/layout/nav.tsx, src/app/layout.tsx
 
