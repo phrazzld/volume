@@ -156,7 +156,7 @@
 
 ## Phase 5: UI - Set Logging [1.5 hours]
 
-- [~] Create set logging form
+- [x] Create set logging form
   ```
   Files: src/app/log/page.tsx, src/components/sets/log-set-form.tsx
 
@@ -173,7 +173,7 @@
   Time: 1 hour
   ```
 
-- [~] Add simple validation and feedback
+- [x] Add simple validation and feedback
   ```
   Files: src/components/sets/log-set-form.tsx
 
@@ -191,7 +191,7 @@
 
 ## Phase 6: UI - Set History [1 hour]
 
-- [ ] Create set history timeline view
+- [~] Create set history timeline view
   ```
   Files: src/app/history/page.tsx, src/components/sets/set-list.tsx
 
