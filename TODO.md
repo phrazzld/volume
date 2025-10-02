@@ -86,7 +86,7 @@
 
 ## Phase 3: Backend - Convex Functions [1.5 hours]
 
-- [~] Implement exercise mutations and queries
+- [x] Implement exercise mutations and queries
   ```
   Files: convex/exercises.ts
 
@@ -103,7 +103,7 @@
   Time: 45 minutes
   ```
 
-- [~] Implement set mutations and queries
+- [x] Implement set mutations and queries
   ```
   Files: convex/sets.ts
 
@@ -123,7 +123,7 @@
 
 ## Phase 4: UI - Exercise Management [1 hour]
 
-- [ ] Create exercise list and creation form
+- [~] Create exercise list and creation form
   ```
   Files: src/app/exercises/page.tsx, src/components/exercises/create-exercise-form.tsx
 
