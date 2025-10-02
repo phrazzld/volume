@@ -225,7 +225,7 @@
 
 ## Phase 7: Navigation & Polish [1 hour]
 
-- [~] Add navigation between pages
+- [x] Add navigation between pages
   ```
   Files: src/components/layout/nav.tsx, src/app/layout.tsx
 
@@ -242,7 +242,7 @@
   Time: 30 minutes
   ```
 
-- [ ] Basic styling and responsive layout
+- [~] Basic styling and responsive layout
   ```
   Files: src/app/globals.css, various components
 
