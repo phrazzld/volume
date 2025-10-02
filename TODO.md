@@ -123,7 +123,7 @@
 
 ## Phase 4: UI - Exercise Management [1 hour]
 
-- [~] Create exercise list and creation form
+- [x] Create exercise list and creation form
   ```
   Files: src/app/exercises/page.tsx, src/components/exercises/create-exercise-form.tsx
 
@@ -139,7 +139,7 @@
   Time: 45 minutes
   ```
 
-- [ ] Add exercise selector component
+- [~] Add exercise selector component
   ```
   Files: src/components/exercises/exercise-selector.tsx
 
