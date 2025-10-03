@@ -95,7 +95,7 @@
   Time: 30 minutes
   ```
 
-- [ ] Implement SetCard component
+- [x] Implement SetCard component
   ```
   Files: src/components/dashboard/set-card.tsx (new)
 
