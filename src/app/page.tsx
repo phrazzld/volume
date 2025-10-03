@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { DailyStatsCard } from "@/components/dashboard/daily-stats-card";
-import { QuickLogForm } from "@/components/dashboard/quick-log-form";
+import { QuickLogForm, QuickLogFormHandle } from "@/components/dashboard/quick-log-form";
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import {
   calculateDailyStats,
@@ -14,6 +14,7 @@ import {
 
 export default function Home() {
   const [statsExpanded, setStatsExpanded] = useState(true);
+  const formRef = useRef<QuickLogFormHandle>(null);
 
   // Fetch data from Convex
   const sets = useQuery(api.sets.listSets, {});
@@ -38,10 +39,9 @@ export default function Home() {
     }
   };
 
-  // Handle repeat set (placeholder for Phase 2)
-  const handleRepeatSet = () => {
-    // Phase 2: Will pre-fill form with set data
-    console.log("Repeat set - coming in Phase 2");
+  // Handle repeat set
+  const handleRepeatSet = (set: any) => {
+    formRef.current?.repeatSet(set);
   };
 
   // Loading state
@@ -90,7 +90,7 @@ export default function Home() {
         />
 
         {/* Quick Log Form */}
-        <QuickLogForm exercises={exercises} />
+        <QuickLogForm ref={formRef} exercises={exercises} />
 
         {/* Grouped Set History */}
         <GroupedSetHistory

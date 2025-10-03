@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useRef, useImperativeHandle, forwardRef } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
@@ -11,19 +11,44 @@ interface Exercise {
   name: string;
 }
 
+interface Set {
+  _id: Id<"sets">;
+  exerciseId: Id<"exercises">;
+  reps: number;
+  weight?: number;
+  performedAt: number;
+}
+
 interface QuickLogFormProps {
   exercises: Exercise[];
   onSetLogged?: (setId: Id<"sets">) => void;
 }
 
-export function QuickLogForm({ exercises, onSetLogged }: QuickLogFormProps) {
-  const [selectedExerciseId, setSelectedExerciseId] = useState<Id<"exercises"> | "">("");
-  const [reps, setReps] = useState("");
-  const [weight, setWeight] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showInlineCreator, setShowInlineCreator] = useState(false);
+export interface QuickLogFormHandle {
+  repeatSet: (set: Set) => void;
+}
 
-  const logSet = useMutation(api.sets.logSet);
+const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
+  function QuickLogForm({ exercises, onSetLogged }, ref) {
+    const [selectedExerciseId, setSelectedExerciseId] = useState<Id<"exercises"> | "">("");
+    const [reps, setReps] = useState("");
+    const [weight, setWeight] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showInlineCreator, setShowInlineCreator] = useState(false);
+    const repsInputRef = useRef<HTMLInputElement>(null);
+
+    const logSet = useMutation(api.sets.logSet);
+
+    // Expose repeatSet method to parent via ref
+    useImperativeHandle(ref, () => ({
+      repeatSet: (set: Set) => {
+        setSelectedExerciseId(set.exerciseId);
+        setReps(set.reps.toString());
+        setWeight(set.weight?.toString() || "");
+        // Auto-focus reps input for quick edit
+        setTimeout(() => repsInputRef.current?.focus(), 100);
+      },
+    }));
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -119,6 +144,7 @@ export function QuickLogForm({ exercises, onSetLogged }: QuickLogFormProps) {
             Reps <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
+            ref={repsInputRef}
             id="reps"
             type="number"
             inputMode="numeric"
@@ -166,4 +192,7 @@ export function QuickLogForm({ exercises, onSetLogged }: QuickLogFormProps) {
       </form>
     </div>
   );
-}
+  }
+);
+
+export const QuickLogForm = QuickLogFormComponent;
