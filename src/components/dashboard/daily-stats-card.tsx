@@ -25,7 +25,7 @@ export function DailyStatsCard({ stats, expanded, onToggle }: DailyStatsCardProp
         <div className="flex items-center gap-2">
           <span className="text-2xl">📊</span>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Today's Progress
+            Today&apos;s Progress
           </h2>
         </div>
         <ChevronDown
