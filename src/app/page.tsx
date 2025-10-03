@@ -11,6 +11,7 @@ import { UndoToast } from "@/components/dashboard/undo-toast";
 import {
   calculateDailyStats,
   groupSetsByDay,
+  sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
 
 export default function Home() {
@@ -31,6 +32,12 @@ export default function Home() {
 
   // Group sets by day
   const groupedSets = useMemo(() => groupSetsByDay(sets), [sets]);
+
+  // Sort exercises by recency (most recently used first)
+  const exercisesByRecency = useMemo(
+    () => sortExercisesByRecency(exercises, sets),
+    [exercises, sets]
+  );
 
   // Handle delete set
   const handleDeleteSet = async (setId: Id<"sets">) => {
@@ -121,14 +128,14 @@ export default function Home() {
         {/* Quick Log Form */}
         <QuickLogForm
           ref={formRef}
-          exercises={exercises}
+          exercises={exercisesByRecency}
           onSetLogged={handleSetLogged}
         />
 
         {/* Grouped Set History */}
         <GroupedSetHistory
           groupedSets={groupedSets}
-          exercises={exercises}
+          exercises={exercisesByRecency}
           onRepeat={handleRepeatSet}
           onDelete={handleDeleteSet}
         />
