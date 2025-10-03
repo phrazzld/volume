@@ -175,7 +175,7 @@
   Time: 30 minutes
   ```
 
-- [ ] Rewrite home page with unified dashboard
+- [x] Rewrite home page with unified dashboard
   ```
   Files: src/app/page.tsx (complete rewrite)
 
