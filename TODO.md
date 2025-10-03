@@ -157,7 +157,7 @@
   Time: 1 hour
   ```
 
-- [ ] Add client-side data transformation utilities
+- [x] Add client-side data transformation utilities
   ```
   Files: src/lib/dashboard-utils.ts (new)
 
@@ -169,7 +169,7 @@
   - calculateDailyStats(sets): Filters today's sets, calculates totals
   - groupSetsByDay(sets): Groups into Map<dateString, sets[]>, sorts by date
   - formatDateGroup(dateString): Returns "Today", "Yesterday", or formatted date
-  - formatRelativeTime(timestamp): Returns "2h ago", "Just now", etc.
+  - sortExercisesByRecency(exercises, sets): Sorts by usage, then alphabetical
 
   Success: Functions work correctly, handle edge cases (empty arrays, null), pure (no mutations)
   Time: 30 minutes
