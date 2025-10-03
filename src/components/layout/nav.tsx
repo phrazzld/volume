@@ -11,8 +11,6 @@ export function Nav() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/exercises", label: "Exercises" },
-    { href: "/log", label: "Log Set" },
-    { href: "/history", label: "History" },
   ];
 
   return (
