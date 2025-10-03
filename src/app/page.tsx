@@ -17,7 +17,6 @@ import {
 } from "@/lib/dashboard-utils";
 
 export default function Home() {
-  const [statsExpanded, setStatsExpanded] = useState(true);
   const [exerciseManagerExpanded, setExerciseManagerExpanded] = useState(false);
   const [undoToastVisible, setUndoToastVisible] = useState(false);
   const [lastLoggedSetId, setLastLoggedSetId] = useState<Id<"sets"> | null>(null);
@@ -141,11 +140,7 @@ export default function Home() {
         ) : (
           <>
             {/* Daily Stats Card */}
-            <DailyStatsCard
-              stats={dailyStats}
-              expanded={statsExpanded}
-              onToggle={() => setStatsExpanded(!statsExpanded)}
-            />
+            <DailyStatsCard stats={dailyStats} />
 
             {/* Exercise Manager */}
             <ExerciseManager
