@@ -128,7 +128,6 @@ export default function Home() {
         exerciseId,
         reps: 0,
         performedAt: Date.now(),
-        userId: "",
       });
     }, 100);
   };
