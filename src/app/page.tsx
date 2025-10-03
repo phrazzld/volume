@@ -17,7 +17,6 @@ import {
 } from "@/lib/dashboard-utils";
 
 export default function Home() {
-  const [exerciseManagerExpanded, setExerciseManagerExpanded] = useState(false);
   const [undoToastVisible, setUndoToastVisible] = useState(false);
   const [lastLoggedSetId, setLastLoggedSetId] = useState<Id<"sets"> | null>(null);
   const formRef = useRef<QuickLogFormHandle>(null);
@@ -146,8 +145,6 @@ export default function Home() {
             <ExerciseManager
               exercises={exercises || []}
               sets={sets || []}
-              expanded={exerciseManagerExpanded}
-              onToggle={() => setExerciseManagerExpanded(!exerciseManagerExpanded)}
             />
 
             {/* Quick Log Form */}

@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { ChevronDown, Pencil, Trash2, Check, X } from "lucide-react";
+import { Pencil, Trash2, Check, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { TerminalPanel } from "@/components/ui/terminal-panel";
+import { TerminalTable } from "@/components/ui/terminal-table";
 
 interface Exercise {
   _id: Id<"exercises">;
@@ -23,16 +25,9 @@ interface Set {
 interface ExerciseManagerProps {
   exercises: Exercise[];
   sets: Set[];
-  expanded: boolean;
-  onToggle: () => void;
 }
 
-export function ExerciseManager({
-  exercises,
-  sets,
-  expanded,
-  onToggle,
-}: ExerciseManagerProps) {
+export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
   const [editingId, setEditingId] = useState<Id<"exercises"> | null>(null);
   const [editingName, setEditingName] = useState("");
   const updateExercise = useMutation(api.exercises.updateExercise);
@@ -86,126 +81,102 @@ export function ExerciseManager({
     }
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-        aria-expanded={expanded}
-        type="button"
-      >
+  // Build table rows
+  const rows = exercises.map((exercise) => {
+    const isEditing = editingId === exercise._id;
+    const setCount = setCountByExercise[exercise._id] || 0;
+    const shortId = exercise._id.slice(0, 6);
+    const createdDate = new Date(exercise.createdAt).toLocaleDateString(
+      "en-US",
+      { month: "2-digit", day: "2-digit", year: "2-digit" }
+    );
+
+    return [
+      // ID
+      <span className="text-terminal-textMuted">{shortId}</span>,
+
+      // NAME (editable inline)
+      isEditing ? (
         <div className="flex items-center gap-2">
-          <span className="text-2xl">💪</span>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Manage Exercises
-          </h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            ({exercises.length})
-          </span>
+          <input
+            type="text"
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSaveEdit(exercise._id);
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                handleCancelEdit();
+              }
+            }}
+            className="flex-1 px-2 py-1 bg-terminal-bgSecondary border border-terminal-info text-terminal-text font-mono focus:ring-1 focus:ring-terminal-info"
+            autoFocus
+          />
+          <button
+            onClick={() => handleSaveEdit(exercise._id)}
+            className="p-1 text-terminal-success hover:opacity-80"
+            title="Save"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleCancelEdit}
+            className="p-1 text-terminal-textSecondary hover:opacity-80"
+            title="Cancel"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <ChevronDown
-          className={`h-5 w-5 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${
-            expanded ? "rotate-180" : ""
-          }`}
+      ) : (
+        <span className="text-terminal-text font-medium">{exercise.name}</span>
+      ),
+
+      // CREATED
+      <span className="text-terminal-textSecondary">{createdDate}</span>,
+
+      // SETS
+      <span className="text-terminal-info">{setCount}</span>,
+
+      // ACTIONS
+      !isEditing ? (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleStartEdit(exercise)}
+            className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
+            title="Edit exercise name"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(exercise)}
+            className="p-1 text-terminal-danger hover:opacity-80 transition-opacity"
+            title="Delete exercise"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ) : (
+        <div className="h-6"></div> // Spacer during edit
+      ),
+    ];
+  });
+
+  return (
+    <TerminalPanel
+      title="EXERCISE REGISTRY"
+      titleColor="accent"
+      className="mb-3"
+    >
+      <div className="p-4">
+        <TerminalTable
+          headers={["ID", "NAME", "CREATED", "SETS", "ACTIONS"]}
+          rows={rows}
+          columnWidths={["w-20", "", "w-28", "w-16", "w-24"]}
         />
-      </button>
-
-      <div
-        className={`overflow-hidden transition-all duration-200 ${
-          expanded ? "max-h-[600px] mt-4" : "max-h-0"
-        }`}
-      >
-        {exercises.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-            No exercises yet. Create one using the form below!
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {exercises.map((exercise) => {
-              const isEditing = editingId === exercise._id;
-              const setCount = setCountByExercise[exercise._id] || 0;
-
-              return (
-                <div
-                  key={exercise._id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                >
-                  <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleSaveEdit(exercise._id);
-                            }
-                            if (e.key === "Escape") {
-                              e.preventDefault();
-                              handleCancelEdit();
-                            }
-                          }}
-                          className="flex-1 px-3 py-1 border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleSaveEdit(exercise._id)}
-                          className="p-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                          title="Save"
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="p-1 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
-                          title="Cancel"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                          {exercise.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Created {new Date(exercise.createdAt).toLocaleDateString()}
-                          {setCount > 0 && (
-                            <span className="ml-2">
-                              • Used in {setCount} set{setCount === 1 ? "" : "s"}
-                            </span>
-                          )}
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  {!isEditing && (
-                    <div className="flex items-center gap-1 ml-4">
-                      <button
-                        onClick={() => handleStartEdit(exercise)}
-                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                        title="Edit exercise name"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(exercise)}
-                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                        title="Delete exercise"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
-    </div>
+    </TerminalPanel>
   );
 }
