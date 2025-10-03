@@ -35,42 +35,46 @@ export function DailyStatsCard({ stats, expanded, onToggle }: DailyStatsCardProp
         />
       </button>
 
-      {expanded && stats && (
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {stats.totalSets}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">sets</p>
-          </div>
-          <div>
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-              {stats.totalReps}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">reps</p>
-          </div>
-          {stats.totalVolume > 0 && (
+      <div
+        className={`overflow-hidden transition-all duration-200 ${
+          expanded ? "max-h-96 mt-4" : "max-h-0"
+        }`}
+      >
+        {stats ? (
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {stats.totalVolume}
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {stats.totalSets}
               </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">lbs total</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">sets</p>
             </div>
-          )}
-          <div>
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {stats.exercisesWorked}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">exercises</p>
+            <div>
+              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                {stats.totalReps}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">reps</p>
+            </div>
+            {stats.totalVolume > 0 && (
+              <div>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.totalVolume}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">lbs total</p>
+              </div>
+            )}
+            <div>
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                {stats.exercisesWorked}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">exercises</p>
+            </div>
           </div>
-        </div>
-      )}
-
-      {expanded && !stats && (
-        <p className="mt-4 text-gray-500 dark:text-gray-400 text-center">
-          No sets logged yet today. Get started! 💪
-        </p>
-      )}
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400 text-center">
+            No sets logged yet today. Get started! 💪
+          </p>
+        )}
+      </div>
     </div>
   );
 }
