@@ -9,6 +9,7 @@ import { ExerciseManager } from "@/components/dashboard/exercise-manager";
 import { QuickLogForm, QuickLogFormHandle } from "@/components/dashboard/quick-log-form";
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import { UndoToast } from "@/components/dashboard/undo-toast";
+import { FirstRunExperience } from "@/components/dashboard/first-run-experience";
 import {
   calculateDailyStats,
   groupSetsByDay,
@@ -117,38 +118,60 @@ export default function Home() {
     );
   }
 
+  // Handle first exercise created - auto-select it and focus form
+  const handleFirstExerciseCreated = (exerciseId: Id<"exercises">) => {
+    // The exercise will appear in the list on next render
+    // Auto-select it by calling repeatSet with a dummy set
+    setTimeout(() => {
+      formRef.current?.repeatSet({
+        _id: "" as Id<"sets">,
+        exerciseId,
+        reps: 0,
+        performedAt: Date.now(),
+        userId: "",
+      });
+    }, 100);
+  };
+
   return (
     <main className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
       <div className="space-y-6">
-        {/* Daily Stats Card */}
-        <DailyStatsCard
-          stats={dailyStats}
-          expanded={statsExpanded}
-          onToggle={() => setStatsExpanded(!statsExpanded)}
-        />
+        {exercises.length === 0 ? (
+          /* First Run Experience - Show when no exercises exist */
+          <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
+        ) : (
+          <>
+            {/* Daily Stats Card */}
+            <DailyStatsCard
+              stats={dailyStats}
+              expanded={statsExpanded}
+              onToggle={() => setStatsExpanded(!statsExpanded)}
+            />
 
-        {/* Exercise Manager */}
-        <ExerciseManager
-          exercises={exercises || []}
-          sets={sets || []}
-          expanded={exerciseManagerExpanded}
-          onToggle={() => setExerciseManagerExpanded(!exerciseManagerExpanded)}
-        />
+            {/* Exercise Manager */}
+            <ExerciseManager
+              exercises={exercises || []}
+              sets={sets || []}
+              expanded={exerciseManagerExpanded}
+              onToggle={() => setExerciseManagerExpanded(!exerciseManagerExpanded)}
+            />
 
-        {/* Quick Log Form */}
-        <QuickLogForm
-          ref={formRef}
-          exercises={exercisesByRecency}
-          onSetLogged={handleSetLogged}
-        />
+            {/* Quick Log Form */}
+            <QuickLogForm
+              ref={formRef}
+              exercises={exercisesByRecency}
+              onSetLogged={handleSetLogged}
+            />
 
-        {/* Grouped Set History */}
-        <GroupedSetHistory
-          groupedSets={groupedSets}
-          exercises={exercisesByRecency}
-          onRepeat={handleRepeatSet}
-          onDelete={handleDeleteSet}
-        />
+            {/* Grouped Set History */}
+            <GroupedSetHistory
+              groupedSets={groupedSets}
+              exercises={exercisesByRecency}
+              onRepeat={handleRepeatSet}
+              onDelete={handleDeleteSet}
+            />
+          </>
+        )}
 
         {/* Undo Toast */}
         <UndoToast
