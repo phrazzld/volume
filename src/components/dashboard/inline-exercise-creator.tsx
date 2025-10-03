@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { FormEvent, useState, useEffect, useRef, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -24,8 +24,7 @@ export function InlineExerciseCreator({
     inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleCreateExercise = async () => {
     if (!name.trim() || isCreating) return;
 
     setIsCreating(true);
@@ -42,6 +41,10 @@ export function InlineExerciseCreator({
 
   // Handle keyboard shortcuts
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCreateExercise();
+    }
     if (e.key === "Escape") {
       e.preventDefault();
       onCancel();
@@ -50,7 +53,7 @@ export function InlineExerciseCreator({
 
   return (
     <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <div className="flex gap-2">
         <input
           ref={inputRef}
           type="text"
@@ -60,10 +63,10 @@ export function InlineExerciseCreator({
           placeholder="New exercise name..."
           className="flex-1 px-4 py-2 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
           disabled={isCreating}
-          required
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleCreateExercise}
           disabled={!name.trim() || isCreating}
           className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
@@ -76,7 +79,7 @@ export function InlineExerciseCreator({
         >
           Cancel
         </button>
-      </form>
+      </div>
     </div>
   );
 }
