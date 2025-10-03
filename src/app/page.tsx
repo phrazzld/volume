@@ -5,6 +5,7 @@ import { useMemo, useState, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { DailyStatsCard } from "@/components/dashboard/daily-stats-card";
+import { ExerciseManager } from "@/components/dashboard/exercise-manager";
 import { QuickLogForm, QuickLogFormHandle } from "@/components/dashboard/quick-log-form";
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import { UndoToast } from "@/components/dashboard/undo-toast";
@@ -16,6 +17,7 @@ import {
 
 export default function Home() {
   const [statsExpanded, setStatsExpanded] = useState(true);
+  const [exerciseManagerExpanded, setExerciseManagerExpanded] = useState(false);
   const [undoToastVisible, setUndoToastVisible] = useState(false);
   const [lastLoggedSetId, setLastLoggedSetId] = useState<Id<"sets"> | null>(null);
   const formRef = useRef<QuickLogFormHandle>(null);
@@ -123,6 +125,14 @@ export default function Home() {
           stats={dailyStats}
           expanded={statsExpanded}
           onToggle={() => setStatsExpanded(!statsExpanded)}
+        />
+
+        {/* Exercise Manager */}
+        <ExerciseManager
+          exercises={exercises || []}
+          sets={sets || []}
+          expanded={exerciseManagerExpanded}
+          onToggle={() => setExerciseManagerExpanded(!exerciseManagerExpanded)}
         />
 
         {/* Quick Log Form */}
