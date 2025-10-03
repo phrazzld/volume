@@ -4,6 +4,7 @@ import { useMutation } from "convex/react";
 import { FormEvent, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { InlineExerciseCreator } from "./inline-exercise-creator";
 
 interface Exercise {
   _id: Id<"exercises">;
@@ -20,6 +21,7 @@ export function QuickLogForm({ exercises, onSetLogged }: QuickLogFormProps) {
   const [reps, setReps] = useState("");
   const [weight, setWeight] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showInlineCreator, setShowInlineCreator] = useState(false);
 
   const logSet = useMutation(api.sets.logSet);
 
@@ -74,7 +76,15 @@ export function QuickLogForm({ exercises, onSetLogged }: QuickLogFormProps) {
           <select
             id="exercise"
             value={selectedExerciseId}
-            onChange={(e) => setSelectedExerciseId(e.target.value as Id<"exercises">)}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "CREATE_NEW") {
+                setShowInlineCreator(true);
+                setSelectedExerciseId(""); // Clear selection when creating
+              } else {
+                setSelectedExerciseId(value as Id<"exercises">);
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
             disabled={isSubmitting}
@@ -85,8 +95,20 @@ export function QuickLogForm({ exercises, onSetLogged }: QuickLogFormProps) {
                 {exercise.name}
               </option>
             ))}
+            <option value="CREATE_NEW">+ Create new exercise</option>
           </select>
         </div>
+
+        {/* Inline Exercise Creator (conditional) */}
+        {showInlineCreator && (
+          <InlineExerciseCreator
+            onCreated={(exerciseId) => {
+              setSelectedExerciseId(exerciseId);
+              setShowInlineCreator(false);
+            }}
+            onCancel={() => setShowInlineCreator(false)}
+          />
+        )}
 
         {/* Reps Input */}
         <div>
