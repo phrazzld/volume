@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { FormEvent, useState, useRef, useImperativeHandle, forwardRef } from "react";
+import { FormEvent, useState, useRef, useImperativeHandle, forwardRef, useEffect, KeyboardEvent } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
@@ -35,7 +35,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const [weight, setWeight] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showInlineCreator, setShowInlineCreator] = useState(false);
+    const exerciseSelectRef = useRef<HTMLSelectElement>(null);
     const repsInputRef = useRef<HTMLInputElement>(null);
+    const weightInputRef = useRef<HTMLInputElement>(null);
 
     const logSet = useMutation(api.sets.logSet);
 
@@ -49,6 +51,13 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         setTimeout(() => repsInputRef.current?.focus(), 100);
       },
     }));
+
+    // Auto-focus reps when exercise is selected
+    useEffect(() => {
+      if (selectedExerciseId && repsInputRef.current) {
+        repsInputRef.current.focus();
+      }
+    }, [selectedExerciseId]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,6 +82,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       setReps("");
       setWeight("");
 
+      // Focus exercise selector for quick re-logging
+      setTimeout(() => exerciseSelectRef.current?.focus(), 100);
+
       // Notify parent
       onSetLogged?.(setId);
     } catch (error) {
@@ -80,6 +92,24 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       alert("Failed to log set. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handle Enter key in reps input - focus weight or submit
+  const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (weightInputRef.current) {
+        weightInputRef.current.focus();
+      }
+    }
+  };
+
+  // Handle Enter key in weight input - submit form
+  const handleWeightKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit(e as any);
     }
   };
 
@@ -99,6 +129,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             Exercise <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <select
+            ref={exerciseSelectRef}
             id="exercise"
             value={selectedExerciseId}
             onChange={(e) => {
@@ -152,6 +183,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             min="1"
             value={reps}
             onChange={(e) => setReps(e.target.value)}
+            onKeyDown={handleRepsKeyDown}
             placeholder="How many reps?"
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isSubmitting}
@@ -168,6 +200,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             Weight (lbs)
           </label>
           <input
+            ref={weightInputRef}
             id="weight"
             type="number"
             inputMode="decimal"
@@ -175,6 +208,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             min="0"
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
+            onKeyDown={handleWeightKeyDown}
             placeholder="Optional"
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isSubmitting}
