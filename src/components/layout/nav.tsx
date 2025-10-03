@@ -8,27 +8,28 @@ import { ThemeToggle } from "./theme-toggle";
 export function Nav() {
   const pathname = usePathname();
 
-  const links = [
-    { href: "/", label: "Home" },
-  ];
+  const links = [{ href: "/", label: "HOME" }];
 
   return (
-    <nav className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <nav className="bg-terminal-bg border-b border-terminal-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Volume
+            <Link
+              href="/"
+              className="text-xl font-bold uppercase font-mono text-terminal-text tracking-wider"
+            >
+              VOLUME
             </Link>
-            <div className="hidden md:flex gap-4">
+            <div className="hidden md:flex gap-6">
               {links.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-2 py-1 text-sm font-mono transition-colors ${
                     pathname === link.href
-                      ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      ? "text-terminal-accent border-b-2 border-terminal-accent"
+                      : "text-terminal-textSecondary hover:text-terminal-info"
                   }`}
                 >
                   {link.label}
@@ -43,15 +44,15 @@ export function Nav() {
         </div>
 
         {/* Mobile navigation */}
-        <div className="md:hidden pb-3 flex gap-2 overflow-x-auto">
+        <div className="md:hidden pb-3 flex gap-4 overflow-x-auto">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-2 py-1 text-sm font-mono whitespace-nowrap transition-colors ${
                 pathname === link.href
-                  ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  ? "text-terminal-accent border-b-2 border-terminal-accent"
+                  : "text-terminal-textSecondary hover:text-terminal-info"
               }`}
             >
               {link.label}
