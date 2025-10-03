@@ -4,6 +4,7 @@ import { useMutation } from "convex/react";
 import { FormEvent, useState, useRef, useImperativeHandle, forwardRef, useEffect, KeyboardEvent } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 
 interface Exercise {
@@ -114,117 +115,119 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-        Quick Log
-      </h2>
+    <TerminalPanel title="LOG SET" titleColor="success" className="mb-3">
+      <form onSubmit={handleSubmit} className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Exercise Selector */}
+          <div>
+            <label
+              htmlFor="exercise"
+              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+            >
+              EXERCISE *
+            </label>
+            <select
+              ref={exerciseSelectRef}
+              id="exercise"
+              value={selectedExerciseId}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "CREATE_NEW") {
+                  setShowInlineCreator(true);
+                  setSelectedExerciseId("");
+                } else {
+                  setSelectedExerciseId(value as Id<"exercises">);
+                }
+              }}
+              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              required
+              disabled={isSubmitting}
+            >
+              <option value="">SELECT...</option>
+              {exercises.map((exercise) => (
+                <option key={exercise._id} value={exercise._id}>
+                  {exercise.name}
+                </option>
+              ))}
+              <option value="CREATE_NEW">+ CREATE NEW</option>
+            </select>
+          </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Exercise Selector */}
-        <div>
-          <label
-            htmlFor="exercise"
-            className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100"
-          >
-            Exercise <span className="text-red-500 dark:text-red-400">*</span>
-          </label>
-          <select
-            ref={exerciseSelectRef}
-            id="exercise"
-            value={selectedExerciseId}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === "CREATE_NEW") {
-                setShowInlineCreator(true);
-                setSelectedExerciseId(""); // Clear selection when creating
-              } else {
-                setSelectedExerciseId(value as Id<"exercises">);
-              }
-            }}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-            disabled={isSubmitting}
-          >
-            <option value="">Select an exercise...</option>
-            {exercises.map((exercise) => (
-              <option key={exercise._id} value={exercise._id}>
-                {exercise.name}
-              </option>
-            ))}
-            <option value="CREATE_NEW">+ Create new exercise</option>
-          </select>
+          {/* Reps Input */}
+          <div>
+            <label
+              htmlFor="reps"
+              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+            >
+              REPS *
+            </label>
+            <input
+              ref={repsInputRef}
+              id="reps"
+              type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              min="1"
+              value={reps}
+              onChange={(e) => setReps(e.target.value)}
+              onKeyDown={handleRepsKeyDown}
+              placeholder="0"
+              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+
+          {/* Weight Input */}
+          <div>
+            <label
+              htmlFor="weight"
+              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+            >
+              WEIGHT (LBS)
+            </label>
+            <input
+              ref={weightInputRef}
+              id="weight"
+              type="number"
+              inputMode="decimal"
+              step="0.5"
+              min="0"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              onKeyDown={handleWeightKeyDown}
+              placeholder="0.0"
+              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="w-full px-4 py-2 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              disabled={!selectedExerciseId || !reps || isSubmitting}
+            >
+              {isSubmitting ? "LOGGING..." : "LOG SET"}
+            </button>
+          </div>
         </div>
 
         {/* Inline Exercise Creator (conditional) */}
         {showInlineCreator && (
-          <InlineExerciseCreator
-            onCreated={(exerciseId) => {
-              setSelectedExerciseId(exerciseId);
-              setShowInlineCreator(false);
-            }}
-            onCancel={() => setShowInlineCreator(false)}
-          />
+          <div className="mt-4">
+            <InlineExerciseCreator
+              onCreated={(exerciseId) => {
+                setSelectedExerciseId(exerciseId);
+                setShowInlineCreator(false);
+              }}
+              onCancel={() => setShowInlineCreator(false)}
+            />
+          </div>
         )}
-
-        {/* Reps Input */}
-        <div>
-          <label
-            htmlFor="reps"
-            className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100"
-          >
-            Reps <span className="text-red-500 dark:text-red-400">*</span>
-          </label>
-          <input
-            ref={repsInputRef}
-            id="reps"
-            type="number"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            min="1"
-            value={reps}
-            onChange={(e) => setReps(e.target.value)}
-            onKeyDown={handleRepsKeyDown}
-            placeholder="How many reps?"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        {/* Weight Input */}
-        <div>
-          <label
-            htmlFor="weight"
-            className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100"
-          >
-            Weight (lbs)
-          </label>
-          <input
-            ref={weightInputRef}
-            id="weight"
-            type="number"
-            inputMode="decimal"
-            step="0.5"
-            min="0"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            onKeyDown={handleWeightKeyDown}
-            placeholder="Optional"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="w-full px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          disabled={!selectedExerciseId || !reps || isSubmitting}
-        >
-          {isSubmitting ? "Logging..." : "Log Set"}
-        </button>
       </form>
-    </div>
+    </TerminalPanel>
   );
   }
 );

@@ -52,7 +52,10 @@ export function InlineExerciseCreator({
   };
 
   return (
-    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+    <div className="p-3 bg-terminal-bgSecondary border border-terminal-border">
+      <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
+        CREATE NEW EXERCISE
+      </p>
       <div className="flex gap-2">
         <input
           ref={inputRef}
@@ -60,24 +63,24 @@ export function InlineExerciseCreator({
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="New exercise name..."
-          className="flex-1 px-4 py-2 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+          placeholder="EXERCISE NAME..."
+          className="flex-1 px-3 py-2 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
           disabled={isCreating}
         />
         <button
           type="button"
           onClick={handleCreateExercise}
           disabled={!name.trim() || isCreating}
-          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isCreating ? "..." : "Create"}
+          {isCreating ? "..." : "CREATE"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          className="px-4 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-textSecondary font-mono text-sm uppercase hover:text-terminal-text hover:border-terminal-borderLight"
         >
-          Cancel
+          CANCEL
         </button>
       </div>
     </div>
