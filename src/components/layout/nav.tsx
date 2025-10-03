@@ -10,7 +10,6 @@ export function Nav() {
 
   const links = [
     { href: "/", label: "Home" },
-    { href: "/exercises", label: "Exercises" },
   ];
 
   return (
