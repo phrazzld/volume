@@ -63,7 +63,7 @@ export function SetList({ sets, exercises }: SetListProps) {
 
   if (sets.length === 0) {
     return (
-      <p className="text-gray-500 text-center py-8">
+      <p className="text-gray-500 dark:text-gray-400 text-center py-8">
         No sets logged yet. Log your first set!
       </p>
     );
@@ -74,24 +74,24 @@ export function SetList({ sets, exercises }: SetListProps) {
       {sets.map((set) => (
         <div
           key={set._id}
-          className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+          className="p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="font-semibold text-lg">
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
                 {getExerciseName(set.exerciseId)}
               </h3>
-              <div className="mt-1 flex gap-4 text-gray-600">
+              <div className="mt-1 flex gap-4 text-gray-600 dark:text-gray-300">
                 <span className="font-medium">{set.reps} reps</span>
                 {set.weight && <span>{set.weight} lbs</span>}
               </div>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {formatDate(set.performedAt)}
               </p>
             </div>
             <button
               onClick={() => handleDelete(set._id)}
-              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+              className="px-3 py-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
               aria-label="Delete set"
             >
               Delete

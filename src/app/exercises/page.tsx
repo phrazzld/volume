@@ -22,20 +22,20 @@ export default function ExercisesPage() {
 
   return (
     <div className="min-h-screen p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Exercises</h1>
+      <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-gray-100">Exercises</h1>
 
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-3">Create New Exercise</h2>
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Create New Exercise</h2>
         <CreateExerciseForm />
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold mb-3">Your Exercises</h2>
+        <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Your Exercises</h2>
 
         {exercises === undefined ? (
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading...</p>
         ) : exercises.length === 0 ? (
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             No exercises yet. Create your first one above!
           </p>
         ) : (
@@ -43,17 +43,17 @@ export default function ExercisesPage() {
             {exercises.map((exercise) => (
               <div
                 key={exercise._id}
-                className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow"
               >
                 <div>
-                  <h3 className="font-medium">{exercise.name}</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">{exercise.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Created {new Date(exercise.createdAt).toLocaleDateString()}
                   </p>
                 </div>
                 <button
                   onClick={() => handleDelete(exercise._id)}
-                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                 >
                   Delete
                 </button>

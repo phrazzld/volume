@@ -53,7 +53,7 @@ export function LogSetForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2">Exercise</label>
+        <label className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">Exercise</label>
         <ExerciseSelector
           onSelect={(id) => setExerciseId(id)}
           selectedId={exerciseId || undefined}
@@ -61,8 +61,8 @@ export function LogSetForm() {
       </div>
 
       <div>
-        <label htmlFor="reps" className="block text-sm font-medium mb-2">
-          Reps <span className="text-red-500">*</span>
+        <label htmlFor="reps" className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+          Reps <span className="text-red-500 dark:text-red-400">*</span>
         </label>
         <input
           id="reps"
@@ -71,14 +71,14 @@ export function LogSetForm() {
           value={reps}
           onChange={(e) => setReps(e.target.value)}
           placeholder="Number of reps"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={isSubmitting}
           required
         />
       </div>
 
       <div>
-        <label htmlFor="weight" className="block text-sm font-medium mb-2">
+        <label htmlFor="weight" className="block text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
           Weight (optional)
         </label>
         <input
@@ -89,13 +89,13 @@ export function LogSetForm() {
           value={weight}
           onChange={(e) => setWeight(e.target.value)}
           placeholder="Weight in lbs/kg"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={isSubmitting}
         />
       </div>
 
       {successMessage && (
-        <div className="p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 rounded-lg">
           {successMessage}
         </div>
       )}
@@ -103,7 +103,7 @@ export function LogSetForm() {
       <button
         type="submit"
         disabled={isSubmitting || !exerciseId || !reps}
-        className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        className="w-full px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
       >
         {isSubmitting ? "Logging..." : "Log Set"}
       </button>
