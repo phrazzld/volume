@@ -113,7 +113,7 @@
   Time: 45 minutes
   ```
 
-- [ ] Implement GroupedSetHistory component
+- [x] Implement GroupedSetHistory component
   ```
   Files: src/components/dashboard/grouped-set-history.tsx (new)
 
