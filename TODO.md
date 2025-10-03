@@ -1,576 +1,376 @@
-# TODO: Unified Dashboard UX Redesign (v1.1)
+# TODO: Bloomberg Terminal Aesthetic Redesign (Phase 4)
 
-## ✅ STATUS: IMPLEMENTATION COMPLETE
+## 🚧 Current Status
 
-**All core phases completed!** Ready for final validation and PR creation.
-
-- ✅ **Phase 1: Core Dashboard** (12 commits) - All components implemented
-- ✅ **Phase 2: Smart Features** (7 commits) - All smart features working
-- ✅ **Phase 3: Polish & Cleanup** (5 commits) - Animations added, old code removed
-
-**Total commits:** 24 atomic commits
 **Branch:** `feature/unified-dashboard`
-**Next steps:** Final testing → Create PR → Merge to master
+**Phase:** 4 of 4 (Visual Redesign)
+**Progress:** Phases 1-3 complete (24 commits), Phase 4 in progress
 
 ---
 
-## Context
+## Phase 4: Bloomberg Terminal Aesthetic [6-8 hours]
 
-**Approach:** Single-page dashboard consolidating logging, history, and stats with zero navigation required. Mobile-first responsive design with inline exercise creation and smart defaults.
+**Goal:** Transform UI to Bloomberg Terminal aesthetic - dense information architecture, monospace typography, systematic color coding, terminal-style panels, zero decorative elements.
 
-**Key Files:**
-- `src/app/page.tsx` - Complete rewrite: unified dashboard page
-- `src/components/dashboard/*.tsx` - New component directory for all dashboard components
-- `src/components/layout/nav.tsx` - Update navigation (Phase 3)
-- `src/app/history/page.tsx` - Delete in Phase 3
-- `src/app/log/page.tsx` - Delete in Phase 3
+**Design Principles:**
+- Pure black background (#000000), high-contrast text (#f0f0f0)
+- Monospace-first (IBM Plex Mono) with tabular-nums for alignment
+- Systematic color coding: green=success, red=danger, yellow=warning, cyan=info
+- No gradients, shadows, or rounded corners (terminal flat aesthetic)
+- 1px borders everywhere, visible grid structure
+- Corner bracket decorations for panel framing
+- Dense spacing (maximize data per screen, ≥44px touch targets)
 
-**Patterns to Follow:**
-- Form state: `useState` for inputs, refs for auto-focus (see `src/components/sets/log-set-form.tsx`)
-- Convex integration: `useQuery` for data fetching, `useMutation` for actions (existing pattern)
-- Styling: Tailwind utility classes, dark mode with `dark:` prefix
-- Component structure: Controlled components with props interfaces
+### 4.1: Design System Foundation
+
+- [ ] Install IBM Plex Mono font via next/font/google
+  ```
+  Files: src/app/layout.tsx
+  Import { IBM_Plex_Mono } from 'next/font/google'
+  Configure: weight: ['400', '500', '600', '700'], variable: '--font-mono'
+  Add to <html> className
+  Time: 10 min
+  ```
+
+- [ ] Define terminal color palette in Tailwind config
+  ```
+  Files: tailwind.config.ts
+  Add theme.extend.colors.terminal:
+    bg: '#000000', bgSecondary: '#0a0a0a'
+    border: '#333333', borderLight: '#444444'
+    text: '#f0f0f0', textSecondary: '#999999', textMuted: '#666666'
+    success: '#00ff00', danger: '#ff0000', warning: '#ffaa00'
+    info: '#00ffff', accent: '#ffcc00'
+  Time: 15 min
+  ```
+
+- [ ] Update global CSS with terminal theme variables
+  ```
+  Files: src/app/globals.css
+  Update :root and .dark with terminal palette
+  Set body font-family: var(--font-mono)
+  Add font-variant-numeric: tabular-nums
+  Time: 10 min
+  ```
+
+- [ ] Add terminal utility classes to Tailwind config
+  ```
+  Files: tailwind.config.ts
+  Add spacing.terminal: '1px', borderRadius.terminal: '0px'
+  Add boxShadow.terminal: 'none'
+  Time: 5 min
+  ```
+
+- [ ] Force-remove all rounded corners and shadows globally
+  ```
+  Files: src/app/globals.css
+  Add * { border-radius: 0 !important; box-shadow: none !important; }
+  Exception: input/select may have 2px radius for UX
+  Time: 5 min
+  ```
+
+### 4.2: UI Primitives
+
+- [ ] Create TerminalPanel component
+  ```
+  Files: src/components/ui/terminal-panel.tsx (new)
+  Props: children, title?, titleColor?, showCornerBrackets?, className?
+  Black bg, 1px border, optional title bar (uppercase, colored)
+  Optional corner brackets in corners
+  Time: 45 min
+  ```
+
+- [ ] Create CornerBracket SVG component
+  ```
+  Files: src/components/ui/corner-bracket.tsx (new)
+  Props: position (top-left/top-right/bottom-left/bottom-right), size?, color?
+  8x8px L-shaped SVG lines, absolute positioned
+  Time: 30 min
+  ```
+
+- [ ] Create TerminalTable component
+  ```
+  Files: src/components/ui/terminal-table.tsx (new)
+  Props: headers, rows, columnWidths?, highlightRows?, className?
+  Full-width table, 1px borders, monospace, tabular-nums
+  Header: uppercase, bold, bg-terminal-bgSecondary
+  Optional zebra striping
+  Time: 1 hour
+  ```
+
+### 4.3: Component Redesign
+
+- [ ] Redesign Nav with terminal aesthetic
+  ```
+  Files: src/components/layout/nav.tsx
+  bg-terminal-bg, border-b border-terminal-border
+  Logo: uppercase, monospace, bold
+  Links: monospace, hover:text-terminal-info
+  Active: text-terminal-accent with underline
+  Time: 30 min
+  ```
+
+- [ ] Redesign DailyStatsCard as dense metrics grid
+  ```
+  Files: src/components/dashboard/daily-stats-card.tsx
+  Wrap in TerminalPanel title="DAILY METRICS" titleColor="info"
+  Remove expand/collapse (always show for density)
+  Grid: 2 cols mobile, 4 cols desktop, bordered cells
+  Color-coded values: sets=cyan, reps=green, volume=orange, exercises=yellow
+  Time: 45 min
+  ```
+
+- [ ] Redesign QuickLogForm with terminal inputs
+  ```
+  Files: src/components/dashboard/quick-log-form.tsx
+  Wrap in TerminalPanel title="LOG SET" titleColor="success"
+  Inputs: bg-terminal-bgSecondary, border-terminal-border, monospace
+  Labels: uppercase, text-xs, text-terminal-textSecondary
+  Buttons: Primary=bg-terminal-success, Secondary=bordered
+  Update InlineExerciseCreator styling to match
+  Time: 1 hour
+  ```
+
+- [ ] Redesign ExerciseManager as terminal table
+  ```
+  Files: src/components/dashboard/exercise-manager.tsx
+  Wrap in TerminalPanel title="EXERCISE REGISTRY" titleColor="accent"
+  Use TerminalTable: ["ID", "NAME", "CREATED", "SETS", "ACTIONS"]
+  ID: first 6 chars, Name: editable inline, Actions: icon buttons
+  Remove expand/collapse (always show)
+  Time: 1.5 hours
+  ```
+
+- [ ] Redesign GroupedSetHistory as dense terminal table
+  ```
+  Files: src/components/dashboard/grouped-set-history.tsx
+  Wrap in TerminalPanel title="SET HISTORY" titleColor="warning"
+  Each day: date header + TerminalTable
+  Headers: ["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]
+  Time: HH:MM, Reps=green, Weight=orange
+  Remove SetCard (inline all in table)
+  Time: 1.5 hours
+  ```
+
+- [ ] Redesign FirstRunExperience with terminal welcome
+  ```
+  Files: src/components/dashboard/first-run-experience.tsx
+  Wrap in TerminalPanel title="SYSTEM INITIALIZATION" titleColor="info"
+  Replace emoji with ASCII art box
+  Popular exercises: bordered grid, hover:border-terminal-info
+  Time: 45 min
+  ```
+
+- [ ] Redesign UndoToast with terminal styling
+  ```
+  Files: src/components/dashboard/undo-toast.tsx
+  bg-terminal-bgSecondary, border border-terminal-success
+  Text: monospace, uppercase
+  Replace CheckCircle with [✓] text
+  Corner brackets, fast animation (duration-100)
+  Time: 30 min
+  ```
+
+### 4.4: Typography & Spacing
+
+- [ ] Tighten all component spacing for density
+  ```
+  Files: All dashboard components
+  Panel padding: p-6 → p-3 or p-4
+  Between components: space-y-6 → space-y-2 or space-y-3
+  Input padding: px-4 py-2 → px-3 py-2
+  Verify ≥44px touch targets on mobile
+  Time: 45 min
+  ```
+
+- [ ] Ensure monospace + tabular-nums everywhere
+  ```
+  Files: All dashboard components
+  Add font-mono to all text
+  Add tabular-nums to all numeric values
+  Headers: font-mono font-bold uppercase
+  Time: 30 min
+  ```
+
+- [ ] Apply systematic color coding to metrics
+  ```
+  Files: All dashboard components
+  Reps: text-terminal-success (green)
+  Weight: text-terminal-warning (orange)
+  Set count: text-terminal-info (cyan)
+  Timestamps: text-terminal-textSecondary (gray)
+  Time: 30 min
+  ```
+
+### 4.5: Polish & Consistency
+
+- [ ] Enable corner brackets on all panels
+  ```
+  Files: All TerminalPanel usages
+  showCornerBrackets={true} on DailyStatsCard, QuickLogForm, etc.
+  Time: 15 min
+  ```
+
+- [ ] Update loading skeletons to match terminal aesthetic
+  ```
+  Files: src/app/page.tsx (loading state)
+  bg-terminal-bgSecondary, border-terminal-border
+  Match new panel layouts
+  Time: 20 min
+  ```
+
+- [ ] Remove theme toggle (terminal is dark-only)
+  ```
+  Files: src/components/layout/theme-toggle.tsx, nav.tsx
+  Delete ThemeToggle component and remove from Nav
+  Time: 15 min
+  ```
+
+- [ ] Update focus states to cyan
+  ```
+  Files: src/app/globals.css
+  *:focus-visible { outline: 2px solid var(--terminal-info); }
+  Time: 10 min
+  ```
+
+- [ ] Audit all borders for 1px consistency
+  ```
+  Files: All dashboard components
+  Replace border-gray-* → border-terminal-border
+  Replace border-2/border-4 → border (1px)
+  Time: 30 min
+  ```
+
+### 4.6: Validation
+
+- [ ] Visual regression check
+  ```
+  Manual inspection: all components match terminal aesthetic
+  No gradients, shadows, rounded corners remain
+  Time: 30 min
+  ```
+
+- [ ] Responsive design verification
+  ```
+  Test mobile (375px), tablet (768px), desktop (1024px+)
+  Tables scroll horizontally if needed on mobile
+  Touch targets ≥44px
+  Time: 30 min
+  ```
+
+- [ ] Accessibility audit
+  ```
+  Run WAVE or axe DevTools
+  Verify WCAG AA contrast (all terminal colors pass)
+  Test keyboard navigation (Tab, Enter, Escape)
+  Time: 30 min
+  ```
+
+- [ ] Performance check
+  ```
+  pnpm build → check bundle size (<150 kB)
+  Profile with React DevTools (no slow renders)
+  Test on mid-range mobile (no jank)
+  Time: 20 min
+  ```
+
+---
+
+## Phase 4 Completion Checklist
+
+- [ ] All components use terminal color palette
+- [ ] All text is monospace with tabular-nums
+- [ ] All borders are 1px, terminal-colored
+- [ ] No gradients, shadows, or rounded corners
+- [ ] Corner brackets on all panels
+- [ ] Spacing dense but usable (≥44px touch)
+- [ ] Color coding systematic and semantic
+- [ ] Loading states match terminal aesthetic
+- [ ] Theme toggle removed
+- [ ] Focus states use cyan
+- [ ] Responsive at all breakpoints
+- [ ] WCAG AA accessibility
+- [ ] Bundle <150 kB
+- [ ] `pnpm typecheck` passes
+- [ ] `pnpm lint` passes
+- [ ] `pnpm build` succeeds
+
+**Estimated:** 6-8 hours
+**Outcome:** Bloomberg Terminal aesthetic while maintaining all functionality
+
+---
+
+## Key Files & Patterns
+
+**New Files to Create:**
+- `src/components/ui/terminal-panel.tsx` - Bordered panel with corner brackets
+- `src/components/ui/corner-bracket.tsx` - SVG L-shaped decorations
+- `src/components/ui/terminal-table.tsx` - Dense tabular data component
+
+**Files to Modify:**
+- `src/app/layout.tsx` - Add IBM Plex Mono font
+- `tailwind.config.ts` - Terminal color palette + utilities
+- `src/app/globals.css` - Terminal theme variables, force no rounding
+- `src/components/layout/nav.tsx` - Terminal styling
+- `src/components/dashboard/*.tsx` - All dashboard components (terminal aesthetic)
+
+**Patterns:**
+- Wrap components in `<TerminalPanel title="..." titleColor="...">`
+- Use `TerminalTable` for tabular data (exercises, history)
+- Apply color semantics: green=success, red=danger, yellow=warning, cyan=info
+- Force 1px borders, no rounding, no shadows
+- Monospace + tabular-nums everywhere
 
 **Dependencies:**
-- lucide-react (installed) - ChevronDown, RotateCcw, Trash2, CheckCircle icons
-- Convex queries/mutations (existing) - no backend changes needed
-- Existing Tailwind config - will extend with animations in Phase 3
-
-**Critical Path:** Phase 1 (core dashboard) → Phase 2 (smart features) → Phase 3 (cleanup)
+- IBM Plex Mono from next/font/google (~50 kB)
+- lucide-react (existing) - may replace with text/symbols for terminal aesthetic
+- Convex (existing) - no backend changes
 
 ---
 
-## Tenet Integration Plan
+## Quality Gates (Run Before Committing)
 
-**🎯 Modularity:**
-- Clear component boundaries: DailyStatsCard, QuickLogForm, GroupedSetHistory, SetCard, InlineExerciseCreator, UndoToast
-- Single responsibility per component: stats display, form logic, history display, etc.
-- Minimal coupling: Parent page fetches data, children receive props
-- Interface contracts: TypeScript interfaces for all props
+```bash
+pnpm typecheck  # TypeScript must pass
+pnpm lint       # ESLint must pass
+pnpm build      # Production build must succeed
+```
 
-**🎯 Testability:**
-- Props-based components (no direct Convex queries in children)
-- Pure functions for data transformations (stats calculation, set grouping)
-- Controlled form components (testable with mock handlers)
-- Test strategy: Start with manual testing, add unit tests for utilities in Phase 4 (future)
-
-**🎯 Design Evolution:**
-- Iteration checkpoints:
-  - After Phase 1: Review component interfaces, extract emerging patterns
-  - After Phase 2: Review auto-focus flow, optimize form UX
-  - After Phase 3: Performance audit, identify refactoring opportunities
-- Assumptions to validate:
-  - Client-side stats calculation is fast enough (< 100ms for 100+ sets)
-  - Exercise selector doesn't need search until users have 20+ exercises
-  - Inline exercise creation is discoverable enough
-
-**🎯 Automation:**
-- Quality gates (already automated): `pnpm lint`, `pnpm typecheck`, `pnpm build`
-- Manual validation steps in Phase 3 (not TODO tasks - developer knows to run these)
-- Future: Add Playwright E2E tests for critical path (BACKLOG.md)
-
-**🎯 Binding Compliance:**
-- hex-domain-purity: Pure functions for stats/grouping logic, UI separate from business logic
-- component-isolation: Each component independently developable with clear interfaces
-- automated-quality-gates: All commits pass lint/typecheck/build before merge
-- code-size: Components stay focused (< 200 lines each), extract utilities if needed
+Manual test: Log a set, view history, edit exercise, check mobile responsiveness
 
 ---
 
-## Phase 1: Core Dashboard [4-5 hours]
+## Completed Work (Reference)
 
-**Goal:** Functional unified dashboard with feature parity to current app.
+### ✅ Phase 1: Core Dashboard (12 commits)
+- Created unified dashboard with all components
+- DailyStatsCard, QuickLogForm, GroupedSetHistory, SetCard
+- Client-side utilities (calculateDailyStats, groupSetsByDay, sortExercisesByRecency)
 
-- [x] Create dashboard component directory structure
-  ```
-  Files: src/components/dashboard/ (new directory)
+### ✅ Phase 2: Smart Features (7 commits)
+- InlineExerciseCreator with keyboard shortcuts
+- Repeat set functionality (from card or button)
+- Auto-focus flow (exercise → reps → weight → submit)
+- UndoToast with 3s auto-dismiss
+- Exercise sorting by recency
 
-  🎯 MODULARITY: Organize by feature, clear naming convention
+### ✅ Phase 3: Polish & Cleanup (5 commits)
+- Slide-up animation for toast
+- Expand/collapse animation for stats
+- Deleted old pages (history, log, exercises)
+- Deleted old components (log-set-form, set-list, etc.)
+- Updated nav to remove old links
+- Added loading skeletons
 
-  Approach: Create src/components/dashboard/ directory for all new components
-  Success: Directory exists and is ready for components
-  Time: 2 minutes
-  ```
-
-- [x] Implement DailyStatsCard component
-  ```
-  Files: src/components/dashboard/daily-stats-card.tsx (new)
-
-  🎯 MODULARITY: Single responsibility - display stats, no mutations
-  🎯 TESTABILITY: Pure presentational component, props-based
-
-  Approach: Collapsible card component following TASK.md spec (line 530-610)
-  - Props: stats object (totalSets, totalReps, totalVolume, exercisesWorked), expanded bool, onToggle callback
-  - Use ChevronDown icon from lucide-react
-  - Gradient background (blue-purple), grid layout for stats
-  - Handle null stats (empty state)
-
-  Success: Component renders, toggles expand/collapse, shows all 4 stats correctly, empty state works
-  Time: 30 minutes
-  ```
-
-- [x] Implement SetCard component
-  ```
-  Files: src/components/dashboard/set-card.tsx (new)
-
-  🎯 MODULARITY: Presentational only, actions via callbacks
-  🎯 TESTABILITY: Props-based, no side effects
-
-  Approach: Individual set display card following TASK.md spec (line 1130-1180)
-  - Props: set object, exercise object (optional), onRepeat callback, onDelete callback
-  - Use RotateCcw and Trash2 icons from lucide-react
-  - Relative time formatting ("2h ago", "Just now", "Yesterday at 3pm")
-  - Confirm dialog on delete
-  - Hover states for action buttons
-
-  Success: Displays set info, formats time correctly, repeat/delete buttons work, looks good in dark mode
-  Time: 45 minutes
-  ```
-
-- [x] Implement GroupedSetHistory component
-  ```
-  Files: src/components/dashboard/grouped-set-history.tsx (new)
-
-  🎯 MODULARITY: Container for SetCard components, handles grouping display
-  🎯 TESTABILITY: Receives pre-grouped data as props
-
-  Approach: Day-grouped set list following TASK.md spec (line 1020-1070)
-  - Props: groupedSets array (date, displayDate, sets[]), exercises array, onRepeat callback, onDelete callback
-  - Map over groups, render day headers with emoji 📅
-  - Render SetCard for each set in group
-  - Empty state: Friendly message with 💪 emoji
-
-  Success: Groups display correctly, day labels format nicely, empty state shows, actions work
-  Time: 30 minutes
-  ```
-
-- [x] Implement QuickLogForm component (basic version, no smart features)
-  ```
-  Files: src/components/dashboard/quick-log-form.tsx (new)
-
-  🎯 MODULARITY: Form logic isolated, controlled inputs
-  🎯 TESTABILITY: Callbacks for mutations, form state testable
-
-  Approach: Logging form following TASK.md spec (line 640-800), Phase 1 features only
-  - Props: exercises array, onSetLogged callback (optional)
-  - State: selectedExerciseId, reps, weight, isSubmitting
-  - Use Convex useMutation for logSet
-  - Validation: required exercise/reps, reps > 0
-  - inputMode="numeric" pattern="[0-9]*" for mobile keyboards
-  - Clear form after successful submit (keep exercise selected)
-  - Basic error handling with alert
-
-  Phase 1 excludes:
-  - Inline exercise creator (Phase 2)
-  - Repeat last button (Phase 2)
-  - Auto-focus flow (Phase 2)
-  - Undo toast (Phase 2)
-  - Exercise sorting by recency (Phase 2)
-
-  Success: Form submits, mutation succeeds, form clears, validation works, mobile numeric keyboard appears
-  Time: 1 hour
-  ```
-
-- [x] Add client-side data transformation utilities
-  ```
-  Files: src/lib/dashboard-utils.ts (new)
-
-  🎯 MODULARITY: Pure functions, no side effects
-  🎯 TESTABILITY: Easy to unit test with sample data
-  🎯 BINDING COMPLIANCE: hex-domain-purity - business logic separate from UI
-
-  Approach: Extract pure functions for reuse following TASK.md spec (line 195-255)
-  - calculateDailyStats(sets): Filters today's sets, calculates totals
-  - groupSetsByDay(sets): Groups into Map<dateString, sets[]>, sorts by date
-  - formatDateGroup(dateString): Returns "Today", "Yesterday", or formatted date
-  - sortExercisesByRecency(exercises, sets): Sorts by usage, then alphabetical
-
-  Success: Functions work correctly, handle edge cases (empty arrays, null), pure (no mutations)
-  Time: 30 minutes
-  ```
-
-- [x] Rewrite home page with unified dashboard
-  ```
-  Files: src/app/page.tsx (complete rewrite)
-
-  🎯 MODULARITY: Page orchestrates components, doesn't implement logic
-  🎯 TESTABILITY: Data fetching layer separate from presentation
-
-  Approach: Unified dashboard page following TASK.md architecture (line 125-170)
-  - Use Convex useQuery for sets and exercises
-  - Use useMemo for dailyStats calculation (from dashboard-utils)
-  - Use useMemo for groupedSets (from dashboard-utils)
-  - State: statsExpanded (boolean, default true)
-  - Render: DailyStatsCard → QuickLogForm → GroupedSetHistory
-  - Handle loading states (undefined queries)
-  - Handle delete set (useMutation, pass to GroupedSetHistory)
-  - Handle repeat set (callback to pre-fill form) - Phase 2
-
-  Layout:
-  - Max-width container (max-w-4xl)
-  - Vertical spacing (mb-6 between sections)
-  - Mobile padding (px-4), responsive (sm:px-6 lg:px-8)
-
-  Success: Page loads, data fetches, components render, stats calculate correctly, can log sets and see them appear
-  Time: 1 hour
-  ```
+**Total:** 24 atomic commits on `feature/unified-dashboard`
 
 ---
 
-## Phase 2: Smart Features [3-4 hours] ✅ COMPLETE
+## Next Steps
 
-**Goal:** Add delightful interactions and smart defaults.
+1. Execute Phase 4 tasks (6-8 hours)
+2. Run completion checklist
+3. Create PR with all 4 phases
+4. Merge to master
 
-- [x] Implement InlineExerciseCreator component
-  ```
-  Files: src/components/dashboard/inline-exercise-creator.tsx (new)
-
-  🎯 MODULARITY: Self-contained inline form, clear interface
-  🎯 TESTABILITY: Controlled component with callbacks
-
-  Approach: Inline exercise creation following TASK.md spec (line 865-925)
-  - Props: onCreated(exerciseId) callback, onCancel callback
-  - State: name, isCreating
-  - Use Convex useMutation for createExercise
-  - Auto-focus name input on mount (useEffect + ref)
-  - Enter to submit, Escape to cancel (onKeyDown handlers)
-  - Blue background to distinguish from main form
-  - Horizontal layout: [input] [Create] [Cancel]
-
-  Success: Creates exercise, calls onCreated with ID, auto-focuses input, keyboard shortcuts work
-  Time: 30 minutes
-  ```
-
-- [x] Add inline exercise creator to QuickLogForm
-  ```
-  Files: src/components/dashboard/quick-log-form.tsx (modify)
-
-  🎯 DESIGN EVOLUTION: Iterate on form UX based on Phase 1 learnings
-
-  Approach: Integrate InlineExerciseCreator following TASK.md spec (line 725-770)
-  - Add state: showInlineCreator (boolean)
-  - Add "CREATE_NEW" option to exercise dropdown (with separator)
-  - onChange: if value === "CREATE_NEW", set showInlineCreator = true
-  - Conditionally render InlineExerciseCreator component below dropdown
-  - onCreated: setSelectedExerciseId(newId), hide creator, focus reps
-  - onCancel: hide creator
-
-  Success: Dropdown has "+ Create new exercise" option, clicking shows inline form, creating works, focus flows correctly
-  Time: 30 minutes
-  ```
-
-- [x] Implement "Repeat Last Set" functionality
-  ```
-  Files: src/components/dashboard/quick-log-form.tsx (modify), src/app/page.tsx (modify)
-
-  🎯 MODULARITY: Clear data flow from parent to form
-
-  Approach: Pre-fill form from set data
-  - Add prop to QuickLogForm: onRepeatRequest (optional callback to get last set)
-  - Add "Repeat Last" button to form (next to Log Set button)
-  - Button enabled only if last set exists for selected exercise
-  - onClick: Pre-fill reps and weight from last set
-  - Auto-focus reps input for quick edit
-
-  In page.tsx:
-  - Track lastLoggedSet state
-  - Pass to QuickLogForm
-  - Also wire up onRepeat from SetCard → pre-fills from specific set
-
-  Success: Repeat button pre-fills form correctly, works from both button and set cards, focus flows to reps
-  Time: 45 minutes
-  ```
-
-- [x] Add auto-focus flow to QuickLogForm
-  ```
-  Files: src/components/dashboard/quick-log-form.tsx (modify)
-
-  🎯 DESIGN EVOLUTION: Optimize keyboard/mobile flow based on testing
-
-  Approach: Intelligent auto-focus following TASK.md spec (line 688-707)
-  - Add refs: exerciseRef, repsRef, weightRef
-  - useEffect: When selectedExerciseId changes → focus reps
-  - handleRepsKeyDown: Enter → focus weight (or submit if weight empty)
-  - handleWeightKeyDown: Enter → submit form
-  - After submit success → focus exercise selector (for quick re-logging)
-
-  Success: Selecting exercise focuses reps, Enter in reps focuses weight, Enter in weight submits, flow feels natural
-  Time: 30 minutes
-  ```
-
-- [x] Implement UndoToast component
-  ```
-  Files: src/components/dashboard/undo-toast.tsx (new)
-
-  🎯 MODULARITY: Self-contained toast with timer logic
-  🎯 TESTABILITY: Props-based, timer testable with fake timers
-
-  Approach: Success toast with undo following TASK.md spec (line 1190-1230)
-  - Props: visible (boolean), onUndo callback, onDismiss callback
-  - useEffect: Auto-dismiss after 3 seconds when visible
-  - Fixed position bottom-right (md breakpoint), full-width on mobile
-  - Green background, CheckCircle icon from lucide-react
-  - Slide-up animation (will add animation to Tailwind in Phase 3)
-  - Portal rendering? (use React.createPortal if needed)
-
-  Success: Toast appears after logging, auto-dismisses after 3s, undo button works, looks good on mobile
-  Time: 30 minutes
-  ```
-
-- [x] Wire up UndoToast in home page
-  ```
-  Files: src/app/page.tsx (modify)
-
-  🎯 AUTOMATION: Implement optimistic UI pattern for instant feedback
-
-  Approach: Show toast after successful set logging
-  - State: undoToastVisible, lastLoggedSetId
-  - After logSet success: show toast, store setId
-  - onUndo: Call deleteSet mutation, hide toast
-  - onDismiss: Hide toast, clear setId
-
-  Success: Toast shows after logging, undo deletes the set, auto-dismiss works
-  Time: 20 minutes
-  ```
-
-- [x] Add exercise sorting by recency
-  ```
-  Files: src/app/page.tsx (modify)
-
-  🎯 DESIGN EVOLUTION: Smart defaults based on usage patterns
-
-  Approach: Sort exercises by last usage following TASK.md spec (line 234-255)
-  - Use useMemo: exercisesByRecency
-  - Build Map of exerciseId → last used timestamp from sets
-  - Sort: most recently used first, then alphabetical
-  - Pass exercisesByRecency to QuickLogForm instead of exercises
-
-  Success: Most recent exercises appear first in dropdown, unused exercises at bottom alphabetically
-  Time: 20 minutes
-  ```
-
----
-
-## Phase 3: Polish & Cleanup [2-3 hours] ✅ COMPLETE
-
-**Goal:** Remove old code, add animations, final polish.
-
-- [x] Add slide-up animation to Tailwind config
-  ```
-  Files: tailwind.config.ts (modify)
-
-  🎯 AUTOMATION: Reusable animation utilities
-
-  Approach: Add keyframes and animation following TASK.md pattern (line 1220-1230)
-  - Add to theme.extend.keyframes: "slide-up" (translateY 100% → 0, opacity 0 → 1)
-  - Add to theme.extend.animation: "slide-up": "slide-up 0.2s ease-out"
-  - Apply to UndoToast component
-
-  Success: Toast slides up smoothly when appearing
-  Time: 10 minutes
-  ```
-
-- [x] Add expand/collapse animation to DailyStatsCard
-  ```
-  Files: src/components/dashboard/daily-stats-card.tsx (modify)
-
-  Approach: Smooth height transition
-  - Add transition-all duration-200 to content div
-  - Ensure overflow-hidden during transition
-  - Test on mobile and desktop
-
-  Success: Stats expand/collapse smoothly without layout jump
-  Time: 15 minutes
-  ```
-
-- [x] Delete old history page
-  ```
-  Files: src/app/history/page.tsx (delete)
-
-  Approach: Remove file entirely
-  Success: File deleted, no references remain
-  Time: 2 minutes
-  ```
-
-- [x] Delete old log page
-  ```
-  Files: src/app/log/page.tsx (delete)
-
-  Approach: Remove file entirely
-  Success: File deleted, no references remain
-  Time: 2 minutes
-  ```
-
-- [x] Delete old form components
-  ```
-  Files: src/components/sets/log-set-form.tsx (delete), src/components/sets/set-list.tsx (delete)
-
-  Approach: Remove replaced components
-  Success: Files deleted, replaced by dashboard components
-  Time: 2 minutes
-  ```
-
-- [x] Update navigation to remove old links
-  ```
-  Files: src/components/layout/nav.tsx (modify)
-
-  🎯 MODULARITY: Clean interface, no dead links
-
-  Approach: Update links array
-  - Remove "Log Set" link
-  - Remove "History" link
-  - Keep "Home" and "Exercises" only
-  - Test on mobile and desktop
-
-  Success: Navigation shows only Home and Exercises, no 404s
-  Time: 10 minutes
-  ```
-
-- [x] Add loading skeletons for initial load
-  ```
-  Files: src/app/page.tsx (already implemented in Phase 1)
-
-  Status: ALREADY COMPLETE - Loading skeletons were implemented inline in page.tsx
-  during Phase 1. Stats skeleton, form skeleton, and history skeleton all use
-  animate-pulse and match component layouts.
-  ```
-
----
-
-## Optional Enhancements (Nice-to-Have)
-
-**Status:** Core implementation complete. These are polish items for future consideration.
-
-- [ ] Add empty state for no exercises
-  ```
-  Priority: Low
-  Effort: 20 minutes
-  Value: Improves first-run experience
-
-  Current state: Form shows with empty dropdown when no exercises exist.
-  Enhancement: Show friendly prompt "No exercises yet 💪" with prominent
-  "+ Create your first exercise" button that opens InlineExerciseCreator.
-
-  Decision: Defer to post-merge. Current UX is functional.
-  ```
-
----
-
-## Pre-Merge Validation Checklist
-
-**Required before creating PR:**
-
-- [ ] Run quality gates
-  ```bash
-  pnpm typecheck  # Must pass
-  pnpm lint       # Must pass
-  pnpm build      # Must pass
-  ```
-
-- [ ] Manual testing
-  - [ ] Create exercise (inline creator)
-  - [ ] Log set with weight
-  - [ ] Log set without weight
-  - [ ] Repeat set from history
-  - [ ] Undo logged set
-  - [ ] Delete set from history
-  - [ ] Expand/collapse stats card
-  - [ ] Test dark mode toggle
-  - [ ] Test responsive breakpoints (mobile/tablet/desktop)
-
-- [ ] Browser testing
-  - [ ] Chrome (primary)
-  - [ ] Safari (macOS)
-  - [ ] Firefox (bonus)
-
----
-
-## Quality Validation (Reference - Not TODO Tasks)
-
-**Before commits:**
-- Run `pnpm typecheck` - TypeScript compiles without errors
-- Run `pnpm lint` - ESLint passes
-- Run `pnpm build` - Production build succeeds
-- Manual smoke test - Core workflow works (log a set, see it appear)
-
-**🎯 Tenet Compliance:**
-- **Modularity:** Each component has single responsibility, clear interface
-- **Testability:** Components are props-based, data transformations are pure functions
-- **Design Evolution:** Refactoring opportunities documented in code comments
-- **Automation:** Quality gates run automatically (lint, typecheck, build)
-- **Binding Compliance:**
-  - hex-domain-purity ✓ (pure utils in lib/, UI separate)
-  - component-isolation ✓ (props-based, independently testable)
-  - automated-quality-gates ✓ (pnpm scripts)
-  - code-size ✓ (components stay focused, < 200 lines)
-
-**Metrics to Track:**
-- Bundle size: Should stay < 120 kB (currently ~105 kB)
-- Component sizes: Each < 200 lines (extract if larger)
-- Zero circular dependencies
-- TypeScript strict mode: No errors
-
----
-
-## Design Iteration Checkpoints
-
-**🎯 DESIGN NEVER DONE** - Schedule reviews after each phase:
-
-**After Phase 1:**
-- Review component interfaces - are props clean and minimal?
-- Check for code duplication - extract common patterns?
-- Validate data flow - is parent-child relationship clear?
-- Test on real mobile device - any UX issues?
-
-**After Phase 2:**
-- Review auto-focus flow - does it feel natural or annoying?
-- Check exercise sorting - is recency useful or confusing?
-- Validate inline creator - is it discoverable enough?
-- Test repeat functionality - works as expected?
-
-**After Phase 3:**
-- Performance audit - any slow renders? (React DevTools Profiler)
-- Bundle size check - under 120 kB?
-- Accessibility audit - keyboard nav works? Screen reader friendly?
-- Identify technical debt - document in code comments for future
-
----
-
-## Next Steps After TODO.md Complete
-
-1. Run `/execute` to start Phase 1 implementation
-2. After Phase 1: Manual testing, review, iterate
-3. After Phase 2: More testing, refine UX
-4. After Phase 3: Create PR with `/git-pr`
-
----
-
-## BACKLOG: Future Enhancements (Not Part of v1.1)
-
-*True future work that's not required for v1.1 - see BACKLOG.md for details*
-
-### Nice-to-Have Improvements (Post-v1.1)
-- **Swipe to delete** on mobile set cards (effort: 2h, priority: low)
-- **Pull to refresh** gesture (effort: 1h, priority: low)
-- **Keyboard shortcuts** Cmd+K to focus exercise selector (effort: 1h, priority: low)
-- **Persist stats collapsed state** to localStorage (effort: 30min, priority: low)
-
-### Testing & Quality (Phase 4)
-- **Unit tests** for dashboard-utils.ts functions (effort: 2h, priority: medium)
-- **E2E tests** with Playwright for critical path (effort: 4h, priority: medium)
-- **Accessibility audit** with axe-core (effort: 2h, priority: medium)
-- **Performance monitoring** setup (effort: 2h, priority: low)
-
-### Advanced Features (v1.2+)
-- **Charts & visualizations** for progress over time (effort: 1 week, priority: medium)
-- **Personal records** tracking and celebration (effort: 3 days, priority: medium)
-- **Workout sessions** grouping sets together (effort: 1 week, priority: low)
-- **Progressive Web App** full implementation (effort: 1 week, priority: low)
-
-See BACKLOG.md for complete list and prioritization.
-
----
-
-**Total Estimated Time:** 9-12 hours across all 3 phases
-**Critical Path:** Phase 1 (4-5h) → Phase 2 (3-4h) → Phase 3 (2-3h)
-**Target Completion:** 2-3 days with breaks and testing
+**Target:** 1-2 days to complete Phase 4
