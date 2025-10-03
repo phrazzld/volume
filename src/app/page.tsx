@@ -7,6 +7,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { DailyStatsCard } from "@/components/dashboard/daily-stats-card";
 import { QuickLogForm, QuickLogFormHandle } from "@/components/dashboard/quick-log-form";
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
+import { UndoToast } from "@/components/dashboard/undo-toast";
 import {
   calculateDailyStats,
   groupSetsByDay,
@@ -14,6 +15,8 @@ import {
 
 export default function Home() {
   const [statsExpanded, setStatsExpanded] = useState(true);
+  const [undoToastVisible, setUndoToastVisible] = useState(false);
+  const [lastLoggedSetId, setLastLoggedSetId] = useState<Id<"sets"> | null>(null);
   const formRef = useRef<QuickLogFormHandle>(null);
 
   // Fetch data from Convex
@@ -42,6 +45,32 @@ export default function Home() {
   // Handle repeat set
   const handleRepeatSet = (set: any) => {
     formRef.current?.repeatSet(set);
+  };
+
+  // Handle set logged - show undo toast
+  const handleSetLogged = (setId: Id<"sets">) => {
+    setLastLoggedSetId(setId);
+    setUndoToastVisible(true);
+  };
+
+  // Handle undo - delete the last logged set
+  const handleUndo = async () => {
+    if (lastLoggedSetId) {
+      try {
+        await deleteSet({ id: lastLoggedSetId });
+        setUndoToastVisible(false);
+        setLastLoggedSetId(null);
+      } catch (error) {
+        console.error("Failed to undo set:", error);
+        alert("Failed to undo set. Please try again.");
+      }
+    }
+  };
+
+  // Handle dismiss toast
+  const handleDismissToast = () => {
+    setUndoToastVisible(false);
+    setLastLoggedSetId(null);
   };
 
   // Loading state
@@ -90,7 +119,11 @@ export default function Home() {
         />
 
         {/* Quick Log Form */}
-        <QuickLogForm ref={formRef} exercises={exercises} />
+        <QuickLogForm
+          ref={formRef}
+          exercises={exercises}
+          onSetLogged={handleSetLogged}
+        />
 
         {/* Grouped Set History */}
         <GroupedSetHistory
@@ -98,6 +131,13 @@ export default function Home() {
           exercises={exercises}
           onRepeat={handleRepeatSet}
           onDelete={handleDeleteSet}
+        />
+
+        {/* Undo Toast */}
+        <UndoToast
+          visible={undoToastVisible}
+          onUndo={handleUndo}
+          onDismiss={handleDismissToast}
         />
       </div>
     </main>
