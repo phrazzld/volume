@@ -46,6 +46,39 @@ export const listExercises = query({
   },
 });
 
+// Update an exercise
+export const updateExercise = mutation({
+  args: {
+    id: v.id("exercises"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Basic validation
+    if (!args.name || args.name.trim().length === 0) {
+      throw new Error("Exercise name is required");
+    }
+
+    const exercise = await ctx.db.get(args.id);
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
+
+    // Verify ownership
+    if (exercise.userId !== identity.subject) {
+      throw new Error("Not authorized to update this exercise");
+    }
+
+    await ctx.db.patch(args.id, {
+      name: args.name.trim(),
+    });
+  },
+});
+
 // Delete an exercise
 export const deleteExercise = mutation({
   args: {

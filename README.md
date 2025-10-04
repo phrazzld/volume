@@ -2,6 +2,8 @@
 
 Simple workout tracking app with Convex backend and Clerk auth.
 
+**Live at: [volume.fitness](https://volume.fitness)**
+
 ## Setup
 
 1. Install dependencies:
