@@ -20,6 +20,14 @@ interface DailyStats {
   exercisesWorked: number;
 }
 
+export interface ExerciseStats {
+  exerciseId: Id<"exercises">;
+  name: string;
+  sets: number;
+  reps: number;
+  volume: number;
+}
+
 /**
  * Calculate daily statistics from a set of workout sets.
  * Filters to today's sets and aggregates totals.
@@ -112,6 +120,57 @@ export function formatDateGroup(dateString: string): string {
   return date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
+  });
+}
+
+/**
+ * Calculate per-exercise statistics for today's sets.
+ * Groups sets by exercise and aggregates totals.
+ *
+ * @param sets - Array of sets to analyze
+ * @param exercises - Array of exercises for name lookup
+ * @returns Array of exercise statistics sorted by most sets first
+ */
+export function calculateDailyStatsByExercise(
+  sets: Set[] | undefined,
+  exercises: Exercise[] | undefined
+): ExerciseStats[] {
+  if (!sets || !exercises) return [];
+
+  const today = new Date().toDateString();
+  const todaySets = sets.filter(
+    (set) => new Date(set.performedAt).toDateString() === today
+  );
+
+  if (todaySets.length === 0) return [];
+
+  // Group by exercise
+  const exerciseMap = new Map<Id<"exercises">, ExerciseStats>();
+
+  todaySets.forEach((set) => {
+    const exercise = exercises.find((ex) => ex._id === set.exerciseId);
+    if (!exercise) return;
+
+    if (!exerciseMap.has(set.exerciseId)) {
+      exerciseMap.set(set.exerciseId, {
+        exerciseId: set.exerciseId,
+        name: exercise.name,
+        sets: 0,
+        reps: 0,
+        volume: 0,
+      });
+    }
+
+    const stats = exerciseMap.get(set.exerciseId)!;
+    stats.sets += 1;
+    stats.reps += set.reps;
+    stats.volume += set.weight ? set.reps * set.weight : 0;
+  });
+
+  // Sort by most sets first, then alphabetical
+  return Array.from(exerciseMap.values()).sort((a, b) => {
+    if (a.sets !== b.sets) return b.sets - a.sets;
+    return a.name.localeCompare(b.name);
   });
 }
 

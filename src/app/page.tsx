@@ -12,6 +12,7 @@ import { UndoToast } from "@/components/dashboard/undo-toast";
 import { FirstRunExperience } from "@/components/dashboard/first-run-experience";
 import {
   calculateDailyStats,
+  calculateDailyStatsByExercise,
   groupSetsByDay,
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
@@ -30,6 +31,12 @@ export default function Home() {
 
   // Calculate daily stats
   const dailyStats = useMemo(() => calculateDailyStats(sets), [sets]);
+
+  // Calculate per-exercise daily stats
+  const exerciseStats = useMemo(
+    () => calculateDailyStatsByExercise(sets, exercises),
+    [sets, exercises]
+  );
 
   // Group sets by day
   const groupedSets = useMemo(() => groupSetsByDay(sets), [sets]);
@@ -144,7 +151,7 @@ export default function Home() {
         ) : (
           <>
             {/* Daily Stats Card */}
-            <DailyStatsCard stats={dailyStats} />
+            <DailyStatsCard stats={dailyStats} exerciseStats={exerciseStats} />
 
             {/* Exercise Manager */}
             <ExerciseManager
