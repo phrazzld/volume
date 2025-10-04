@@ -28,6 +28,20 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Terminal aesthetic: all text uppercase */
+main {
+  text-transform: uppercase;
+}
+
+/* Uppercase inputs/selects as user types */
+input[type="text"],
+input[type="number"],
+textarea,
+select,
+option {
+  text-transform: uppercase;
+}
+
 /* Terminal aesthetic: force no rounded corners or shadows */
 * {
   border-radius: 0 !important;
