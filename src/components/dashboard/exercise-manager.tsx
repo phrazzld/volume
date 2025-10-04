@@ -168,6 +168,7 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
     <TerminalPanel
       title="EXERCISE REGISTRY"
       titleColor="accent"
+      showCornerBrackets={true}
       className="mb-3"
     >
       <div className="p-4">

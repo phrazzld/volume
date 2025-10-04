@@ -61,6 +61,7 @@ export function FirstRunExperience({
     <TerminalPanel
       title="SYSTEM INITIALIZATION"
       titleColor="info"
+      showCornerBrackets={true}
       className="mb-3"
     >
       <div className="p-6">

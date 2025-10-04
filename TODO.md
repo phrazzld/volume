@@ -131,7 +131,7 @@
   Time: 1 hour
   ```
 
-- [ ] Redesign ExerciseManager as terminal table
+- [x] Redesign ExerciseManager as terminal table
   ```
   Files: src/components/dashboard/exercise-manager.tsx
   Wrap in TerminalPanel title="EXERCISE REGISTRY" titleColor="accent"
@@ -141,7 +141,7 @@
   Time: 1.5 hours
   ```
 
-- [ ] Redesign GroupedSetHistory as dense terminal table
+- [x] Redesign GroupedSetHistory as dense terminal table
   ```
   Files: src/components/dashboard/grouped-set-history.tsx
   Wrap in TerminalPanel title="SET HISTORY" titleColor="warning"
@@ -152,7 +152,7 @@
   Time: 1.5 hours
   ```
 
-- [ ] Redesign FirstRunExperience with terminal welcome
+- [x] Redesign FirstRunExperience with terminal welcome
   ```
   Files: src/components/dashboard/first-run-experience.tsx
   Wrap in TerminalPanel title="SYSTEM INITIALIZATION" titleColor="info"
@@ -161,7 +161,7 @@
   Time: 45 min
   ```
 
-- [ ] Redesign UndoToast with terminal styling
+- [x] Redesign UndoToast with terminal styling
   ```
   Files: src/components/dashboard/undo-toast.tsx
   bg-terminal-bgSecondary, border border-terminal-success
@@ -173,7 +173,7 @@
 
 ### 4.4: Typography & Spacing
 
-- [ ] Tighten all component spacing for density
+- [x] Tighten all component spacing for density
   ```
   Files: All dashboard components
   Panel padding: p-6 → p-3 or p-4
@@ -183,7 +183,7 @@
   Time: 45 min
   ```
 
-- [ ] Ensure monospace + tabular-nums everywhere
+- [x] Ensure monospace + tabular-nums everywhere
   ```
   Files: All dashboard components
   Add font-mono to all text
@@ -192,7 +192,7 @@
   Time: 30 min
   ```
 
-- [ ] Apply systematic color coding to metrics
+- [x] Apply systematic color coding to metrics
   ```
   Files: All dashboard components
   Reps: text-terminal-success (green)
@@ -204,14 +204,14 @@
 
 ### 4.5: Polish & Consistency
 
-- [ ] Enable corner brackets on all panels
+- [~] Enable corner brackets on all panels
   ```
   Files: All TerminalPanel usages
   showCornerBrackets={true} on DailyStatsCard, QuickLogForm, etc.
   Time: 15 min
   ```
 
-- [ ] Update loading skeletons to match terminal aesthetic
+- [~] Update loading skeletons to match terminal aesthetic
   ```
   Files: src/app/page.tsx (loading state)
   bg-terminal-bgSecondary, border-terminal-border
@@ -219,21 +219,21 @@
   Time: 20 min
   ```
 
-- [ ] Remove theme toggle (terminal is dark-only)
+- [~] Remove theme toggle (terminal is dark-only)
   ```
   Files: src/components/layout/theme-toggle.tsx, nav.tsx
   Delete ThemeToggle component and remove from Nav
   Time: 15 min
   ```
 
-- [ ] Update focus states to cyan
+- [~] Update focus states to cyan
   ```
   Files: src/app/globals.css
   *:focus-visible { outline: 2px solid var(--terminal-info); }
   Time: 10 min
   ```
 
-- [ ] Audit all borders for 1px consistency
+- [~] Audit all borders for 1px consistency
   ```
   Files: All dashboard components
   Replace border-gray-* → border-terminal-border

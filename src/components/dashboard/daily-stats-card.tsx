@@ -13,7 +13,12 @@ interface DailyStatsCardProps {
 
 export function DailyStatsCard({ stats }: DailyStatsCardProps) {
   return (
-    <TerminalPanel title="DAILY METRICS" titleColor="info" className="mb-3">
+    <TerminalPanel
+      title="DAILY METRICS"
+      titleColor="info"
+      showCornerBrackets={true}
+      className="mb-3"
+    >
       {stats ? (
         <div className="grid grid-cols-2 md:grid-cols-4">
           {/* Total Sets - Cyan */}

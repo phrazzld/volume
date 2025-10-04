@@ -87,29 +87,34 @@ export default function Home() {
       <main className="min-h-screen p-3 sm:p-4 lg:p-6 max-w-4xl mx-auto">
         <div className="space-y-3">
           {/* Stats skeleton */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 animate-pulse">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="bg-terminal-bg border border-terminal-border p-3 animate-pulse">
+            <div className="h-4 bg-terminal-bgSecondary w-32 mb-3" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px">
+              <div className="h-16 bg-terminal-bgSecondary" />
+              <div className="h-16 bg-terminal-bgSecondary" />
+              <div className="h-16 bg-terminal-bgSecondary" />
+              <div className="h-16 bg-terminal-bgSecondary" />
             </div>
           </div>
 
           {/* Form skeleton */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 animate-pulse">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-4" />
-            <div className="space-y-4">
-              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
-              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="bg-terminal-bg border border-terminal-border p-4 animate-pulse">
+            <div className="h-4 bg-terminal-bgSecondary w-24 mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="h-10 bg-terminal-bgSecondary" />
+              <div className="h-10 bg-terminal-bgSecondary" />
+              <div className="h-10 bg-terminal-bgSecondary" />
+              <div className="h-10 bg-terminal-bgSecondary" />
             </div>
           </div>
 
           {/* History skeleton */}
-          <div className="space-y-3">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse" />
-            <div className="h-24 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg animate-pulse" />
-            <div className="h-24 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg animate-pulse" />
+          <div className="bg-terminal-bg border border-terminal-border p-4 animate-pulse">
+            <div className="h-4 bg-terminal-bgSecondary w-32 mb-4" />
+            <div className="space-y-3">
+              <div className="h-20 bg-terminal-bgSecondary" />
+              <div className="h-20 bg-terminal-bgSecondary" />
+            </div>
           </div>
         </div>
       </main>

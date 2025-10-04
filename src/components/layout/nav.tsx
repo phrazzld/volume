@@ -3,7 +3,6 @@
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "./theme-toggle";
 
 export function Nav() {
   const pathname = usePathname();
@@ -38,7 +37,6 @@ export function Nav() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <UserButton afterSignOutUrl="/" />
           </div>
         </div>

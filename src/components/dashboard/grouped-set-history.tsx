@@ -61,7 +61,12 @@ export function GroupedSetHistory({
 
   if (groupedSets.length === 0) {
     return (
-      <TerminalPanel title="SET HISTORY" titleColor="warning" className="mb-3">
+      <TerminalPanel
+        title="SET HISTORY"
+        titleColor="warning"
+        showCornerBrackets={true}
+        className="mb-3"
+      >
         <div className="p-8 text-center">
           <p className="text-terminal-textSecondary uppercase font-mono text-sm">
             NO DATA
@@ -75,7 +80,12 @@ export function GroupedSetHistory({
   }
 
   return (
-    <TerminalPanel title="SET HISTORY" titleColor="warning" className="mb-3">
+    <TerminalPanel
+      title="SET HISTORY"
+      titleColor="warning"
+      showCornerBrackets={true}
+      className="mb-3"
+    >
       <div className="p-4 space-y-6">
         {groupedSets.map((group) => {
           // Build table rows for this day

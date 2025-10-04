@@ -115,7 +115,12 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   };
 
   return (
-    <TerminalPanel title="LOG SET" titleColor="success" className="mb-3">
+    <TerminalPanel
+      title="LOG SET"
+      titleColor="success"
+      showCornerBrackets={true}
+      className="mb-3"
+    >
       <form onSubmit={handleSubmit} className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Exercise Selector */}
