@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CheckCircle } from "lucide-react";
+import { CornerBracket } from "@/components/ui/corner-bracket";
 
 interface UndoToastProps {
   visible: boolean;
@@ -22,16 +22,24 @@ export function UndoToast({ visible, onUndo, onDismiss }: UndoToastProps) {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
-      <div className="bg-green-600 dark:bg-green-700 text-white rounded-lg shadow-lg p-4 flex items-center justify-between">
+      <div className="relative bg-terminal-bgSecondary border border-terminal-success p-4 flex items-center justify-between">
+        {/* Corner brackets */}
+        <CornerBracket position="top-left" color="#00ff00" />
+        <CornerBracket position="top-right" color="#00ff00" />
+        <CornerBracket position="bottom-left" color="#00ff00" />
+        <CornerBracket position="bottom-right" color="#00ff00" />
+
         <div className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5" />
-          <span className="font-medium">Set logged successfully!</span>
+          <span className="text-terminal-success font-mono font-bold">[✓]</span>
+          <span className="text-terminal-text font-mono uppercase text-sm font-medium">
+            SET LOGGED
+          </span>
         </div>
         <button
           onClick={onUndo}
-          className="ml-4 px-3 py-1 bg-white/20 hover:bg-white/30 rounded font-medium transition-colors"
+          className="ml-4 px-3 py-1 border border-terminal-success text-terminal-success hover:bg-terminal-success hover:text-terminal-bg font-mono uppercase text-xs font-bold transition-all duration-100"
         >
-          Undo
+          UNDO
         </button>
       </div>
     </div>
