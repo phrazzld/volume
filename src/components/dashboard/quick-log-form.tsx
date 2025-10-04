@@ -1,7 +1,7 @@
 "use client";
 
-import { useMutation } from "convex/react";
-import { FormEvent, useState, useRef, useImperativeHandle, forwardRef, useEffect, KeyboardEvent } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { FormEvent, useState, useRef, useImperativeHandle, forwardRef, useEffect, KeyboardEvent, useMemo } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
@@ -41,6 +41,29 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const weightInputRef = useRef<HTMLInputElement>(null);
 
     const logSet = useMutation(api.sets.logSet);
+
+    // Query last set for selected exercise
+    const allSets = useQuery(api.sets.listSets, {});
+
+    // Find last set for selected exercise
+    const lastSet = useMemo(() => {
+      if (!selectedExerciseId || !allSets) return null;
+      const exerciseSets = allSets.filter(s => s.exerciseId === selectedExerciseId);
+      if (exerciseSets.length === 0) return null;
+      return exerciseSets[0]; // Already sorted by performedAt desc
+    }, [selectedExerciseId, allSets]);
+
+    // Format time ago
+    const formatTimeAgo = (timestamp: number) => {
+      const seconds = Math.floor((Date.now() - timestamp) / 1000);
+      if (seconds < 60) return `${seconds} SEC AGO`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} MIN AGO`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} HR AGO`;
+      const days = Math.floor(hours / 24);
+      return `${days} DAY${days === 1 ? '' : 'S'} AGO`;
+    };
 
     // Expose repeatSet method to parent via ref
     useImperativeHandle(ref, () => ({
@@ -122,6 +145,16 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       className="mb-3"
     >
       <form onSubmit={handleSubmit} className="p-4">
+        {/* Last Set Indicator */}
+        {lastSet && (
+          <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border">
+            <p className="text-xs uppercase text-terminal-info font-mono">
+              LAST: {exercises.find(e => e._id === selectedExerciseId)?.name} • {lastSet.reps} REPS
+              {lastSet.weight && ` @ ${lastSet.weight} LBS`} • {formatTimeAgo(lastSet.performedAt)}
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Exercise Selector */}
           <div>

@@ -166,10 +166,13 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
 
   return (
     <TerminalPanel
-      title="EXERCISE REGISTRY"
+      title={`EXERCISE REGISTRY (${exercises.length})`}
       titleColor="accent"
       showCornerBrackets={true}
       className="mb-3"
+      collapsible={true}
+      defaultCollapsed={true}
+      storageKey="exercise-registry-collapsed"
     >
       <div className="p-4">
         <TerminalTable

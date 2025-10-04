@@ -153,13 +153,7 @@ export default function Home() {
             {/* Daily Stats Card */}
             <DailyStatsCard stats={dailyStats} exerciseStats={exerciseStats} />
 
-            {/* Exercise Manager */}
-            <ExerciseManager
-              exercises={exercises || []}
-              sets={sets || []}
-            />
-
-            {/* Quick Log Form */}
+            {/* Quick Log Form - MOVED TO PRIME POSITION */}
             <QuickLogForm
               ref={formRef}
               exercises={exercisesByRecency}
@@ -172,6 +166,12 @@ export default function Home() {
               exercises={exercisesByRecency}
               onRepeat={handleRepeatSet}
               onDelete={handleDeleteSet}
+            />
+
+            {/* Exercise Manager - MOVED TO BOTTOM */}
+            <ExerciseManager
+              exercises={exercises || []}
+              sets={sets || []}
             />
           </>
         )}

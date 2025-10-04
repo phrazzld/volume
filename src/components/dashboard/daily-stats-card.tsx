@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
 import { ExerciseStats } from "@/lib/dashboard-utils";
@@ -15,6 +16,8 @@ interface DailyStatsCardProps {
 }
 
 export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
+  const [showBreakdown, setShowBreakdown] = useState(false);
+
   // Build table rows for per-exercise breakdown
   const rows = exerciseStats.map((exercise) => [
     // EXERCISE
@@ -96,15 +99,25 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
             </div>
           </div>
 
-          {/* Per-Exercise Breakdown */}
+          {/* Per-Exercise Breakdown - Collapsible */}
           {exerciseStats.length > 0 && (
-            <div className="p-3">
-              <TerminalTable
-                headers={["EXERCISE", "SETS", "REPS", "VOLUME"]}
-                rows={rows}
-                columnWidths={["", "w-16", "w-20", "w-24"]}
-              />
-            </div>
+            <>
+              <button
+                onClick={() => setShowBreakdown(!showBreakdown)}
+                className="w-full px-3 py-2 border-t border-terminal-border text-terminal-textSecondary hover:text-terminal-info hover:bg-terminal-bgSecondary transition-colors text-xs uppercase font-mono text-center"
+              >
+                {showBreakdown ? "▲ HIDE BREAKDOWN" : "▼ SHOW BREAKDOWN"}
+              </button>
+              {showBreakdown && (
+                <div className="p-3 border-t border-terminal-border">
+                  <TerminalTable
+                    headers={["EXERCISE", "SETS", "REPS", "VOLUME"]}
+                    rows={rows}
+                    columnWidths={["", "w-16", "w-20", "w-24"]}
+                  />
+                </div>
+              )}
+            </>
           )}
         </>
       ) : (

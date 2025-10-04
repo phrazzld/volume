@@ -1,4 +1,6 @@
-import { ReactNode } from "react";
+"use client";
+
+import { ReactNode, useState, useEffect } from "react";
 import { CornerBracket } from "./corner-bracket";
 
 interface TerminalPanelProps {
@@ -7,6 +9,9 @@ interface TerminalPanelProps {
   titleColor?: "success" | "danger" | "warning" | "info" | "accent";
   showCornerBrackets?: boolean;
   className?: string;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
+  storageKey?: string; // For localStorage persistence
 }
 
 const titleColorClasses = {
@@ -23,7 +28,32 @@ export function TerminalPanel({
   titleColor = "info",
   showCornerBrackets = false,
   className = "",
+  collapsible = false,
+  defaultCollapsed = false,
+  storageKey,
 }: TerminalPanelProps) {
+  // Initialize collapsed state from localStorage or defaultCollapsed
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === "undefined" || !collapsible || !storageKey) {
+      return defaultCollapsed;
+    }
+    const stored = localStorage.getItem(storageKey);
+    return stored !== null ? stored === "true" : defaultCollapsed;
+  });
+
+  // Persist collapsed state to localStorage
+  useEffect(() => {
+    if (collapsible && storageKey) {
+      localStorage.setItem(storageKey, String(isCollapsed));
+    }
+  }, [isCollapsed, collapsible, storageKey]);
+
+  const toggleCollapsed = () => {
+    if (collapsible) {
+      setIsCollapsed((prev) => !prev);
+    }
+  };
+
   return (
     <div
       className={`relative bg-terminal-bg border border-terminal-border ${className}`}
@@ -38,16 +68,26 @@ export function TerminalPanel({
       )}
 
       {title && (
-        <div className="border-b border-terminal-border px-3 py-2">
+        <div
+          className={`border-b border-terminal-border px-3 py-2 ${
+            collapsible ? "cursor-pointer hover:bg-terminal-bgSecondary transition-colors" : ""
+          }`}
+          onClick={toggleCollapsed}
+        >
           <h2
-            className={`text-xs font-bold uppercase tracking-wider ${titleColorClasses[titleColor]}`}
+            className={`text-xs font-bold uppercase tracking-wider flex items-center justify-between ${titleColorClasses[titleColor]}`}
           >
-            {title}
+            <span>{title}</span>
+            {collapsible && (
+              <span className="text-terminal-textSecondary ml-2">
+                {isCollapsed ? "▼" : "▲"}
+              </span>
+            )}
           </h2>
         </div>
       )}
 
-      {children}
+      {!isCollapsed && children}
     </div>
   );
 }

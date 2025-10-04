@@ -79,88 +79,91 @@ export function GroupedSetHistory({
     );
   }
 
+  // Determine today's date for default expansion
+  const todayDate = new Date().toDateString();
+
   return (
-    <TerminalPanel
-      title="SET HISTORY"
-      titleColor="warning"
-      showCornerBrackets={true}
-      className="mb-3"
-    >
-      <div className="p-4 space-y-6">
-        {groupedSets.map((group) => {
-          // Build table rows for this day
-          const rows = group.sets.map((set) => {
-            const exercise = exercises.find((ex) => ex._id === set.exerciseId);
-            const isDeleting = deletingId === set._id;
+    <div className="space-y-3">
+      {groupedSets.map((group) => {
+        // Build table rows for this day
+        const rows = group.sets.map((set) => {
+          const exercise = exercises.find((ex) => ex._id === set.exerciseId);
+          const isDeleting = deletingId === set._id;
 
-            return [
-              // TIME
-              <span key="time" className="text-terminal-textSecondary">
-                {formatTime(set.performedAt)}
-              </span>,
+          return [
+            // TIME
+            <span key="time" className="text-terminal-textSecondary">
+              {formatTime(set.performedAt)}
+            </span>,
 
-              // EXERCISE
-              <span key="exercise" className="text-terminal-text">
-                {exercise?.name || "Unknown"}
-              </span>,
+            // EXERCISE
+            <span key="exercise" className="text-terminal-text">
+              {exercise?.name || "Unknown"}
+            </span>,
 
-              // REPS
-              <span key="reps" className="text-terminal-success font-bold">
-                {set.reps}
-              </span>,
+            // REPS
+            <span key="reps" className="text-terminal-success font-bold">
+              {set.reps}
+            </span>,
 
-              // WEIGHT
-              set.weight ? (
-                <span key="weight" className="text-terminal-warning font-bold">
-                  {set.weight}
-                </span>
-              ) : (
-                <span key="weight" className="text-terminal-textMuted">-</span>
-              ),
+            // WEIGHT
+            set.weight ? (
+              <span key="weight" className="text-terminal-warning font-bold">
+                {set.weight}
+              </span>
+            ) : (
+              <span key="weight" className="text-terminal-textMuted">-</span>
+            ),
 
-              // ACTIONS
-              <div key="actions" className="flex items-center gap-1">
-                <button
-                  onClick={() => onRepeat(set)}
-                  className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
-                  aria-label="Repeat this set"
-                  title="Repeat this set"
-                  type="button"
-                  disabled={isDeleting}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(set)}
-                  className="p-1 text-terminal-danger hover:opacity-80 transition-opacity"
-                  aria-label="Delete this set"
-                  title="Delete this set"
-                  type="button"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>,
-            ];
-          });
+            // ACTIONS
+            <div key="actions" className="flex items-center gap-1">
+              <button
+                onClick={() => onRepeat(set)}
+                className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
+                aria-label="Repeat this set"
+                title="Repeat this set"
+                type="button"
+                disabled={isDeleting}
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => handleDelete(set)}
+                className="p-1 text-terminal-danger hover:opacity-80 transition-opacity"
+                aria-label="Delete this set"
+                title="Delete this set"
+                type="button"
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>,
+          ];
+        });
 
-          return (
-            <div key={group.date}>
-              {/* Date header */}
-              <h3 className="text-xs font-bold uppercase text-terminal-accent mb-2 font-mono">
-                {group.displayDate}
-              </h3>
+        const isToday = group.date === todayDate;
 
-              {/* Table for this day */}
+        return (
+          <TerminalPanel
+            key={group.date}
+            title={`${group.displayDate.toUpperCase()} (${group.sets.length} SET${group.sets.length === 1 ? '' : 'S'})`}
+            titleColor="warning"
+            showCornerBrackets={false}
+            collapsible={true}
+            defaultCollapsed={!isToday}
+            storageKey={`history-day-${group.date}`}
+            className=""
+          >
+            <div className="p-4">
               <TerminalTable
                 headers={["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]}
                 rows={rows}
                 columnWidths={["w-20", "", "w-16", "w-20", "w-24"]}
               />
             </div>
-          );
-        })}
-      </div>
-    </TerminalPanel>
+          </TerminalPanel>
+        );
+      })}
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/layout/nav";
+import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -25,11 +26,12 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning className={ibmPlexMono.variable}>
-        <body className="antialiased bg-terminal-bg">
+        <body className="antialiased bg-terminal-bg pb-12">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <ConvexClientProvider>
               <Nav />
               {children}
+              <Footer />
             </ConvexClientProvider>
           </ThemeProvider>
         </body>
