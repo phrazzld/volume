@@ -3,21 +3,51 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #f0f0f0;
-  --border: #333333;
-  --border-light: #444444;
-  --text-secondary: #999999;
-  --text-muted: #666666;
+  /* Light mode - Paper terminal aesthetic */
+  --background: #faf8f5;
+  --foreground: #1a1a1a;
+  --border: #cccccc;
+  --border-light: #dddddd;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+
+  /* Terminal colors - Light mode (darker for readability) */
+  --terminal-bg: #faf8f5;
+  --terminal-bg-secondary: #f0ede8;
+  --terminal-border: #cccccc;
+  --terminal-border-light: #dddddd;
+  --terminal-text: #1a1a1a;
+  --terminal-text-secondary: #666666;
+  --terminal-text-muted: #999999;
+  --terminal-success: #008000;
+  --terminal-danger: #cc0000;
+  --terminal-warning: #cc8800;
+  --terminal-info: #008b8b;
+  --terminal-accent: #b8860b;
 }
 
 .dark {
+  /* Dark mode - Bloomberg terminal aesthetic */
   --background: #000000;
   --foreground: #f0f0f0;
   --border: #333333;
   --border-light: #444444;
   --text-secondary: #999999;
   --text-muted: #666666;
+
+  /* Terminal colors - Dark mode (bright on black) */
+  --terminal-bg: #000000;
+  --terminal-bg-secondary: #0a0a0a;
+  --terminal-border: #333333;
+  --terminal-border-light: #444444;
+  --terminal-text: #f0f0f0;
+  --terminal-text-secondary: #999999;
+  --terminal-text-muted: #666666;
+  --terminal-success: #00ff00;
+  --terminal-danger: #ff0000;
+  --terminal-warning: #ffaa00;
+  --terminal-info: #00ffff;
+  --terminal-accent: #ffcc00;
 }
 
 body {

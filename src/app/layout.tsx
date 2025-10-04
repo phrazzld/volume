@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning className={ibmPlexMono.variable}>
-        <body className="antialiased bg-gray-50 dark:bg-gray-900">
+        <body className="antialiased bg-terminal-bg">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <ConvexClientProvider>
               <Nav />

@@ -2,6 +2,7 @@
 
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Nav() {
   return (
@@ -14,7 +15,10 @@ export function Nav() {
           >
             VOLUME
           </Link>
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </div>
     </nav>
