@@ -84,8 +84,8 @@ export default function Home() {
   // Loading state
   if (sets === undefined || exercises === undefined) {
     return (
-      <main className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-        <div className="space-y-6">
+      <main className="min-h-screen p-3 sm:p-4 lg:p-6 max-w-4xl mx-auto">
+        <div className="space-y-3">
           {/* Stats skeleton */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 animate-pulse">
             <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-4" />
@@ -131,8 +131,8 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="space-y-6">
+    <main className="min-h-screen p-3 sm:p-4 lg:p-6 max-w-4xl mx-auto">
+      <div className="space-y-3">
         {exercises.length === 0 ? (
           /* First Run Experience - Show when no exercises exist */
           <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
