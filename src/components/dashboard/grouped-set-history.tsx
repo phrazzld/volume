@@ -95,31 +95,31 @@ export function GroupedSetHistory({
 
             return [
               // TIME
-              <span className="text-terminal-textSecondary">
+              <span key="time" className="text-terminal-textSecondary">
                 {formatTime(set.performedAt)}
               </span>,
 
               // EXERCISE
-              <span className="text-terminal-text">
+              <span key="exercise" className="text-terminal-text">
                 {exercise?.name || "Unknown"}
               </span>,
 
               // REPS
-              <span className="text-terminal-success font-bold">
+              <span key="reps" className="text-terminal-success font-bold">
                 {set.reps}
               </span>,
 
               // WEIGHT
               set.weight ? (
-                <span className="text-terminal-warning font-bold">
+                <span key="weight" className="text-terminal-warning font-bold">
                   {set.weight}
                 </span>
               ) : (
-                <span className="text-terminal-textMuted">-</span>
+                <span key="weight" className="text-terminal-textMuted">-</span>
               ),
 
               // ACTIONS
-              <div className="flex items-center gap-1">
+              <div key="actions" className="flex items-center gap-1">
                 <button
                   onClick={() => onRepeat(set)}
                   className="p-1 text-terminal-info hover:opacity-80 transition-opacity"

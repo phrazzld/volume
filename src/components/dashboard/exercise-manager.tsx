@@ -93,11 +93,11 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
 
     return [
       // ID
-      <span className="text-terminal-textMuted">{shortId}</span>,
+      <span key="id" className="text-terminal-textMuted">{shortId}</span>,
 
       // NAME (editable inline)
       isEditing ? (
-        <div className="flex items-center gap-2">
+        <div key="name" className="flex items-center gap-2">
           <input
             type="text"
             value={editingName}
@@ -131,18 +131,18 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
           </button>
         </div>
       ) : (
-        <span className="text-terminal-text font-medium">{exercise.name}</span>
+        <span key="name" className="text-terminal-text font-medium">{exercise.name}</span>
       ),
 
       // CREATED
-      <span className="text-terminal-textSecondary">{createdDate}</span>,
+      <span key="created" className="text-terminal-textSecondary">{createdDate}</span>,
 
       // SETS
-      <span className="text-terminal-info">{setCount}</span>,
+      <span key="sets" className="text-terminal-info">{setCount}</span>,
 
       // ACTIONS
       !isEditing ? (
-        <div className="flex items-center gap-1">
+        <div key="actions" className="flex items-center gap-1">
           <button
             onClick={() => handleStartEdit(exercise)}
             className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
@@ -159,7 +159,7 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
           </button>
         </div>
       ) : (
-        <div className="h-6"></div> // Spacer during edit
+        <div key="actions" className="h-6"></div> // Spacer during edit
       ),
     ];
   });

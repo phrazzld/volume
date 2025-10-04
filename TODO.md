@@ -204,14 +204,14 @@
 
 ### 4.5: Polish & Consistency
 
-- [~] Enable corner brackets on all panels
+- [x] Enable corner brackets on all panels
   ```
   Files: All TerminalPanel usages
   showCornerBrackets={true} on DailyStatsCard, QuickLogForm, etc.
   Time: 15 min
   ```
 
-- [~] Update loading skeletons to match terminal aesthetic
+- [x] Update loading skeletons to match terminal aesthetic
   ```
   Files: src/app/page.tsx (loading state)
   bg-terminal-bgSecondary, border-terminal-border
@@ -219,21 +219,21 @@
   Time: 20 min
   ```
 
-- [~] Remove theme toggle (terminal is dark-only)
+- [x] Remove theme toggle (terminal is dark-only)
   ```
   Files: src/components/layout/theme-toggle.tsx, nav.tsx
   Delete ThemeToggle component and remove from Nav
   Time: 15 min
   ```
 
-- [~] Update focus states to cyan
+- [x] Update focus states to cyan
   ```
   Files: src/app/globals.css
   *:focus-visible { outline: 2px solid var(--terminal-info); }
   Time: 10 min
   ```
 
-- [~] Audit all borders for 1px consistency
+- [x] Audit all borders for 1px consistency
   ```
   Files: All dashboard components
   Replace border-gray-* → border-terminal-border
