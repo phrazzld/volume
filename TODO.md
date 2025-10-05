@@ -37,7 +37,7 @@
 - [ ] Subtle gradients on metrics cards
 
 ### Spacing & Layout
-- [~] Increase padding in "DAILY METRICS" card
+- [x] Increase padding in "DAILY METRICS" card
 - [ ] Use consistent 16px spacing rhythm throughout
 - [ ] Subtle border-width variation for depth
 - [ ] Add thin dividers between collapsible sections
