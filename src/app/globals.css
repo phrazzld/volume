@@ -94,6 +94,19 @@ label {
   font-variant-numeric: tabular-nums;
 }
 
+/* Button press states - scale down on tap for tactile feedback */
+button:active,
+.btn-press:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease-out;
+}
+
+/* Smooth return to normal state */
+button,
+.btn-press {
+  transition: transform 0.1s ease-in;
+}
+
 /* Uppercase inputs/selects as user types */
 input[type="text"],
 input[type="number"],

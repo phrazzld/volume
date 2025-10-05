@@ -54,7 +54,7 @@
 
 ### Interactions
 - [ ] Swipe left on set card reveals delete button
-- [ ] Button press states (scale down on tap)
+- [~] Button press states (scale down on tap)
 - [ ] Haptic feedback on successful log
 - [ ] Landscape mode optimization (horizontal layout)
 - [ ] Native select styling for better dropdown UX
