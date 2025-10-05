@@ -72,7 +72,7 @@
 - [ ] Color-code exercises in history (dots/bars)
 - [ ] Group consecutive sets of same exercise
 - [ ] Highlight personal records (PRs)
-- [~] Show relative time ("2h ago") for recent sets
+- [x] Show relative time ("2h ago") for recent sets
 - [ ] Responsive table: stack columns on small screens
 
 ### Micro-interactions
