@@ -4,6 +4,7 @@ import { useState } from "react";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
 import { ExerciseStats } from "@/lib/dashboard-utils";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 
 interface DailyStatsCardProps {
   stats: {
@@ -17,6 +18,12 @@ interface DailyStatsCardProps {
 
 export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const { unit } = useWeightUnit();
+
+  // Format number with commas for readability
+  const formatNumber = (num: number): string => {
+    return num.toLocaleString('en-US');
+  };
 
   // Build table rows for per-exercise breakdown
   const rows = exerciseStats.map((exercise) => [
@@ -38,7 +45,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
     // VOLUME
     exercise.volume > 0 ? (
       <span key="volume" className="text-terminal-warning font-bold">
-        {exercise.volume}
+        {formatNumber(exercise.volume)} {unit.toUpperCase()}
       </span>
     ) : (
       <span key="volume" className="text-terminal-textMuted">
@@ -81,10 +88,10 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
             {/* Total Volume - Orange */}
             <div className="p-2 border-r border-terminal-border">
               <p className="text-xs uppercase text-terminal-textSecondary mb-1 font-mono">
-                VOLUME
+                VOLUME ({unit.toUpperCase()})
               </p>
               <p className="text-xl font-bold text-terminal-warning tabular-nums font-mono">
-                {stats.totalVolume > 0 ? `${stats.totalVolume}` : "—"}
+                {stats.totalVolume > 0 ? formatNumber(stats.totalVolume) : "—"}
               </p>
             </div>
 
@@ -111,9 +118,9 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
               {showBreakdown && (
                 <div className="p-3 border-t border-terminal-border">
                   <TerminalTable
-                    headers={["EXERCISE", "SETS", "REPS", "VOLUME"]}
+                    headers={["EXERCISE", "SETS", "REPS", `VOLUME (${unit.toUpperCase()})`]}
                     rows={rows}
-                    columnWidths={["", "w-16", "w-20", "w-24"]}
+                    columnWidths={["", "w-16", "w-20", "w-32"]}
                   />
                 </div>
               )}

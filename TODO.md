@@ -19,13 +19,6 @@
 - [x] Add weight unit toggle (lbs/kg switcher)
 - [x] Show "optional" as placeholder in weight field
 
-### Big Ideas
-- [ ] One-handed mode: move form to bottom (thumb-zone)
-- [ ] Swipe right on history card to pre-fill form
-- [ ] Voice input: "Log 20 reps squats"
-- [ ] Increment buttons (+1/+5) next to reps input
-- [ ] Optional rest timer after logging set
-
 ## 2. Visual Polish
 
 ### Typography
@@ -37,7 +30,7 @@
 
 ### Color & Contrast
 - [ ] Color code exercises (bodyweight=cyan, weighted=green, etc.)
-- [ ] Calculate and show actual volume instead of "—"
+- [~] Calculate and show actual volume instead of "—"
 - [ ] Flash green border on form after successful submit
 - [ ] Add glowing border animation on focused inputs
 - [ ] Subtle hover effects on table rows (desktop)
