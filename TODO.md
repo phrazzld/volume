@@ -72,11 +72,11 @@
 - [ ] Color-code exercises in history (dots/bars)
 - [ ] Group consecutive sets of same exercise
 - [ ] Highlight personal records (PRs)
-- [ ] Show relative time ("2h ago") for recent sets
+- [~] Show relative time ("2h ago") for recent sets
 - [ ] Responsive table: stack columns on small screens
 
 ### Micro-interactions
-- [ ] Undo toast: "Set logged! [Undo]" for 3 seconds
+- [x] Undo toast: "Set logged! [Undo]" for 3 seconds
 - [ ] Loading skeleton screens (not blank sections)
 - [ ] Smooth collapse animations on accordions
 - [ ] Number counter animations when metrics change

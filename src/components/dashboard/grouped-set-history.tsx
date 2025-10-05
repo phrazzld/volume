@@ -54,6 +54,17 @@ export function GroupedSetHistory({
   };
 
   const formatTime = (timestamp: number) => {
+    const now = Date.now();
+    const diffMs = now - timestamp;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+
+    // Show relative time for sets within last 24 hours
+    if (diffMins < 1) return "JUST NOW";
+    if (diffMins < 60) return `${diffMins}M AGO`;
+    if (diffHours < 24) return `${diffHours}H AGO`;
+
+    // Show absolute time for older sets
     return new Date(timestamp).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
