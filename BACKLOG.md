@@ -331,6 +331,254 @@
 
 ---
 
+## UI/UX Enhancement Ideas (Post-Polish Phase)
+
+### 5. Data Insights & Visualization
+**Effort: 2-3 weeks | Value: High - drives engagement**
+
+#### Analytics Dashboard Enhancements
+- [ ] Progress bar: today's sets vs. weekly average
+- [ ] Streak indicator: "🔥 3 day streak" badge in metrics
+- [ ] Mini calendar heatmap showing workout frequency
+- [ ] Interactive exercise breakdown pie/bar chart
+- [ ] Reps distribution insights: "Most common: 20 reps"
+- [ ] Time of day patterns: "You usually train at 7PM"
+- [ ] Personal record badges and highlights in history
+- [ ] Weekly/monthly volume trends with sparklines
+- [ ] Exercise frequency analysis and balance score
+- [ ] Rest day tracking and recovery recommendations
+
+#### Data Visualization Components
+- [ ] Interactive charts (Recharts preferred for bundle size)
+- [ ] Inline sparklines for quick trends
+- [ ] Progress photos timeline with before/after
+- [ ] Workout density heatmap (GitHub-style)
+- [ ] Volume progression graphs per exercise
+- [ ] Comparative analytics (this week vs. last week)
+- [ ] Training split visualization
+
+#### Smart Insights & Recommendations
+- [ ] Auto-detect plateaus and suggest deload weeks
+- [ ] Volume recommendations based on fitness goals
+- [ ] Exercise variation suggestions when stale
+- [ ] Recovery time analysis per muscle group
+- [ ] Optimal training frequency insights
+- [ ] Form fatigue warnings (declining reps pattern)
+
+---
+
+### 6. Advanced Interactions & Features
+**Effort: 3-4 weeks | Value: Medium-High - power user features**
+
+#### Enhanced Logging Experience
+- [ ] Voice input: "Log 20 reps squats at 135 pounds"
+  - Natural language processing
+  - Fallback to manual if parse fails
+  - Voice feedback confirmation
+
+- [ ] Workout templates system
+  - Save common routines (e.g., "Push Day A")
+  - Quick-start templates from history
+  - Community template sharing (later)
+
+- [ ] Rich set metadata
+  - Notes field per set: "felt easy", "form breakdown"
+  - Photo/video attachments for form checks
+  - Tags: "warmup", "dropset", "amrap"
+
+- [ ] RPE/RIR tracking
+  - Rate of Perceived Exertion (1-10 slider)
+  - Reps in Reserve estimation
+  - Fatigue tracking over session
+
+- [ ] Superset & circuit grouping
+  - Link sets performed back-to-back
+  - Visual grouping in history
+  - Circuit timer mode
+
+- [ ] Smart rest timer
+  - Auto-start after logging set
+  - Customizable per exercise type
+  - Progressive rest time reduction
+
+- [ ] Exercise aliases & variations
+  - "BB Squat" = "Barbell Squat"
+  - Track variations separately or grouped
+  - Quick variant switcher
+
+- [ ] Bulk operations
+  - Select multiple sets for batch delete
+  - Batch edit exercise/weight/reps
+  - Copy entire workout to new date
+
+- [ ] Media attachments
+  - Upload form check videos
+  - Progress photos with date tags
+  - Side-by-side comparison view
+
+- [ ] Timer integrations
+  - Countdown for timed exercises (planks)
+  - EMOM (every minute on the minute) mode
+  - Tabata timer integration
+
+#### Offline & Sync Enhancements
+- [ ] True offline-first architecture (Dexie.js)
+- [ ] Intelligent sync queue with retry logic
+- [ ] Auto-save drafts (recover from crashes)
+- [ ] Conflict resolution UI for multi-device
+- [ ] Background sync with service workers
+- [ ] Sync status indicator and manual trigger
+
+#### Data Management & Portability
+- [ ] Advanced export options
+  - CSV with custom column selection
+  - JSON with full schema
+  - Excel with charts
+  - PDF workout summaries
+
+- [ ] Import from competitors
+  - Strong app CSV format
+  - FitNotes format
+  - Hevy format
+  - Generic CSV mapper
+
+- [ ] Automated backups
+  - Daily encrypted backups
+  - Point-in-time restore
+  - Version history browser
+
+- [ ] Privacy controls
+  - Selective data deletion
+  - Archive vs. delete exercises
+  - GDPR compliance tools
+
+#### Navigation & Organization
+- [ ] Advanced filtering & search
+  - Date range picker
+  - Exercise multi-select filter
+  - Cmd+K quick search palette
+  - Saved filter presets
+
+- [ ] Keyboard shortcuts (desktop)
+  - L = focus log form
+  - N = new exercise
+  - / = search
+  - Esc = clear form
+  - ↑↓ = navigate history
+
+- [ ] Navigation improvements
+  - Breadcrumb showing current date
+  - Jump to date modal
+  - Sticky metrics while scrolling
+  - Floating "scroll to top" FAB
+  - Swipe left/right between days
+
+#### Gamification & Motivation
+- [ ] Goal system
+  - Daily set targets with progress rings
+  - Weekly volume goals per exercise
+  - Custom goal creation
+
+- [ ] Achievement badges
+  - Milestones (100 sets, 1000 reps, etc.)
+  - Consistency badges (7/30/90 day streaks)
+  - Exercise mastery levels
+
+- [ ] Leaderboards (opt-in)
+  - Compare with friends only
+  - Privacy-first design
+  - Custom competitions
+
+- [ ] Motivational features
+  - Rotating quotes in empty states
+  - Celebration animations on PRs
+  - Progress reminders
+  - "On this day" flashbacks
+
+- [ ] Social sharing
+  - "Share today's workout" card generator
+  - Beautiful workout summary images
+  - Opt-in public profile
+
+#### Accessibility & Theming
+- [ ] Full accessibility audit
+  - ARIA labels on all controls
+  - Screen reader testing (NVDA/JAWS)
+  - Keyboard-only navigation
+  - Focus management
+
+- [ ] High contrast mode
+  - WCAG AAA contrast ratios
+  - Reduced reliance on color alone
+  - Bold text option
+
+- [ ] Color-blind friendly modes
+  - Deuteranopia safe palette
+  - Protanopia safe palette
+  - Pattern-based differentiation
+
+- [ ] User customization
+  - Adjustable font sizing
+  - Line height controls
+  - Reduced motion toggle
+  - Animation speed control
+
+- [ ] Multiple theme variants
+  - Cyberpunk (neon accents)
+  - Retro (amber/green CRT)
+  - Minimal (ultra-clean)
+  - Custom theme creator
+
+#### Terminal Aesthetic Deep Dive
+- [ ] CRT effects (toggleable)
+  - Scanline overlay
+  - Phosphor glow
+  - Screen curvature subtle
+  - Flicker effect
+
+- [ ] Retro interactions
+  - Blinking cursor in inputs
+  - Typewriter text on load
+  - Terminal prompt ">" prefixes
+  - ASCII art loading states
+
+- [ ] Neon cyberpunk mode
+  - Glowing borders on focus
+  - Pulsing active states
+  - Matrix-style bg animation
+  - Synthwave color palette
+
+- [ ] Sound design (opt-in)
+  - Mechanical keyboard clicks
+  - Terminal beep on success
+  - Error buzzer on fail
+  - 8-bit celebration sounds
+
+#### Advanced Training Features
+- [ ] Program tracking
+  - Follow structured programs
+  - 12-week program templates
+  - Progress tracking vs. plan
+  - Auto-progression rules
+
+- [ ] Plate calculator
+  - Show loading for target weight
+  - Available plates config
+  - Optimal plate arrangement
+
+- [ ] Strength standards
+  - 1RM calculator (Epley/Brzycki)
+  - Compare to population norms
+  - Strength level badges
+
+- [ ] Periodization tools
+  - Deload week planner
+  - Volume landmarks tracking
+  - Training max calculations
+  - Auto-progression suggestions
+
+---
+
 ## Decision Log
 
 ### Why These Aren't in MVP

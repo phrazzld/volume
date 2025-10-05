@@ -119,23 +119,23 @@ export function GroupedSetHistory({
             <div key="actions" className="flex items-center gap-1">
               <button
                 onClick={() => onRepeat(set)}
-                className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
+                className="p-2 text-terminal-info hover:opacity-80 transition-opacity"
                 aria-label="Repeat this set"
                 title="Repeat this set"
                 type="button"
                 disabled={isDeleting}
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-5 w-5" />
               </button>
               <button
                 onClick={() => handleDelete(set)}
-                className="p-1 text-terminal-danger hover:opacity-80 transition-opacity"
+                className="p-2 text-terminal-danger hover:opacity-80 transition-opacity"
                 aria-label="Delete this set"
                 title="Delete this set"
                 type="button"
                 disabled={isDeleting}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </button>
             </div>,
           ];

@@ -64,21 +64,21 @@ export function InlineExerciseCreator({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="EXERCISE NAME..."
-          className="flex-1 px-3 py-2 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+          className="flex-1 px-3 py-3 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
           disabled={isCreating}
         />
         <button
           type="button"
           onClick={handleCreateExercise}
           disabled={!name.trim() || isCreating}
-          className="px-4 py-2 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isCreating ? "..." : "CREATE"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-textSecondary font-mono text-sm uppercase hover:text-terminal-text hover:border-terminal-borderLight"
+          className="px-4 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-textSecondary font-mono text-sm uppercase hover:text-terminal-text hover:border-terminal-borderLight"
         >
           CANCEL
         </button>

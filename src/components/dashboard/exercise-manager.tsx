@@ -112,22 +112,22 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
                 handleCancelEdit();
               }
             }}
-            className="flex-1 px-2 py-1 bg-terminal-bgSecondary border border-terminal-info text-terminal-text font-mono focus:ring-1 focus:ring-terminal-info"
+            className="flex-1 px-2 py-2 bg-terminal-bgSecondary border border-terminal-info text-terminal-text font-mono focus:ring-1 focus:ring-terminal-info"
             autoFocus
           />
           <button
             onClick={() => handleSaveEdit(exercise._id)}
-            className="p-1 text-terminal-success hover:opacity-80"
+            className="p-2 text-terminal-success hover:opacity-80"
             title="Save"
           >
-            <Check className="h-4 w-4" />
+            <Check className="h-5 w-5" />
           </button>
           <button
             onClick={handleCancelEdit}
-            className="p-1 text-terminal-textSecondary hover:opacity-80"
+            className="p-2 text-terminal-textSecondary hover:opacity-80"
             title="Cancel"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
       ) : (
@@ -145,17 +145,17 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
         <div key="actions" className="flex items-center gap-1">
           <button
             onClick={() => handleStartEdit(exercise)}
-            className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
+            className="p-2 text-terminal-info hover:opacity-80 transition-opacity"
             title="Edit exercise name"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-5 w-5" />
           </button>
           <button
             onClick={() => handleDelete(exercise)}
-            className="p-1 text-terminal-danger hover:opacity-80 transition-opacity"
+            className="p-2 text-terminal-danger hover:opacity-80 transition-opacity"
             title="Delete exercise"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </button>
         </div>
       ) : (

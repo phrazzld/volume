@@ -91,14 +91,14 @@ export function FirstRunExperience({
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="EXERCISE NAME (e.g., PUSH-UPS)"
-              className="flex-1 px-3 py-2 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info uppercase"
+              className="flex-1 px-3 py-3 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info uppercase"
               disabled={isCreating}
             />
             <button
               type="button"
               onClick={() => handleCreateExercise(name)}
               disabled={!name.trim() || isCreating}
-              className="px-6 py-2 bg-terminal-info text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="px-6 py-3 bg-terminal-info text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
               {isCreating ? "..." : "CREATE"}
             </button>
@@ -117,7 +117,7 @@ export function FirstRunExperience({
                 type="button"
                 onClick={() => handleQuickCreate(exercise)}
                 disabled={isCreating}
-                className="px-4 py-2 text-sm border border-terminal-border text-terminal-text font-mono hover:border-terminal-info hover:text-terminal-info transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
+                className="px-4 py-3 text-sm border border-terminal-border text-terminal-text font-mono hover:border-terminal-info hover:text-terminal-info transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
               >
                 {exercise}
               </button>

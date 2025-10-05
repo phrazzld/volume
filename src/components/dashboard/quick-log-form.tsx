@@ -177,7 +177,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   setSelectedExerciseId(value as Id<"exercises">);
                 }
               }}
-              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               required
               disabled={isSubmitting}
             >
@@ -210,7 +210,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               onChange={(e) => setReps(e.target.value)}
               onKeyDown={handleRepsKeyDown}
               placeholder="0"
-              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
               required
             />
@@ -235,7 +235,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               onChange={(e) => setWeight(e.target.value)}
               onKeyDown={handleWeightKeyDown}
               placeholder="0.0"
-              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
             />
           </div>
@@ -244,7 +244,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full px-4 py-3 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               disabled={!selectedExerciseId || !reps || isSubmitting}
             >
               {isSubmitting ? "LOGGING..." : "LOG SET"}
