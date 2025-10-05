@@ -68,11 +68,14 @@ export function GroupedSetHistory({
         className="mb-3"
       >
         <div className="p-8 text-center">
-          <p className="text-terminal-textSecondary uppercase font-mono text-sm">
-            NO DATA
+          <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
+            NO SETS LOGGED YET
+          </p>
+          <p className="text-terminal-info font-mono text-xs mb-1">
+            START YOUR JOURNEY! 🚀
           </p>
           <p className="text-terminal-textMuted font-mono text-xs mt-2">
-            Log your first set above to get started
+            Log your first set above
           </p>
         </div>
       </TerminalPanel>

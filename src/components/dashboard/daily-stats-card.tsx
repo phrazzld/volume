@@ -121,9 +121,14 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
           )}
         </>
       ) : (
-        <p className="text-terminal-textSecondary text-center py-8 font-mono">
-          NO SETS LOGGED TODAY
-        </p>
+        <div className="p-8 text-center">
+          <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
+            NO SETS TODAY
+          </p>
+          <p className="text-terminal-info font-mono text-xs">
+            LET'S GO! 💪
+          </p>
+        </div>
       )}
     </TerminalPanel>
   );

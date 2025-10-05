@@ -53,8 +53,8 @@
 ## 3. Mobile Optimization
 
 ### Core Patterns
-- [ ] Ensure `inputMode="numeric"` on number inputs
-- [ ] Beautiful empty states: "No sets today. Let's go! 💪"
+- [x] Ensure `inputMode="numeric"` on number inputs
+- [x] Beautiful empty states: "No sets today. Let's go! 💪"
 - [ ] Optimistic UI updates (set appears before server confirms)
 - [ ] Pull-to-refresh pattern for syncing
 - [ ] Proper safe area insets for notched devices
