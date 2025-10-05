@@ -29,11 +29,11 @@
 ## 2. Visual Polish
 
 ### Typography
-- [ ] Increase line-height to 1.6 for body text
-- [ ] Add letter-spacing to headings (DAILY METRICS, LOG SET)
-- [ ] Use tabular-nums for metrics (prevents layout shift)
-- [ ] Vary font weights for better hierarchy
-- [ ] Increase base font size from 16px to 18px
+- [~] Increase line-height to 1.6 for body text
+- [~] Add letter-spacing to headings (DAILY METRICS, LOG SET)
+- [~] Use tabular-nums for metrics (prevents layout shift)
+- [~] Vary font weights for better hierarchy
+- [~] Increase base font size from 16px to 18px
 
 ### Color & Contrast
 - [ ] Color code exercises (bodyweight=cyan, weighted=green, etc.)
