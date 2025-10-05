@@ -133,7 +133,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
             NO SETS TODAY
           </p>
           <p className="text-terminal-info font-mono text-xs">
-            LET'S GO! 💪
+            {"LET'S GO! 💪"}
           </p>
         </div>
       )}
