@@ -5,6 +5,7 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 
 interface Set {
   _id: Id<"sets">;
@@ -37,6 +38,7 @@ export function GroupedSetHistory({
   onDelete,
 }: GroupedSetHistoryProps) {
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
+  const { unit } = useWeightUnit();
 
   const handleDelete = async (set: Set) => {
     if (!confirm("Delete this set? This cannot be undone.")) return;
@@ -160,7 +162,7 @@ export function GroupedSetHistory({
           >
             <div className="p-4">
               <TerminalTable
-                headers={["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]}
+                headers={["TIME", "EXERCISE", "REPS", `WEIGHT (${unit.toUpperCase()})`, "ACTIONS"]}
                 rows={rows}
                 columnWidths={["w-20", "", "w-16", "w-20", "w-32"]}
               />
