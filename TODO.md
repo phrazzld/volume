@@ -13,11 +13,11 @@
 - [x] Set weight input step to 0.5 for precision
 
 ### Medium Impact
-- [ ] Add inline "+ Create Exercise" option in dropdown
-- [ ] Sort exercises by last used, not alphabetical
-- [ ] Pre-fill form with last logged values for selected exercise
+- [x] Add inline "+ Create Exercise" option in dropdown
+- [x] Sort exercises by last used, not alphabetical
+- [x] Pre-fill form with last logged values for selected exercise
 - [ ] Add weight unit toggle (lbs/kg switcher)
-- [ ] Show "optional" as placeholder in weight field
+- [x] Show "optional" as placeholder in weight field
 
 ### Big Ideas
 - [ ] One-handed mode: move form to bottom (thumb-zone)
