@@ -77,7 +77,7 @@
 
 ### Micro-interactions
 - [x] Undo toast: "Set logged! [Undo]" for 3 seconds
-- [ ] Loading skeleton screens (not blank sections)
+- [x] Loading skeleton screens (not blank sections)
 - [ ] Smooth collapse animations on accordions
 - [ ] Number counter animations when metrics change
 - [ ] Success celebration on PR sets
