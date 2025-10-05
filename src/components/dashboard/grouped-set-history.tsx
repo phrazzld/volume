@@ -119,13 +119,14 @@ export function GroupedSetHistory({
             <div key="actions" className="flex items-center gap-1">
               <button
                 onClick={() => onRepeat(set)}
-                className="p-2 text-terminal-info hover:opacity-80 transition-opacity"
+                className="flex items-center gap-1 px-2 py-1 text-terminal-info hover:bg-terminal-info hover:bg-opacity-10 transition-colors rounded"
                 aria-label="Repeat this set"
                 title="Repeat this set"
                 type="button"
                 disabled={isDeleting}
               >
-                <RotateCcw className="h-5 w-5" />
+                <RotateCcw className="h-4 w-4" />
+                <span className="text-xs font-mono uppercase">REPEAT</span>
               </button>
               <button
                 onClick={() => handleDelete(set)}
@@ -158,7 +159,7 @@ export function GroupedSetHistory({
               <TerminalTable
                 headers={["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]}
                 rows={rows}
-                columnWidths={["w-20", "", "w-16", "w-20", "w-24"]}
+                columnWidths={["w-20", "", "w-16", "w-20", "w-32"]}
               />
             </div>
           </TerminalPanel>

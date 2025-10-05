@@ -5,7 +5,7 @@
 ### Quick Wins
 - [x] Increase touch targets to 48px minimum (buttons/inputs)
 - [x] Add autofocus flow: exercise → reps → weight → submit
-- [ ] Implement "Repeat Last" button on history cards
+- [x] Implement "Repeat Last" button on history cards
 - [ ] Smart placeholders ("How many?" instead of "0")
 - [ ] Enable Enter key submission from any field
 - [ ] Auto-clear reps/weight after submit (keep exercise selected)
