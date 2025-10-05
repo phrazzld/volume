@@ -18,6 +18,7 @@ interface Set {
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;
+  unit?: string; // "lbs" or "kg" - stored with set for data integrity
   performedAt: number;
 }
 
@@ -94,8 +95,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       }
     }, [selectedExerciseId]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  // Extract submit logic to avoid type casting
+  const submitForm = async () => {
     if (!selectedExerciseId || !reps || isSubmitting) return;
 
     const repsNum = parseInt(reps, 10);
@@ -111,6 +112,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         exerciseId: selectedExerciseId as Id<"exercises">,
         reps: repsNum,
         weight: weight ? parseFloat(weight) : undefined,
+        unit: weight ? unit : undefined, // Store unit with set for data integrity
       });
 
       // Clear form inputs (keep exercise selected for quick re-logging)
@@ -130,6 +132,11 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     }
   };
 
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    await submitForm();
+  };
+
   // Handle Enter key in reps input - focus weight or submit
   const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -144,7 +151,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   const handleWeightKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSubmit(e as any);
+      submitForm();
     }
   };
 
@@ -161,7 +168,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border flex items-center justify-between">
             <p className="text-xs uppercase text-terminal-info font-mono">
               LAST: {exercises.find(e => e._id === selectedExerciseId)?.name} • {lastSet.reps} REPS
-              {lastSet.weight && ` @ ${lastSet.weight} ${unit.toUpperCase()}`} • {formatTimeAgo(lastSet.performedAt)}
+              {lastSet.weight && ` @ ${lastSet.weight} ${(lastSet.unit || unit).toUpperCase()}`} • {formatTimeAgo(lastSet.performedAt)}
             </p>
             <button
               type="button"

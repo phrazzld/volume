@@ -12,6 +12,7 @@ interface Set {
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;
+  unit?: string; // "lbs" or "kg" - stored with set for data integrity
   performedAt: number;
 }
 
@@ -38,7 +39,7 @@ export function GroupedSetHistory({
   onDelete,
 }: GroupedSetHistoryProps) {
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
-  const { unit } = useWeightUnit();
+  const { unit: preferredUnit } = useWeightUnit();
 
   const handleDelete = async (set: Set) => {
     if (!confirm("Delete this set? This cannot be undone.")) return;
@@ -122,10 +123,10 @@ export function GroupedSetHistory({
               {set.reps}
             </span>,
 
-            // WEIGHT
+            // WEIGHT (with unit stored in set, fallback to user preference for legacy)
             set.weight ? (
               <span key="weight" className="text-terminal-warning font-bold">
-                {set.weight}
+                {set.weight} {(set.unit || preferredUnit).toUpperCase()}
               </span>
             ) : (
               <span key="weight" className="text-terminal-textMuted">-</span>
@@ -173,7 +174,7 @@ export function GroupedSetHistory({
           >
             <div className="p-4">
               <TerminalTable
-                headers={["TIME", "EXERCISE", "REPS", `WEIGHT (${unit.toUpperCase()})`, "ACTIONS"]}
+                headers={["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]}
                 rows={rows}
                 columnWidths={["w-20", "", "w-16", "w-20", "w-32"]}
               />

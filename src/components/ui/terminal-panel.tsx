@@ -37,14 +37,26 @@ export function TerminalPanel({
     if (typeof window === "undefined" || !collapsible || !storageKey) {
       return defaultCollapsed;
     }
-    const stored = localStorage.getItem(storageKey);
-    return stored !== null ? stored === "true" : defaultCollapsed;
+
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored !== null ? stored === "true" : defaultCollapsed;
+    } catch (error) {
+      // localStorage might be blocked (private mode, etc.)
+      console.warn("Failed to read collapsed state from localStorage:", error);
+      return defaultCollapsed;
+    }
   });
 
   // Persist collapsed state to localStorage
   useEffect(() => {
     if (collapsible && storageKey) {
-      localStorage.setItem(storageKey, String(isCollapsed));
+      try {
+        localStorage.setItem(storageKey, String(isCollapsed));
+      } catch (error) {
+        // localStorage might be blocked (private mode, quota exceeded, etc.)
+        console.warn("Failed to save collapsed state to localStorage:", error);
+      }
     }
   }, [isCollapsed, collapsible, storageKey]);
 

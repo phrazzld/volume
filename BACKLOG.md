@@ -4,6 +4,143 @@
 
 ---
 
+## PR #3 Review Feedback - Deferred Improvements
+
+*Items from comprehensive code review that are valid but deferred for scope/focus control.*
+*Source: Claude + Codex reviews on "Polish mobile UX" PR*
+*Date: 2025-10-04*
+
+### Code Quality Improvements
+**Effort: 2-3 hours | Value: Medium - improves maintainability**
+
+- [ ] **Replace alert/confirm with Toast System**
+  - **Current**: `alert()` and `confirm()` in multiple components (jarring, not mobile-friendly)
+  - **Locations**: `quick-log-form.tsx:103,127`, `grouped-set-history.tsx:44,51`, `set-card.tsx:33`
+  - **Solution**: Extend existing `undo-toast.tsx` pattern for all user feedback
+  - **Benefits**: Consistent UX, better mobile experience, matches terminal aesthetic
+  - **Effort**: 1-2 hours
+  - **Priority**: Medium (UX improvement, not blocking)
+
+- [ ] **Extract Time Formatting Utility**
+  - **Current**: Duplicate logic across 3 components with slight variations
+  - **Locations**: `quick-log-form.tsx:68-77`, `grouped-set-history.tsx:56-73`, `set-card.tsx:45-59`
+  - **Solution**: Create `src/lib/time-utils.ts` with `formatRelativeTime()` utility
+  - **Benefits**: DRY principle, consistent formatting, easier testing
+  - **Effort**: 30 minutes
+  - **Priority**: Low (code quality, not user-facing)
+
+- [ ] **Extract Magic Numbers**
+  - **Current**: `setTimeout(..., 100)` hardcoded twice in quick-log-form
+  - **Locations**: `quick-log-form.tsx:86,121`
+  - **Solution**: Define `const FOCUS_DELAY_MS = 100` with explanatory comment
+  - **Benefits**: Code clarity, easier to adjust if needed
+  - **Effort**: 5 minutes
+  - **Priority**: Low (minor code quality)
+
+### Accessibility Enhancements
+**Effort: 1.5 hours | Value: High - inclusive design**
+
+- [ ] **Add ARIA Labels to Collapsible Elements**
+  - **Current**: Collapsible breakdown button lacks proper ARIA attributes
+  - **Location**: `daily-stats-card.tsx:113-116`
+  - **Solution**: Add `aria-expanded={showBreakdown}` and `aria-controls="exercise-breakdown"`
+  - **Benefits**: Screen reader support, better semantic HTML
+  - **Effort**: 15 minutes per collapsible component
+  - **Priority**: Medium (a11y compliance)
+
+- [ ] **Add Screen Reader Live Regions**
+  - **Current**: No feedback for screen readers on successful form submission
+  - **Solution**: Add ARIA live region for success/error announcements
+  - **Benefits**: Better experience for screen reader users
+  - **Effort**: 30 minutes
+  - **Priority**: Medium (a11y compliance)
+
+- [ ] **Verify Color Contrast Ratios**
+  - **Current**: `text-terminal-textMuted` and `text-terminal-textSecondary` need WCAG AA verification
+  - **Solution**: Test contrast ratios (4.5:1 minimum for normal text), adjust if needed
+  - **Tools**: Use axe DevTools or Lighthouse
+  - **Effort**: 30 minutes
+  - **Priority**: Medium (a11y compliance)
+
+### Documentation Improvements
+**Effort: 30 minutes | Value: Low - developer experience**
+
+- [ ] **Add JSDoc Comments to Exported Functions**
+  - **Current**: Components and hooks lack JSDoc for IDE IntelliSense
+  - **Examples**: `WeightUnitProvider`, `useWeightUnit`, `QuickLogForm`, etc.
+  - **Solution**: Add comprehensive JSDoc with param/return descriptions
+  - **Benefits**: Better IDE support, easier onboarding, clearer API contracts
+  - **Effort**: 30 minutes
+  - **Priority**: Low (DX improvement)
+
+### Performance Optimizations
+**Effort: 30 minutes | Value: Low - premature at current scale**
+
+- [ ] **Optimize Convex Query for Last Set Retrieval**
+  - **Current**: `allSets` query fetches all sets to find last set for exercise
+  - **Location**: `quick-log-form.tsx:57`
+  - **Solution**: Create dedicated `getLastSetForExercise(exerciseId)` query
+  - **Benefits**: Reduce data transfer, faster queries, less client filtering
+  - **Effort**: 30 minutes
+  - **Priority**: Low (not critical at MVP scale, optimize when needed)
+
+### Testing & Robustness
+**Effort: 1-2 hours | Value: Medium - error prevention**
+
+- [ ] **Add Loading/Error States for Queries**
+  - **Current**: No loading skeleton or error handling for `allSets` query
+  - **Location**: `quick-log-form.tsx`
+  - **Solution**: Add loading skeleton, error boundary, retry logic
+  - **Benefits**: Better UX during slow connections, graceful degradation
+  - **Effort**: 1 hour
+  - **Priority**: Medium (user experience)
+
+- [ ] **Handle Edge Case: Deleted Exercise**
+  - **Current**: Unclear behavior if selected exercise is deleted
+  - **Solution**: Add error handling or auto-deselect when exercise disappears
+  - **Benefits**: Prevent crashes, better error messages
+  - **Effort**: 30 minutes
+  - **Priority**: Low (rare edge case)
+
+### Developer Experience
+**Effort: 5 minutes | Value: Low - optional DX improvement**
+
+- [ ] **Add TypeCheck to Lint-Staged**
+  - **Current**: Pre-commit only runs ESLint
+  - **Suggestion**: Add `pnpm typecheck` to catch type errors before commit
+  - **Consideration**: May slow down commits, test performance first
+  - **Effort**: 5 minutes
+  - **Priority**: Low (optional DX)
+
+### UX Enhancements
+**Effort: 1-2 hours | Value: Low - minor polish**
+
+- [ ] **Add Global Weight Unit Toggle**
+  - **Current**: Unit toggle only in form (works well)
+  - **Suggestion**: Also add toggle in settings/nav for discoverability
+  - **Benefits**: Improved feature visibility
+  - **Effort**: 30 minutes
+  - **Priority**: Low (current UX is sufficient)
+
+- [ ] **Add Visual Hint for Enter Key Behavior**
+  - **Current**: Autofocus flow works well but isn't explicitly communicated
+  - **Suggestion**: Add "Press Enter to continue" hint on input focus
+  - **Benefits**: Educate users about keyboard shortcuts
+  - **Effort**: 30 minutes
+  - **Priority**: Low (current UX is discoverable)
+
+- [ ] **Make "USE" Button More Prominent**
+  - **Current**: "USE" button works well in current styling
+  - **Suggestion**: Consider different color or icon to increase visibility
+  - **Benefits**: Feature discoverability
+  - **Effort**: 15 minutes
+  - **Priority**: Low (current design is functional)
+
+**Decision Rationale:**
+These items were deferred from PR #3 to maintain focus on critical fixes (weight unit data integrity, SSR hydration). All suggestions are valid but represent incremental polish rather than blocking issues. They'll be addressed in focused follow-up PRs to keep changes reviewable and testable.
+
+---
+
 ## High Priority (v1.1) - User Requested Features
 
 ### Analytics & Insights

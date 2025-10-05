@@ -12,20 +12,35 @@ interface WeightUnitContextType {
 const WeightUnitContext = createContext<WeightUnitContextType | undefined>(undefined);
 
 export function WeightUnitProvider({ children }: { children: ReactNode }) {
-  const [unit, setUnit] = useState<WeightUnit>("lbs");
+  // Lazy initialization to prevent SSR hydration mismatch
+  const [unit, setUnit] = useState<WeightUnit>(() => {
+    // During SSR, window is undefined - use default
+    if (typeof window === "undefined") return "lbs";
 
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("weightUnit");
-    if (stored === "kg" || stored === "lbs") {
-      setUnit(stored);
+    // On client, read from localStorage
+    try {
+      const stored = localStorage.getItem("weightUnit");
+      if (stored === "kg" || stored === "lbs") {
+        return stored;
+      }
+    } catch (error) {
+      // localStorage might be blocked (private mode, etc.)
+      console.warn("Failed to read weight unit preference from localStorage:", error);
     }
-  }, []);
+
+    return "lbs";
+  });
 
   const toggleUnit = () => {
     setUnit((prev) => {
       const next = prev === "lbs" ? "kg" : "lbs";
-      localStorage.setItem("weightUnit", next);
+      // Save to localStorage with error handling
+      try {
+        localStorage.setItem("weightUnit", next);
+      } catch (error) {
+        // localStorage might be blocked (private mode, quota exceeded, etc.)
+        console.warn("Failed to save weight unit preference to localStorage:", error);
+      }
       return next;
     });
   };
