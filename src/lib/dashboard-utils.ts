@@ -5,7 +5,32 @@ interface Set {
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;
+  unit?: string; // "lbs" or "kg" - stored with set for data integrity
   performedAt: number;
+}
+
+/**
+ * Convert weight from one unit to another.
+ * @param weight - Weight value to convert
+ * @param fromUnit - Source unit ("lbs" or "kg")
+ * @param toUnit - Target unit ("lbs" or "kg")
+ * @returns Converted weight value
+ */
+export function convertWeight(weight: number, fromUnit: string, toUnit: string): number {
+  if (fromUnit === toUnit) return weight;
+
+  // Convert lbs to kg: divide by 2.20462
+  if (fromUnit === "lbs" && toUnit === "kg") {
+    return weight / 2.20462;
+  }
+
+  // Convert kg to lbs: multiply by 2.20462
+  if (fromUnit === "kg" && toUnit === "lbs") {
+    return weight * 2.20462;
+  }
+
+  // Unknown units, return as-is
+  return weight;
 }
 
 interface Exercise {
@@ -31,11 +56,16 @@ export interface ExerciseStats {
 /**
  * Calculate daily statistics from a set of workout sets.
  * Filters to today's sets and aggregates totals.
+ * Converts all weights to the target unit for accurate volume calculations.
  *
  * @param sets - Array of sets to analyze
+ * @param targetUnit - Unit to convert all weights to (e.g., "lbs" or "kg")
  * @returns Daily statistics or null if no sets
  */
-export function calculateDailyStats(sets: Set[] | undefined): DailyStats | null {
+export function calculateDailyStats(
+  sets: Set[] | undefined,
+  targetUnit: string = "lbs"
+): DailyStats | null {
   if (!sets || sets.length === 0) return null;
 
   const today = new Date().toDateString();
@@ -48,10 +78,13 @@ export function calculateDailyStats(sets: Set[] | undefined): DailyStats | null 
   return {
     totalSets: todaySets.length,
     totalReps: todaySets.reduce((sum, set) => sum + set.reps, 0),
-    totalVolume: todaySets.reduce(
-      (sum, set) => sum + (set.weight ? set.reps * set.weight : 0),
-      0
-    ),
+    totalVolume: todaySets.reduce((sum, set) => {
+      if (!set.weight) return sum;
+      // Convert weight to target unit before calculating volume
+      const setUnit = set.unit || "lbs"; // fallback for legacy sets
+      const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
+      return sum + (set.reps * convertedWeight);
+    }, 0),
     exercisesWorked: new Set(todaySets.map((s) => s.exerciseId)).size,
   };
 }
@@ -126,14 +159,17 @@ export function formatDateGroup(dateString: string): string {
 /**
  * Calculate per-exercise statistics for today's sets.
  * Groups sets by exercise and aggregates totals.
+ * Converts all weights to the target unit for accurate volume calculations.
  *
  * @param sets - Array of sets to analyze
  * @param exercises - Array of exercises for name lookup
+ * @param targetUnit - Unit to convert all weights to (e.g., "lbs" or "kg")
  * @returns Array of exercise statistics sorted by most sets first
  */
 export function calculateDailyStatsByExercise(
   sets: Set[] | undefined,
-  exercises: Exercise[] | undefined
+  exercises: Exercise[] | undefined,
+  targetUnit: string = "lbs"
 ): ExerciseStats[] {
   if (!sets || !exercises) return [];
 
@@ -164,7 +200,13 @@ export function calculateDailyStatsByExercise(
     const stats = exerciseMap.get(set.exerciseId)!;
     stats.sets += 1;
     stats.reps += set.reps;
-    stats.volume += set.weight ? set.reps * set.weight : 0;
+
+    // Convert weight to target unit before calculating volume
+    if (set.weight) {
+      const setUnit = set.unit || "lbs"; // fallback for legacy sets
+      const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
+      stats.volume += set.reps * convertedWeight;
+    }
   });
 
   // Sort by most sets first, then alphabetical

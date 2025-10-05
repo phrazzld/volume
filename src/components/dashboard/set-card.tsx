@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 
 interface Set {
   _id: Id<"sets">;
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;
+  unit?: string; // "lbs" or "kg" - stored with set for data integrity
   performedAt: number;
 }
 
@@ -26,6 +28,9 @@ interface SetCardProps {
 
 export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const { unit: preferredUnit } = useWeightUnit();
+  // Use the unit stored with the set, fallback to user preference for legacy sets
+  const displayUnit = set.unit || preferredUnit;
 
   const handleDelete = async () => {
     if (!confirm("Delete this set? This cannot be undone.")) return;
@@ -74,7 +79,7 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
             {set.weight && (
               <>
                 <span className="text-gray-400 dark:text-gray-500">•</span>
-                <span>{set.weight} lbs</span>
+                <span>{set.weight} {displayUnit}</span>
               </>
             )}
           </div>

@@ -4,6 +4,143 @@
 
 ---
 
+## PR #3 Review Feedback - Deferred Improvements
+
+*Items from comprehensive code review that are valid but deferred for scope/focus control.*
+*Source: Claude + Codex reviews on "Polish mobile UX" PR*
+*Date: 2025-10-04*
+
+### Code Quality Improvements
+**Effort: 2-3 hours | Value: Medium - improves maintainability**
+
+- [ ] **Replace alert/confirm with Toast System**
+  - **Current**: `alert()` and `confirm()` in multiple components (jarring, not mobile-friendly)
+  - **Locations**: `quick-log-form.tsx:103,127`, `grouped-set-history.tsx:44,51`, `set-card.tsx:33`
+  - **Solution**: Extend existing `undo-toast.tsx` pattern for all user feedback
+  - **Benefits**: Consistent UX, better mobile experience, matches terminal aesthetic
+  - **Effort**: 1-2 hours
+  - **Priority**: Medium (UX improvement, not blocking)
+
+- [ ] **Extract Time Formatting Utility**
+  - **Current**: Duplicate logic across 3 components with slight variations
+  - **Locations**: `quick-log-form.tsx:68-77`, `grouped-set-history.tsx:56-73`, `set-card.tsx:45-59`
+  - **Solution**: Create `src/lib/time-utils.ts` with `formatRelativeTime()` utility
+  - **Benefits**: DRY principle, consistent formatting, easier testing
+  - **Effort**: 30 minutes
+  - **Priority**: Low (code quality, not user-facing)
+
+- [ ] **Extract Magic Numbers**
+  - **Current**: `setTimeout(..., 100)` hardcoded twice in quick-log-form
+  - **Locations**: `quick-log-form.tsx:86,121`
+  - **Solution**: Define `const FOCUS_DELAY_MS = 100` with explanatory comment
+  - **Benefits**: Code clarity, easier to adjust if needed
+  - **Effort**: 5 minutes
+  - **Priority**: Low (minor code quality)
+
+### Accessibility Enhancements
+**Effort: 1.5 hours | Value: High - inclusive design**
+
+- [ ] **Add ARIA Labels to Collapsible Elements**
+  - **Current**: Collapsible breakdown button lacks proper ARIA attributes
+  - **Location**: `daily-stats-card.tsx:113-116`
+  - **Solution**: Add `aria-expanded={showBreakdown}` and `aria-controls="exercise-breakdown"`
+  - **Benefits**: Screen reader support, better semantic HTML
+  - **Effort**: 15 minutes per collapsible component
+  - **Priority**: Medium (a11y compliance)
+
+- [ ] **Add Screen Reader Live Regions**
+  - **Current**: No feedback for screen readers on successful form submission
+  - **Solution**: Add ARIA live region for success/error announcements
+  - **Benefits**: Better experience for screen reader users
+  - **Effort**: 30 minutes
+  - **Priority**: Medium (a11y compliance)
+
+- [ ] **Verify Color Contrast Ratios**
+  - **Current**: `text-terminal-textMuted` and `text-terminal-textSecondary` need WCAG AA verification
+  - **Solution**: Test contrast ratios (4.5:1 minimum for normal text), adjust if needed
+  - **Tools**: Use axe DevTools or Lighthouse
+  - **Effort**: 30 minutes
+  - **Priority**: Medium (a11y compliance)
+
+### Documentation Improvements
+**Effort: 30 minutes | Value: Low - developer experience**
+
+- [ ] **Add JSDoc Comments to Exported Functions**
+  - **Current**: Components and hooks lack JSDoc for IDE IntelliSense
+  - **Examples**: `WeightUnitProvider`, `useWeightUnit`, `QuickLogForm`, etc.
+  - **Solution**: Add comprehensive JSDoc with param/return descriptions
+  - **Benefits**: Better IDE support, easier onboarding, clearer API contracts
+  - **Effort**: 30 minutes
+  - **Priority**: Low (DX improvement)
+
+### Performance Optimizations
+**Effort: 30 minutes | Value: Low - premature at current scale**
+
+- [ ] **Optimize Convex Query for Last Set Retrieval**
+  - **Current**: `allSets` query fetches all sets to find last set for exercise
+  - **Location**: `quick-log-form.tsx:57`
+  - **Solution**: Create dedicated `getLastSetForExercise(exerciseId)` query
+  - **Benefits**: Reduce data transfer, faster queries, less client filtering
+  - **Effort**: 30 minutes
+  - **Priority**: Low (not critical at MVP scale, optimize when needed)
+
+### Testing & Robustness
+**Effort: 1-2 hours | Value: Medium - error prevention**
+
+- [ ] **Add Loading/Error States for Queries**
+  - **Current**: No loading skeleton or error handling for `allSets` query
+  - **Location**: `quick-log-form.tsx`
+  - **Solution**: Add loading skeleton, error boundary, retry logic
+  - **Benefits**: Better UX during slow connections, graceful degradation
+  - **Effort**: 1 hour
+  - **Priority**: Medium (user experience)
+
+- [ ] **Handle Edge Case: Deleted Exercise**
+  - **Current**: Unclear behavior if selected exercise is deleted
+  - **Solution**: Add error handling or auto-deselect when exercise disappears
+  - **Benefits**: Prevent crashes, better error messages
+  - **Effort**: 30 minutes
+  - **Priority**: Low (rare edge case)
+
+### Developer Experience
+**Effort: 5 minutes | Value: Low - optional DX improvement**
+
+- [ ] **Add TypeCheck to Lint-Staged**
+  - **Current**: Pre-commit only runs ESLint
+  - **Suggestion**: Add `pnpm typecheck` to catch type errors before commit
+  - **Consideration**: May slow down commits, test performance first
+  - **Effort**: 5 minutes
+  - **Priority**: Low (optional DX)
+
+### UX Enhancements
+**Effort: 1-2 hours | Value: Low - minor polish**
+
+- [ ] **Add Global Weight Unit Toggle**
+  - **Current**: Unit toggle only in form (works well)
+  - **Suggestion**: Also add toggle in settings/nav for discoverability
+  - **Benefits**: Improved feature visibility
+  - **Effort**: 30 minutes
+  - **Priority**: Low (current UX is sufficient)
+
+- [ ] **Add Visual Hint for Enter Key Behavior**
+  - **Current**: Autofocus flow works well but isn't explicitly communicated
+  - **Suggestion**: Add "Press Enter to continue" hint on input focus
+  - **Benefits**: Educate users about keyboard shortcuts
+  - **Effort**: 30 minutes
+  - **Priority**: Low (current UX is discoverable)
+
+- [ ] **Make "USE" Button More Prominent**
+  - **Current**: "USE" button works well in current styling
+  - **Suggestion**: Consider different color or icon to increase visibility
+  - **Benefits**: Feature discoverability
+  - **Effort**: 15 minutes
+  - **Priority**: Low (current design is functional)
+
+**Decision Rationale:**
+These items were deferred from PR #3 to maintain focus on critical fixes (weight unit data integrity, SSR hydration). All suggestions are valid but represent incremental polish rather than blocking issues. They'll be addressed in focused follow-up PRs to keep changes reviewable and testable.
+
+---
+
 ## High Priority (v1.1) - User Requested Features
 
 ### Analytics & Insights
@@ -328,6 +465,254 @@
   - Application layer (use cases)
   - Infrastructure layer (Convex, Dexie)
   - Presentation layer (React components)
+
+---
+
+## UI/UX Enhancement Ideas (Post-Polish Phase)
+
+### 5. Data Insights & Visualization
+**Effort: 2-3 weeks | Value: High - drives engagement**
+
+#### Analytics Dashboard Enhancements
+- [ ] Progress bar: today's sets vs. weekly average
+- [ ] Streak indicator: "🔥 3 day streak" badge in metrics
+- [ ] Mini calendar heatmap showing workout frequency
+- [ ] Interactive exercise breakdown pie/bar chart
+- [ ] Reps distribution insights: "Most common: 20 reps"
+- [ ] Time of day patterns: "You usually train at 7PM"
+- [ ] Personal record badges and highlights in history
+- [ ] Weekly/monthly volume trends with sparklines
+- [ ] Exercise frequency analysis and balance score
+- [ ] Rest day tracking and recovery recommendations
+
+#### Data Visualization Components
+- [ ] Interactive charts (Recharts preferred for bundle size)
+- [ ] Inline sparklines for quick trends
+- [ ] Progress photos timeline with before/after
+- [ ] Workout density heatmap (GitHub-style)
+- [ ] Volume progression graphs per exercise
+- [ ] Comparative analytics (this week vs. last week)
+- [ ] Training split visualization
+
+#### Smart Insights & Recommendations
+- [ ] Auto-detect plateaus and suggest deload weeks
+- [ ] Volume recommendations based on fitness goals
+- [ ] Exercise variation suggestions when stale
+- [ ] Recovery time analysis per muscle group
+- [ ] Optimal training frequency insights
+- [ ] Form fatigue warnings (declining reps pattern)
+
+---
+
+### 6. Advanced Interactions & Features
+**Effort: 3-4 weeks | Value: Medium-High - power user features**
+
+#### Enhanced Logging Experience
+- [ ] Voice input: "Log 20 reps squats at 135 pounds"
+  - Natural language processing
+  - Fallback to manual if parse fails
+  - Voice feedback confirmation
+
+- [ ] Workout templates system
+  - Save common routines (e.g., "Push Day A")
+  - Quick-start templates from history
+  - Community template sharing (later)
+
+- [ ] Rich set metadata
+  - Notes field per set: "felt easy", "form breakdown"
+  - Photo/video attachments for form checks
+  - Tags: "warmup", "dropset", "amrap"
+
+- [ ] RPE/RIR tracking
+  - Rate of Perceived Exertion (1-10 slider)
+  - Reps in Reserve estimation
+  - Fatigue tracking over session
+
+- [ ] Superset & circuit grouping
+  - Link sets performed back-to-back
+  - Visual grouping in history
+  - Circuit timer mode
+
+- [ ] Smart rest timer
+  - Auto-start after logging set
+  - Customizable per exercise type
+  - Progressive rest time reduction
+
+- [ ] Exercise aliases & variations
+  - "BB Squat" = "Barbell Squat"
+  - Track variations separately or grouped
+  - Quick variant switcher
+
+- [ ] Bulk operations
+  - Select multiple sets for batch delete
+  - Batch edit exercise/weight/reps
+  - Copy entire workout to new date
+
+- [ ] Media attachments
+  - Upload form check videos
+  - Progress photos with date tags
+  - Side-by-side comparison view
+
+- [ ] Timer integrations
+  - Countdown for timed exercises (planks)
+  - EMOM (every minute on the minute) mode
+  - Tabata timer integration
+
+#### Offline & Sync Enhancements
+- [ ] True offline-first architecture (Dexie.js)
+- [ ] Intelligent sync queue with retry logic
+- [ ] Auto-save drafts (recover from crashes)
+- [ ] Conflict resolution UI for multi-device
+- [ ] Background sync with service workers
+- [ ] Sync status indicator and manual trigger
+
+#### Data Management & Portability
+- [ ] Advanced export options
+  - CSV with custom column selection
+  - JSON with full schema
+  - Excel with charts
+  - PDF workout summaries
+
+- [ ] Import from competitors
+  - Strong app CSV format
+  - FitNotes format
+  - Hevy format
+  - Generic CSV mapper
+
+- [ ] Automated backups
+  - Daily encrypted backups
+  - Point-in-time restore
+  - Version history browser
+
+- [ ] Privacy controls
+  - Selective data deletion
+  - Archive vs. delete exercises
+  - GDPR compliance tools
+
+#### Navigation & Organization
+- [ ] Advanced filtering & search
+  - Date range picker
+  - Exercise multi-select filter
+  - Cmd+K quick search palette
+  - Saved filter presets
+
+- [ ] Keyboard shortcuts (desktop)
+  - L = focus log form
+  - N = new exercise
+  - / = search
+  - Esc = clear form
+  - ↑↓ = navigate history
+
+- [ ] Navigation improvements
+  - Breadcrumb showing current date
+  - Jump to date modal
+  - Sticky metrics while scrolling
+  - Floating "scroll to top" FAB
+  - Swipe left/right between days
+
+#### Gamification & Motivation
+- [ ] Goal system
+  - Daily set targets with progress rings
+  - Weekly volume goals per exercise
+  - Custom goal creation
+
+- [ ] Achievement badges
+  - Milestones (100 sets, 1000 reps, etc.)
+  - Consistency badges (7/30/90 day streaks)
+  - Exercise mastery levels
+
+- [ ] Leaderboards (opt-in)
+  - Compare with friends only
+  - Privacy-first design
+  - Custom competitions
+
+- [ ] Motivational features
+  - Rotating quotes in empty states
+  - Celebration animations on PRs
+  - Progress reminders
+  - "On this day" flashbacks
+
+- [ ] Social sharing
+  - "Share today's workout" card generator
+  - Beautiful workout summary images
+  - Opt-in public profile
+
+#### Accessibility & Theming
+- [ ] Full accessibility audit
+  - ARIA labels on all controls
+  - Screen reader testing (NVDA/JAWS)
+  - Keyboard-only navigation
+  - Focus management
+
+- [ ] High contrast mode
+  - WCAG AAA contrast ratios
+  - Reduced reliance on color alone
+  - Bold text option
+
+- [ ] Color-blind friendly modes
+  - Deuteranopia safe palette
+  - Protanopia safe palette
+  - Pattern-based differentiation
+
+- [ ] User customization
+  - Adjustable font sizing
+  - Line height controls
+  - Reduced motion toggle
+  - Animation speed control
+
+- [ ] Multiple theme variants
+  - Cyberpunk (neon accents)
+  - Retro (amber/green CRT)
+  - Minimal (ultra-clean)
+  - Custom theme creator
+
+#### Terminal Aesthetic Deep Dive
+- [ ] CRT effects (toggleable)
+  - Scanline overlay
+  - Phosphor glow
+  - Screen curvature subtle
+  - Flicker effect
+
+- [ ] Retro interactions
+  - Blinking cursor in inputs
+  - Typewriter text on load
+  - Terminal prompt ">" prefixes
+  - ASCII art loading states
+
+- [ ] Neon cyberpunk mode
+  - Glowing borders on focus
+  - Pulsing active states
+  - Matrix-style bg animation
+  - Synthwave color palette
+
+- [ ] Sound design (opt-in)
+  - Mechanical keyboard clicks
+  - Terminal beep on success
+  - Error buzzer on fail
+  - 8-bit celebration sounds
+
+#### Advanced Training Features
+- [ ] Program tracking
+  - Follow structured programs
+  - 12-week program templates
+  - Progress tracking vs. plan
+  - Auto-progression rules
+
+- [ ] Plate calculator
+  - Show loading for target weight
+  - Available plates config
+  - Optimal plate arrangement
+
+- [ ] Strength standards
+  - 1RM calculator (Epley/Brzycki)
+  - Compare to population norms
+  - Strength level badges
+
+- [ ] Periodization tools
+  - Deload week planner
+  - Volume landmarks tracking
+  - Training max calculations
+  - Auto-progression suggestions
 
 ---
 

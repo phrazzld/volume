@@ -10,6 +10,7 @@ import { QuickLogForm, QuickLogFormHandle } from "@/components/dashboard/quick-l
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import { UndoToast } from "@/components/dashboard/undo-toast";
 import { FirstRunExperience } from "@/components/dashboard/first-run-experience";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import {
   calculateDailyStats,
   calculateDailyStatsByExercise,
@@ -21,6 +22,7 @@ export default function Home() {
   const [undoToastVisible, setUndoToastVisible] = useState(false);
   const [lastLoggedSetId, setLastLoggedSetId] = useState<Id<"sets"> | null>(null);
   const formRef = useRef<QuickLogFormHandle>(null);
+  const { unit } = useWeightUnit();
 
   // Fetch data from Convex
   const sets = useQuery(api.sets.listSets, {});
@@ -29,13 +31,13 @@ export default function Home() {
   // Delete set mutation
   const deleteSet = useMutation(api.sets.deleteSet);
 
-  // Calculate daily stats
-  const dailyStats = useMemo(() => calculateDailyStats(sets), [sets]);
+  // Calculate daily stats (convert all volumes to user's preferred unit)
+  const dailyStats = useMemo(() => calculateDailyStats(sets, unit), [sets, unit]);
 
-  // Calculate per-exercise daily stats
+  // Calculate per-exercise daily stats (convert all volumes to user's preferred unit)
   const exerciseStats = useMemo(
-    () => calculateDailyStatsByExercise(sets, exercises),
-    [sets, exercises]
+    () => calculateDailyStatsByExercise(sets, exercises, unit),
+    [sets, exercises, unit]
   );
 
   // Group sets by day

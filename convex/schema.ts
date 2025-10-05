@@ -15,6 +15,7 @@ export default defineSchema({
     exerciseId: v.id("exercises"),
     reps: v.number(),
     weight: v.optional(v.number()),
+    unit: v.optional(v.string()), // "lbs" or "kg" - stored with each set for data integrity
     performedAt: v.number(), // Unix timestamp
   })
     .index("by_user", ["userId"])

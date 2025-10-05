@@ -37,7 +37,7 @@ export function UndoToast({ visible, onUndo, onDismiss }: UndoToastProps) {
         </div>
         <button
           onClick={onUndo}
-          className="ml-4 px-3 py-1 border border-terminal-success text-terminal-success hover:bg-terminal-success hover:text-terminal-bg font-mono uppercase text-xs font-bold transition-all duration-100"
+          className="ml-4 px-3 py-2 border border-terminal-success text-terminal-success hover:bg-terminal-success hover:text-terminal-bg font-mono uppercase text-xs font-bold transition-all duration-100"
         >
           UNDO
         </button>

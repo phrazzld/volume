@@ -56,11 +56,55 @@ body {
   font-family: var(--font-mono), "Courier New", monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+  font-size: 18px;
+  line-height: 1.6;
 }
 
 /* Terminal aesthetic: all text uppercase */
 main {
   text-transform: uppercase;
+}
+
+/* Typography hierarchy with varied font weights */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+/* Body text with improved readability */
+p, span, div {
+  font-weight: 400;
+}
+
+/* Emphasized text */
+strong, b {
+  font-weight: 700;
+}
+
+/* Medium weight for labels and secondary text */
+label {
+  font-weight: 500;
+}
+
+/* Ensure metrics use tabular nums for consistent layout */
+.tabular-nums,
+[data-metric],
+[role="cell"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Button press states - scale down on tap for tactile feedback */
+button:active,
+.btn-press:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease-out;
+}
+
+/* Smooth return to normal state */
+button,
+.btn-press {
+  transition: transform 0.1s ease-in;
 }
 
 /* Uppercase inputs/selects as user types */
@@ -111,4 +155,16 @@ html {
   input[type="radio"] {
     min-height: 44px;
   }
+}
+
+/* Hide number input spinners - hard to tap on mobile */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

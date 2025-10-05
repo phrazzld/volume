@@ -5,12 +5,14 @@ import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 
 interface Set {
   _id: Id<"sets">;
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;
+  unit?: string; // "lbs" or "kg" - stored with set for data integrity
   performedAt: number;
 }
 
@@ -37,6 +39,7 @@ export function GroupedSetHistory({
   onDelete,
 }: GroupedSetHistoryProps) {
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
+  const { unit: preferredUnit } = useWeightUnit();
 
   const handleDelete = async (set: Set) => {
     if (!confirm("Delete this set? This cannot be undone.")) return;
@@ -52,6 +55,17 @@ export function GroupedSetHistory({
   };
 
   const formatTime = (timestamp: number) => {
+    const now = Date.now();
+    const diffMs = now - timestamp;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+
+    // Show relative time for sets within last 24 hours
+    if (diffMins < 1) return "JUST NOW";
+    if (diffMins < 60) return `${diffMins}M AGO`;
+    if (diffHours < 24) return `${diffHours}H AGO`;
+
+    // Show absolute time for older sets
     return new Date(timestamp).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -68,11 +82,14 @@ export function GroupedSetHistory({
         className="mb-3"
       >
         <div className="p-8 text-center">
-          <p className="text-terminal-textSecondary uppercase font-mono text-sm">
-            NO DATA
+          <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
+            NO SETS LOGGED YET
+          </p>
+          <p className="text-terminal-info font-mono text-xs mb-1">
+            START YOUR JOURNEY! 🚀
           </p>
           <p className="text-terminal-textMuted font-mono text-xs mt-2">
-            Log your first set above to get started
+            Log your first set above
           </p>
         </div>
       </TerminalPanel>
@@ -106,10 +123,10 @@ export function GroupedSetHistory({
               {set.reps}
             </span>,
 
-            // WEIGHT
+            // WEIGHT (with unit stored in set, fallback to user preference for legacy)
             set.weight ? (
               <span key="weight" className="text-terminal-warning font-bold">
-                {set.weight}
+                {set.weight} {(set.unit || preferredUnit).toUpperCase()}
               </span>
             ) : (
               <span key="weight" className="text-terminal-textMuted">-</span>
@@ -119,23 +136,24 @@ export function GroupedSetHistory({
             <div key="actions" className="flex items-center gap-1">
               <button
                 onClick={() => onRepeat(set)}
-                className="p-1 text-terminal-info hover:opacity-80 transition-opacity"
+                className="flex items-center gap-1 px-2 py-1 text-terminal-info hover:bg-terminal-info hover:bg-opacity-10 transition-colors rounded"
                 aria-label="Repeat this set"
                 title="Repeat this set"
                 type="button"
                 disabled={isDeleting}
               >
                 <RotateCcw className="h-4 w-4" />
+                <span className="text-xs font-mono uppercase">REPEAT</span>
               </button>
               <button
                 onClick={() => handleDelete(set)}
-                className="p-1 text-terminal-danger hover:opacity-80 transition-opacity"
+                className="p-2 text-terminal-danger hover:opacity-80 transition-opacity"
                 aria-label="Delete this set"
                 title="Delete this set"
                 type="button"
                 disabled={isDeleting}
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </button>
             </div>,
           ];
@@ -158,7 +176,7 @@ export function GroupedSetHistory({
               <TerminalTable
                 headers={["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]}
                 rows={rows}
-                columnWidths={["w-20", "", "w-16", "w-20", "w-24"]}
+                columnWidths={["w-20", "", "w-16", "w-20", "w-32"]}
               />
             </div>
           </TerminalPanel>

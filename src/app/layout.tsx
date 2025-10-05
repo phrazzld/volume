@@ -6,6 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/layout/nav";
 import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { WeightUnitProvider } from "@/contexts/WeightUnitContext";
 
 const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600", "700"],
@@ -28,11 +29,13 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning className={ibmPlexMono.variable}>
         <body className="antialiased bg-terminal-bg pb-12">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <ConvexClientProvider>
-              <Nav />
-              {children}
-              <Footer />
-            </ConvexClientProvider>
+            <WeightUnitProvider>
+              <ConvexClientProvider>
+                <Nav />
+                {children}
+                <Footer />
+              </ConvexClientProvider>
+            </WeightUnitProvider>
           </ThemeProvider>
         </body>
       </html>

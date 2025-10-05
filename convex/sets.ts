@@ -7,6 +7,7 @@ export const logSet = mutation({
     exerciseId: v.id("exercises"),
     reps: v.number(),
     weight: v.optional(v.number()),
+    unit: v.optional(v.string()), // "lbs" or "kg" - required when weight is provided
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -17,6 +18,19 @@ export const logSet = mutation({
     // Validate reps
     if (args.reps <= 0) {
       throw new Error("Reps must be greater than 0");
+    }
+
+    // Validate weight and unit if provided
+    if (args.weight !== undefined) {
+      // Validate weight is a valid positive number
+      if (!isFinite(args.weight) || args.weight < 0) {
+        throw new Error("Weight must be a positive number");
+      }
+
+      // Validate unit is provided and is valid
+      if (!args.unit || (args.unit !== "lbs" && args.unit !== "kg")) {
+        throw new Error("Unit must be 'lbs' or 'kg' when weight is provided");
+      }
     }
 
     // Verify exercise exists and belongs to user
@@ -33,6 +47,7 @@ export const logSet = mutation({
       exerciseId: args.exerciseId,
       reps: args.reps,
       weight: args.weight,
+      unit: args.unit, // Store the unit with the set for data integrity
       performedAt: Date.now(),
     });
 

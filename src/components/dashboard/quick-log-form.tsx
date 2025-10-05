@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 
 interface Exercise {
   _id: Id<"exercises">;
@@ -17,6 +18,7 @@ interface Set {
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;
+  unit?: string; // "lbs" or "kg" - stored with set for data integrity
   performedAt: number;
 }
 
@@ -41,6 +43,16 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const weightInputRef = useRef<HTMLInputElement>(null);
 
     const logSet = useMutation(api.sets.logSet);
+    const { unit, toggleUnit } = useWeightUnit();
+
+    /*
+     * Autofocus Flow:
+     * 1. User selects exercise → auto-focus reps input (useEffect below)
+     * 2. User enters reps, presses Enter → focus weight input (handleRepsKeyDown)
+     * 3. User enters weight, presses Enter → submit form (handleWeightKeyDown)
+     * 4. After successful submit → focus reps input for next set (handleSubmit)
+     * Note: Exercise stays selected after submit for quick multi-set logging
+     */
 
     // Query last set for selected exercise
     const allSets = useQuery(api.sets.listSets, {});
@@ -76,15 +88,15 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       },
     }));
 
-    // Auto-focus reps when exercise is selected
+    // Auto-focus flow: exercise selected → focus reps input
     useEffect(() => {
       if (selectedExerciseId && repsInputRef.current) {
         repsInputRef.current.focus();
       }
     }, [selectedExerciseId]);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  // Extract submit logic to avoid type casting
+  const submitForm = async () => {
     if (!selectedExerciseId || !reps || isSubmitting) return;
 
     const repsNum = parseInt(reps, 10);
@@ -100,14 +112,15 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         exerciseId: selectedExerciseId as Id<"exercises">,
         reps: repsNum,
         weight: weight ? parseFloat(weight) : undefined,
+        unit: weight ? unit : undefined, // Store unit with set for data integrity
       });
 
       // Clear form inputs (keep exercise selected for quick re-logging)
       setReps("");
       setWeight("");
 
-      // Focus exercise selector for quick re-logging
-      setTimeout(() => exerciseSelectRef.current?.focus(), 100);
+      // Focus reps input for quick re-logging of same exercise
+      setTimeout(() => repsInputRef.current?.focus(), 100);
 
       // Notify parent
       onSetLogged?.(setId);
@@ -117,6 +130,11 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    await submitForm();
   };
 
   // Handle Enter key in reps input - focus weight or submit
@@ -133,7 +151,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   const handleWeightKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleSubmit(e as any);
+      submitForm();
     }
   };
 
@@ -147,11 +165,22 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       <form onSubmit={handleSubmit} className="p-4">
         {/* Last Set Indicator */}
         {lastSet && (
-          <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border">
+          <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border flex items-center justify-between">
             <p className="text-xs uppercase text-terminal-info font-mono">
               LAST: {exercises.find(e => e._id === selectedExerciseId)?.name} • {lastSet.reps} REPS
-              {lastSet.weight && ` @ ${lastSet.weight} LBS`} • {formatTimeAgo(lastSet.performedAt)}
+              {lastSet.weight && ` @ ${lastSet.weight} ${(lastSet.unit || unit).toUpperCase()}`} • {formatTimeAgo(lastSet.performedAt)}
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setReps(lastSet.reps.toString());
+                setWeight(lastSet.weight?.toString() || "");
+                repsInputRef.current?.focus();
+              }}
+              className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:bg-opacity-10 transition-colors"
+            >
+              USE
+            </button>
           </div>
         )}
 
@@ -177,7 +206,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   setSelectedExerciseId(value as Id<"exercises">);
                 }
               }}
-              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               required
               disabled={isSubmitting}
             >
@@ -209,8 +238,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               value={reps}
               onChange={(e) => setReps(e.target.value)}
               onKeyDown={handleRepsKeyDown}
-              placeholder="0"
-              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              placeholder="HOW MANY?"
+              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
               required
             />
@@ -218,12 +247,22 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
 
           {/* Weight Input */}
           <div>
-            <label
-              htmlFor="weight"
-              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-            >
-              WEIGHT (LBS)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="weight"
+                className="text-xs uppercase text-terminal-textSecondary font-mono"
+              >
+                WEIGHT ({unit.toUpperCase()})
+              </label>
+              <button
+                type="button"
+                onClick={toggleUnit}
+                className="text-xs uppercase font-mono text-terminal-info hover:text-terminal-accent transition-colors border border-terminal-info px-2 py-0.5 hover:bg-terminal-info hover:bg-opacity-10"
+                aria-label="Toggle weight unit"
+              >
+                {unit === "lbs" ? "→ KG" : "→ LBS"}
+              </button>
+            </div>
             <input
               ref={weightInputRef}
               id="weight"
@@ -234,8 +273,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               onKeyDown={handleWeightKeyDown}
-              placeholder="0.0"
-              className="w-full px-3 py-2 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              placeholder="OPTIONAL"
+              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
             />
           </div>
@@ -244,7 +283,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full px-4 py-3 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               disabled={!selectedExerciseId || !reps || isSubmitting}
             >
               {isSubmitting ? "LOGGING..." : "LOG SET"}
