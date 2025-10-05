@@ -37,7 +37,7 @@
 - [ ] Subtle gradients on metrics cards
 
 ### Spacing & Layout
-- [ ] Increase padding in "DAILY METRICS" card
+- [~] Increase padding in "DAILY METRICS" card
 - [ ] Use consistent 16px spacing rhythm throughout
 - [ ] Subtle border-width variation for depth
 - [ ] Add thin dividers between collapsible sections
@@ -62,7 +62,7 @@
 ## 4. Smart Defaults & Patterns
 
 ### Intelligent Behavior
-- [ ] Exercise dropdown shows recent first
+- [x] Exercise dropdown shows recent first
 - [ ] Remember last exercise between sessions
 - [ ] Suggest common rep ranges based on exercise type
 - [ ] Auto-increment set number for same exercise

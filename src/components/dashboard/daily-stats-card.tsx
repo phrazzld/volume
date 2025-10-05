@@ -63,11 +63,11 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
     >
       {stats ? (
         <>
-          {/* Aggregate Totals - Compact Row */}
+          {/* Aggregate Totals - Improved Spacing */}
           <div className="grid grid-cols-4 border-b border-terminal-border">
             {/* Total Sets - Cyan */}
-            <div className="p-2 border-r border-terminal-border">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-1 font-mono">
+            <div className="p-3 border-r border-terminal-border">
+              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
                 SETS
               </p>
               <p className="text-xl font-bold text-terminal-info tabular-nums font-mono">
@@ -76,8 +76,8 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
             </div>
 
             {/* Total Reps - Green */}
-            <div className="p-2 border-r border-terminal-border">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-1 font-mono">
+            <div className="p-3 border-r border-terminal-border">
+              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
                 REPS
               </p>
               <p className="text-xl font-bold text-terminal-success tabular-nums font-mono">
@@ -86,8 +86,8 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
             </div>
 
             {/* Total Volume - Orange */}
-            <div className="p-2 border-r border-terminal-border">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-1 font-mono">
+            <div className="p-3 border-r border-terminal-border">
+              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
                 VOLUME ({unit.toUpperCase()})
               </p>
               <p className="text-xl font-bold text-terminal-warning tabular-nums font-mono">
@@ -96,8 +96,8 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
             </div>
 
             {/* Exercises Worked - Yellow */}
-            <div className="p-2">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-1 font-mono">
+            <div className="p-3">
+              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
                 EXERCISES
               </p>
               <p className="text-xl font-bold text-terminal-accent tabular-nums font-mono">
