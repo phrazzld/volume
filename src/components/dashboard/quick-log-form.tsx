@@ -42,6 +42,15 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
 
     const logSet = useMutation(api.sets.logSet);
 
+    /*
+     * Autofocus Flow:
+     * 1. User selects exercise → auto-focus reps input (useEffect below)
+     * 2. User enters reps, presses Enter → focus weight input (handleRepsKeyDown)
+     * 3. User enters weight, presses Enter → submit form (handleWeightKeyDown)
+     * 4. After successful submit → focus reps input for next set (handleSubmit)
+     * Note: Exercise stays selected after submit for quick multi-set logging
+     */
+
     // Query last set for selected exercise
     const allSets = useQuery(api.sets.listSets, {});
 
@@ -76,7 +85,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       },
     }));
 
-    // Auto-focus reps when exercise is selected
+    // Auto-focus flow: exercise selected → focus reps input
     useEffect(() => {
       if (selectedExerciseId && repsInputRef.current) {
         repsInputRef.current.focus();
@@ -106,8 +115,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       setReps("");
       setWeight("");
 
-      // Focus exercise selector for quick re-logging
-      setTimeout(() => exerciseSelectRef.current?.focus(), 100);
+      // Focus reps input for quick re-logging of same exercise
+      setTimeout(() => repsInputRef.current?.focus(), 100);
 
       // Notify parent
       onSetLogged?.(setId);
