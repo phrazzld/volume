@@ -16,7 +16,7 @@
 - [x] Add inline "+ Create Exercise" option in dropdown
 - [x] Sort exercises by last used, not alphabetical
 - [x] Pre-fill form with last logged values for selected exercise
-- [~] Add weight unit toggle (lbs/kg switcher)
+- [x] Add weight unit toggle (lbs/kg switcher)
 - [x] Show "optional" as placeholder in weight field
 
 ### Big Ideas
