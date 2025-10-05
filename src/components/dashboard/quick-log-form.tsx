@@ -218,7 +218,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               value={reps}
               onChange={(e) => setReps(e.target.value)}
               onKeyDown={handleRepsKeyDown}
-              placeholder="0"
+              placeholder="HOW MANY?"
               className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
               required
@@ -243,7 +243,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               onKeyDown={handleWeightKeyDown}
-              placeholder="0.0"
+              placeholder="OPTIONAL"
               className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
             />

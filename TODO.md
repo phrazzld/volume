@@ -6,11 +6,11 @@
 - [x] Increase touch targets to 48px minimum (buttons/inputs)
 - [x] Add autofocus flow: exercise → reps → weight → submit
 - [x] Implement "Repeat Last" button on history cards
-- [ ] Smart placeholders ("How many?" instead of "0")
-- [ ] Enable Enter key submission from any field
-- [ ] Auto-clear reps/weight after submit (keep exercise selected)
-- [ ] Remove number input spinners (hard to tap on mobile)
-- [ ] Set weight input step to 0.5 for precision
+- [x] Smart placeholders ("How many?" instead of "0")
+- [x] Enable Enter key submission from any field
+- [x] Auto-clear reps/weight after submit (keep exercise selected)
+- [x] Remove number input spinners (hard to tap on mobile)
+- [x] Set weight input step to 0.5 for precision
 
 ### Medium Impact
 - [ ] Add inline "+ Create Exercise" option in dropdown
