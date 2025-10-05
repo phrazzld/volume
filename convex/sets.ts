@@ -20,9 +20,17 @@ export const logSet = mutation({
       throw new Error("Reps must be greater than 0");
     }
 
-    // Validate unit is provided when weight is provided
-    if (args.weight !== undefined && !args.unit) {
-      throw new Error("Unit is required when weight is provided");
+    // Validate weight and unit if provided
+    if (args.weight !== undefined) {
+      // Validate weight is a valid positive number
+      if (!isFinite(args.weight) || args.weight < 0) {
+        throw new Error("Weight must be a positive number");
+      }
+
+      // Validate unit is provided and is valid
+      if (!args.unit || (args.unit !== "lbs" && args.unit !== "kg")) {
+        throw new Error("Unit must be 'lbs' or 'kg' when weight is provided");
+      }
     }
 
     // Verify exercise exists and belongs to user
