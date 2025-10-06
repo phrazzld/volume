@@ -154,6 +154,53 @@
 
 ---
 
+## Phase 5: Critical PR Review Fixes 🚨 MERGE BLOCKERS
+
+### P1: Client-side parseInt() bypasses server validation
+
+- [ ] Fix reps parsing in `src/components/dashboard/quick-log-form.tsx:109`
+  - **Issue**: User enters "5.5" → `parseInt("5.5", 10)` = 5 → silently truncated → server validation bypassed
+  - **Impact**: Data corruption - fractional reps stored without user awareness or server rejection
+  - **Root Cause**: Client-side truncation happens BEFORE mutation call, so `validateReps()` never sees decimal
+  - **Fix**: Change `parseInt(reps, 10)` to `parseFloat(reps)` OR `Number(reps)`
+  - **Testing**: After fix, entering "5.5" should trigger error toast: "Reps must be a whole number between 1 and 1000"
+  - **Success Criteria**: Decimal reps rejected by server, user sees clear error message
+  - **Source**: Codex PR Review, inline comment on quick-log-form.tsx:110
+
+### P1: Weight validation lower bound inconsistency
+
+- [ ] Fix weight minimum threshold in `convex/lib/validate.ts:31`
+  - **Issue**: Code checks `weight <= 0` but error message says "between 0.1 and 10000"
+  - **Impact**: Invalid ultra-small weights (0.01, 0.05) accepted, contradicts documentation
+  - **Inconsistency**: TODO.md:15, TASK.md, and error message all specify 0.1 minimum
+  - **Fix**: Change condition from `weight <= 0` to `weight < 0.1`
+  - **Testing**: After fix, validateWeight(0.05) should throw "Weight must be between 0.1 and 10000"
+  - **Success Criteria**: Weights below 0.1 rejected, matches error message and docs
+  - **Source**: Codex PR Review + Claude AI Review (both flagged this)
+
+### Enhancement: Empty exercise name edge case
+
+- [ ] Improve empty string handling in `convex/lib/validate.ts:68-72`
+  - **Issue**: Empty string after `trim()` gets generic "Exercise name must be 2-100 characters" error
+  - **Enhancement**: Add specific check for empty string with clearer message
+  - **Fix**:
+    ```typescript
+    const trimmed = name.trim();
+
+    if (trimmed.length === 0) {
+      throw new Error("Exercise name cannot be empty");
+    }
+
+    if (trimmed.length < 2 || trimmed.length > 100) {
+      throw new Error("Exercise name must be 2-100 characters");
+    }
+    ```
+  - **Benefit**: More specific, user-friendly error message for common mistake
+  - **Effort**: 2 minutes
+  - **Source**: Claude AI Review suggestion
+
+---
+
 ## Notes
 
 - All exercise names stored as UPPERCASE for consistency
@@ -161,3 +208,27 @@
 - No silent data modification - reject bad input with clear error messages
 - Tests focus on discrete, useful cases - no complex mocks or deep integration tests
 - Error handler utility centralizes message mapping for future error tracking integration
+
+## PR Review Feedback Summary (PR #4)
+
+**Reviews Received:**
+- Claude AI Code Review (2025-10-06)
+- Codex Automated Review (2025-10-06)
+
+**Critical Issues (Merge Blockers):**
+1. ✅ **P1: parseInt() bypasses server validation** - Added to Phase 5
+2. ✅ **P1: Weight lower bound inconsistency** - Added to Phase 5
+3. ✅ **Enhancement: Empty exercise name** - Added to Phase 5
+
+**Valid Suggestions (Deferred to BACKLOG):**
+- Add unit tests for validators → BACKLOG #10 (elevated to "Immediate Concerns")
+- Migration script for uppercase normalization → BACKLOG (new item)
+- Optimize quick-log-form query → BACKLOG #6 note
+- Sentry integration → BACKLOG #19 (already tracked)
+- Rate limiting → BACKLOG #8 (already tracked)
+
+**Rejected Suggestions:**
+- None - all feedback was valid and actionable
+
+**Decision Rationale:**
+Phase 5 must be completed before merge to prevent data corruption and ensure validation integrity. Testing infrastructure (Phase 3) deferred to post-merge to unblock PR while maintaining quality standards.

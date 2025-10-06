@@ -2,7 +2,7 @@
 
 *A map of opportunities to improve the product, codebase, and development experience.*
 
-**Last Updated:** 2025-10-05
+**Last Updated:** 2025-10-06
 **Status:** Post-MVP - Clean codebase, ready for strategic improvements
 
 ---
@@ -11,10 +11,17 @@
 
 *Issues that need attention right now - security, reliability, critical UX problems.*
 
-### 1. Enhanced Input Validation ✅ IN PROGRESS
-**Effort:** 2 hours | **Value:** HIGH - Data integrity & security
+### 1. Enhanced Input Validation ⚠️ PR REVIEW - CRITICAL FIXES NEEDED
+**Effort:** 2 hours + 30 min fixes | **Value:** HIGH - Data integrity & security
 
-**Status:** Currently being implemented. See TODO.md for detailed tasks.
+**Status:** PR #4 under review. Critical bugs found, must fix before merge. See TODO.md Phase 5 for details.
+
+**PR Review Findings (2025-10-06):**
+- 🚨 **P1 Bug**: Client-side `parseInt()` bypasses server validation (data corruption risk)
+- 🚨 **P1 Bug**: Weight lower bound inconsistency (0.1 vs 0 check)
+- ✅ Enhancement: Empty exercise name error message
+
+**PR Link:** https://github.com/phrazzld/volume/pull/4
 
 **Implementation:**
 - Integer-only reps validation (reject decimals)
@@ -29,6 +36,118 @@
 - Error tracking service (Sentry) integration with structured context
 - Advanced validation: RPE (1-10 scale), tempo patterns, set tags
 - Field-level validation errors (highlight specific form fields)
+
+---
+
+### 1A. Validator Unit Tests 🆕 ELEVATED FROM PR REVIEW
+**Effort:** 30 minutes | **Value:** HIGH - Regression prevention for critical data validation
+
+**Status:** Deferred from PR #4 to unblock merge, but HIGH priority post-merge.
+
+**Rationale:**
+- Validators in `convex/lib/validate.ts` are pure functions (easy to test, high value)
+- Critical to data integrity - bugs in validation = data corruption
+- PR review identified 2 critical validation bugs that unit tests would have caught
+- Low effort, high ROI - perfect test candidates
+
+**Test Coverage Needed:**
+```typescript
+// convex/lib/validate.test.ts
+describe('validateReps', () => {
+  it('accepts valid integers 1-1000', () => {
+    expect(() => validateReps(1)).not.toThrow();
+    expect(() => validateReps(500)).not.toThrow();
+    expect(() => validateReps(1000)).not.toThrow();
+  });
+
+  it('rejects decimals', () => {
+    expect(() => validateReps(5.5)).toThrow('whole number');
+    expect(() => validateReps(10.1)).toThrow('whole number');
+  });
+
+  it('rejects out-of-bounds values', () => {
+    expect(() => validateReps(0)).toThrow();
+    expect(() => validateReps(-5)).toThrow();
+    expect(() => validateReps(1001)).toThrow();
+  });
+
+  it('rejects non-finite values', () => {
+    expect(() => validateReps(NaN)).toThrow();
+    expect(() => validateReps(Infinity)).toThrow();
+  });
+});
+
+describe('validateWeight', () => {
+  it('returns undefined for undefined input', () => {
+    expect(validateWeight(undefined)).toBeUndefined();
+  });
+
+  it('rounds to 2 decimal places', () => {
+    expect(validateWeight(22.555)).toBe(22.56);
+    expect(validateWeight(99.999)).toBe(100.00);
+    expect(validateWeight(10.1234)).toBe(10.12);
+  });
+
+  it('rejects values below 0.1', () => {
+    expect(() => validateWeight(0)).toThrow('between 0.1 and 10000');
+    expect(() => validateWeight(0.05)).toThrow('between 0.1 and 10000');
+  });
+
+  it('rejects values above 10000', () => {
+    expect(() => validateWeight(10001)).toThrow('between 0.1 and 10000');
+  });
+});
+
+describe('validateUnit', () => {
+  it('allows valid units with weight', () => {
+    expect(() => validateUnit('lbs', 100)).not.toThrow();
+    expect(() => validateUnit('kg', 50)).not.toThrow();
+  });
+
+  it('rejects invalid units when weight provided', () => {
+    expect(() => validateUnit('pounds', 100)).toThrow();
+    expect(() => validateUnit(undefined, 100)).toThrow();
+  });
+
+  it('allows no unit when no weight', () => {
+    expect(() => validateUnit(undefined, undefined)).not.toThrow();
+  });
+});
+
+describe('validateExerciseName', () => {
+  it('trims whitespace', () => {
+    expect(validateExerciseName('  push-ups  ')).toBe('PUSH-UPS');
+  });
+
+  it('converts to uppercase', () => {
+    expect(validateExerciseName('bench press')).toBe('BENCH PRESS');
+  });
+
+  it('rejects empty strings', () => {
+    expect(() => validateExerciseName('')).toThrow('cannot be empty');
+    expect(() => validateExerciseName('   ')).toThrow('cannot be empty');
+  });
+
+  it('rejects too short names', () => {
+    expect(() => validateExerciseName('a')).toThrow('2-100 characters');
+  });
+
+  it('rejects too long names', () => {
+    const longName = 'a'.repeat(101);
+    expect(() => validateExerciseName(longName)).toThrow('2-100 characters');
+  });
+});
+```
+
+**Dependencies:** Vitest setup (see #10)
+
+**Benefits:**
+- ✅ Prevents regression of PR #4 bugs
+- ✅ Documents expected validation behavior
+- ✅ Fast feedback loop (unit tests run in milliseconds)
+- ✅ Foundation for TDD on future validators
+
+**Source:** Claude AI Review + Codex Review feedback on PR #4
 
 ---
 
@@ -162,6 +281,63 @@ export interface QuickLogFormHandle {
 - ✅ Full TypeScript safety restored
 - ✅ Prevents runtime type errors
 - ✅ Better IDE autocomplete and refactoring
+
+---
+
+### 3A. Exercise Name Uppercase Migration 🆕 FROM PR REVIEW
+**Effort:** 15 minutes | **Value:** MEDIUM - Data consistency
+
+**Status:** Deferred from PR #4, recommended for post-merge cleanup.
+
+**Context:**
+PR #4 implements uppercase normalization for exercise names (all stored as "PUSH-UPS" not "push-ups"). However, normalization is gradual - only applies when exercises are created or updated. This creates potential issues:
+- Mixed-case exercises coexist indefinitely if never edited
+- Duplicate detection only works for new/updated exercises
+- User confusion: "push-ups" and "PUSH-UPS" could both exist
+
+**Migration Script:**
+```typescript
+// convex/migrations/uppercaseExerciseNames.ts
+import { mutation } from "./_generated/server";
+
+/**
+ * One-time migration: Convert all exercise names to uppercase.
+ * Run once after PR #4 is merged.
+ */
+export default mutation({
+  handler: async (ctx) => {
+    const exercises = await ctx.db.query("exercises").collect();
+    let updated = 0;
+
+    for (const exercise of exercises) {
+      const uppercase = exercise.name.toUpperCase();
+      if (exercise.name !== uppercase) {
+        await ctx.db.patch(exercise._id, { name: uppercase });
+        updated++;
+      }
+    }
+
+    return { total: exercises.length, updated };
+  },
+});
+```
+
+**Execution:**
+```bash
+# After PR #4 is merged and deployed
+pnpm convex run migrations/uppercaseExerciseNames
+# Expected output: { total: 15, updated: 12 } (example)
+```
+
+**Benefits:**
+- ✅ Immediate data consistency (all exercises uppercase)
+- ✅ Duplicate detection works for all exercises, not just new ones
+- ✅ Prevents user confusion from mixed-case names
+- ✅ Clean slate for production data
+
+**Risks:** LOW - Non-destructive transformation, idempotent (safe to re-run)
+
+**Source:** Claude AI Review feedback on PR #4
 
 ---
 
@@ -353,6 +529,33 @@ const logSet = useMutation(api.sets.logSet).withOptimisticUpdate(
 - Create/delete exercises
 - Log/delete sets
 - Update exercise names
+
+**Query Optimization (Related - from PR review):**
+Currently `quick-log-form.tsx:60-68` fetches ALL sets then filters client-side to find last set for selected exercise. This wastes bandwidth and CPU.
+
+**Better approach:**
+```typescript
+// Current (inefficient)
+const allSets = useQuery(api.sets.listSets, {});
+const lastSet = useMemo(() => {
+  const exerciseSets = allSets?.filter(s => s.exerciseId === selectedExerciseId);
+  return exerciseSets?.[0] ?? null;
+}, [selectedExerciseId, allSets]);
+
+// Optimized (query only needed sets)
+const exerciseSets = useQuery(
+  api.sets.listSets,
+  selectedExerciseId ? { exerciseId: selectedExerciseId } : "skip"
+);
+const lastSet = exerciseSets?.[0] ?? null;
+```
+
+**Benefits:**
+- ✅ Reduced data transfer (only fetch sets for one exercise, not all)
+- ✅ Faster client-side processing (no filtering needed)
+- ✅ Better performance as dataset grows
+
+**Source:** Claude AI Review feedback on PR #4
 
 **Benefits:**
 - ✅ Instant UI updates (feels native-app fast)
