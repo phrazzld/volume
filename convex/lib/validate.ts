@@ -28,7 +28,7 @@ export function validateWeight(weight: number | undefined): number | undefined {
     return undefined;
   }
 
-  if (!isFinite(weight) || weight <= 0 || weight > 10000) {
+  if (!isFinite(weight) || weight < 0.1 || weight > 10000) {
     throw new Error("Weight must be between 0.1 and 10000");
   }
 
@@ -66,6 +66,10 @@ export function validateUnit(
  */
 export function validateExerciseName(name: string): string {
   const trimmed = name.trim();
+
+  if (trimmed.length === 0) {
+    throw new Error("Exercise name cannot be empty");
+  }
 
   if (trimmed.length < 2 || trimmed.length > 100) {
     throw new Error("Exercise name must be 2-100 characters");

@@ -106,7 +106,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     try {
       const setId = await logSet({
         exerciseId: selectedExerciseId as Id<"exercises">,
-        reps: parseInt(reps, 10),
+        reps: parseFloat(reps),
         weight: weight ? parseFloat(weight) : undefined,
         unit: weight ? unit : undefined, // Store unit with set for data integrity
       });
