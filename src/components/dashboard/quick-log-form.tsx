@@ -7,6 +7,8 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { toast } from "sonner";
+import { handleMutationError } from "@/lib/error-handler";
 
 interface Exercise {
   _id: Id<"exercises">;
@@ -99,18 +101,12 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   const submitForm = async () => {
     if (!selectedExerciseId || !reps || isSubmitting) return;
 
-    const repsNum = parseInt(reps, 10);
-    if (repsNum <= 0) {
-      alert("Reps must be greater than 0");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       const setId = await logSet({
         exerciseId: selectedExerciseId as Id<"exercises">,
-        reps: repsNum,
+        reps: parseInt(reps, 10),
         weight: weight ? parseFloat(weight) : undefined,
         unit: weight ? unit : undefined, // Store unit with set for data integrity
       });
@@ -122,11 +118,13 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       // Focus reps input for quick re-logging of same exercise
       setTimeout(() => repsInputRef.current?.focus(), 100);
 
+      // Show success toast
+      toast.success("Set logged!");
+
       // Notify parent
       onSetLogged?.(setId);
     } catch (error) {
-      console.error("Failed to log set:", error);
-      alert("Failed to log set. Please try again.");
+      handleMutationError(error, "Log Set");
     } finally {
       setIsSubmitting(false);
     }

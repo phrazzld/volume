@@ -72,27 +72,27 @@
 
 ### Component Updates
 
-- [ ] Update `src/components/dashboard/quick-log-form.tsx` - Replace alert with toast (lines 103, 127)
+- [x] Update `src/components/dashboard/quick-log-form.tsx` - Replace alert with toast (lines 103, 127)
   - Import: `import { toast } from "sonner"; import { handleMutationError } from "@/lib/error-handler";`
   - Line 103 (delete set): Replace console.error + alert with `handleMutationError(error, "Delete Set");`
   - Line 127 (log set): Replace console.error + alert with `handleMutationError(error, "Log Set");`
   - Add success toast after successful log: `toast.success("Set logged!");` (after line 123)
   - Success: No more alert() calls, toasts appear on error/success
 
-- [ ] Update `src/components/dashboard/grouped-set-history.tsx` - Replace alerts with toasts (lines 44, 51)
+- [x] Update `src/components/dashboard/grouped-set-history.tsx` - Replace alerts with toasts (lines 44, 51)
   - Import error handler and toast
   - Line 44: Replace console.error + alert with `handleMutationError(error, "Delete Set");`
   - Line 51: Replace console.error + alert with `handleMutationError(error, "Undo Delete");`
   - Add success toast after delete: `toast.success("Set deleted");`
   - Success: Toast notifications for delete and undo operations
 
-- [ ] Update `src/components/dashboard/set-card.tsx` - Replace alert with toast (line 33)
+- [x] Update `src/components/dashboard/set-card.tsx` - Replace alert with toast (line 33)
   - Import error handler and toast
   - Replace console.error + alert with `handleMutationError(error, "Delete Set");`
   - Add success toast after delete: `toast.success("Set deleted");`
   - Success: Consistent error/success messaging
 
-- [ ] Update `src/components/dashboard/exercise-manager.tsx` - Replace alerts with toasts (lines 62, 77, 94)
+- [x] Update `src/components/dashboard/exercise-manager.tsx` - Replace alerts with toasts (lines 62, 77, 94)
   - Import error handler and toast
   - Line 62 (update): Replace console.error + alert with `handleMutationError(error, "Update Exercise");`
   - Line 77 (delete): Replace console.error + alert with `handleMutationError(error, "Delete Exercise");`
@@ -100,7 +100,7 @@
   - Add success toasts: After update → `toast.success("Exercise updated");`, after delete → `toast.success("Exercise deleted");`
   - Success: All exercise operations show toasts
 
-- [ ] Update `src/components/dashboard/inline-exercise-creator.tsx` - Replace alert with toast (line 39)
+- [x] Update `src/components/dashboard/inline-exercise-creator.tsx` - Replace alert with toast (line 39)
   - Import error handler and toast
   - Replace console.error + alert with `handleMutationError(error, "Create Exercise");`
   - Add success toast after create: `toast.success("Exercise created");`

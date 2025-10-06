@@ -7,6 +7,8 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
+import { toast } from "sonner";
+import { handleMutationError } from "@/lib/error-handler";
 
 interface Exercise {
   _id: Id<"exercises">;
@@ -56,9 +58,9 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
       await updateExercise({ id: exerciseId, name: editingName.trim() });
       setEditingId(null);
       setEditingName("");
+      toast.success("Exercise updated");
     } catch (error) {
-      console.error("Failed to update exercise:", error);
-      alert("Failed to update exercise. Please try again.");
+      handleMutationError(error, "Update Exercise");
     }
   };
 
@@ -75,9 +77,9 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
 
     try {
       await deleteExercise({ id: exercise._id });
+      toast.success("Exercise deleted");
     } catch (error) {
-      console.error("Failed to delete exercise:", error);
-      alert("Failed to delete exercise. Please try again.");
+      handleMutationError(error, "Delete Exercise");
     }
   };
 

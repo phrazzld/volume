@@ -4,6 +4,8 @@ import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { toast } from "sonner";
+import { handleMutationError } from "@/lib/error-handler";
 
 interface Set {
   _id: Id<"sets">;
@@ -38,9 +40,9 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
     setIsDeleting(true);
     try {
       await onDelete();
+      toast.success("Set deleted");
     } catch (error) {
-      console.error("Failed to delete set:", error);
-      alert("Failed to delete set. Please try again.");
+      handleMutationError(error, "Delete Set");
       setIsDeleting(false);
     }
   };
