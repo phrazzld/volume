@@ -154,11 +154,11 @@
 
 ---
 
-## Phase 5: Critical PR Review Fixes 🚨 MERGE BLOCKERS
+## Phase 5: Critical PR Review Fixes ✅ COMPLETED
 
 ### P1: Client-side parseInt() bypasses server validation
 
-- [ ] Fix reps parsing in `src/components/dashboard/quick-log-form.tsx:109`
+- [x] Fix reps parsing in `src/components/dashboard/quick-log-form.tsx:109`
   - **Issue**: User enters "5.5" → `parseInt("5.5", 10)` = 5 → silently truncated → server validation bypassed
   - **Impact**: Data corruption - fractional reps stored without user awareness or server rejection
   - **Root Cause**: Client-side truncation happens BEFORE mutation call, so `validateReps()` never sees decimal
@@ -166,10 +166,11 @@
   - **Testing**: After fix, entering "5.5" should trigger error toast: "Reps must be a whole number between 1 and 1000"
   - **Success Criteria**: Decimal reps rejected by server, user sees clear error message
   - **Source**: Codex PR Review, inline comment on quick-log-form.tsx:110
+  - ✅ **COMPLETED**: Commit f2ff6cf - Changed to `parseFloat(reps)` in quick-log-form.tsx:109
 
 ### P1: Weight validation lower bound inconsistency
 
-- [ ] Fix weight minimum threshold in `convex/lib/validate.ts:31`
+- [x] Fix weight minimum threshold in `convex/lib/validate.ts:31`
   - **Issue**: Code checks `weight <= 0` but error message says "between 0.1 and 10000"
   - **Impact**: Invalid ultra-small weights (0.01, 0.05) accepted, contradicts documentation
   - **Inconsistency**: TODO.md:15, TASK.md, and error message all specify 0.1 minimum
@@ -177,10 +178,11 @@
   - **Testing**: After fix, validateWeight(0.05) should throw "Weight must be between 0.1 and 10000"
   - **Success Criteria**: Weights below 0.1 rejected, matches error message and docs
   - **Source**: Codex PR Review + Claude AI Review (both flagged this)
+  - ✅ **COMPLETED**: Commit f2ff6cf - Changed to `weight < 0.1` in validate.ts:31
 
 ### Enhancement: Empty exercise name edge case
 
-- [ ] Improve empty string handling in `convex/lib/validate.ts:68-72`
+- [x] Improve empty string handling in `convex/lib/validate.ts:68-72`
   - **Issue**: Empty string after `trim()` gets generic "Exercise name must be 2-100 characters" error
   - **Enhancement**: Add specific check for empty string with clearer message
   - **Fix**:
@@ -198,6 +200,7 @@
   - **Benefit**: More specific, user-friendly error message for common mistake
   - **Effort**: 2 minutes
   - **Source**: Claude AI Review suggestion
+  - ✅ **COMPLETED**: Commit f2ff6cf - Added empty check in validate.ts:70-72
 
 ---
 
