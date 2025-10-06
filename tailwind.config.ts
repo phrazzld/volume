@@ -46,10 +46,15 @@ export default {
           "0%": { transform: "translateY(100%)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "blink-cursor": {
+          "0%, 49%": { opacity: "1" },
+          "50%, 100%": { opacity: "0" },
+        },
       },
       animation: {
         "theme-rotate": "theme-rotate 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         "slide-up": "slide-up 0.2s ease-out",
+        "blink-cursor": "blink-cursor 1s infinite",
       },
     },
   },
