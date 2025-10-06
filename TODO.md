@@ -18,7 +18,7 @@
   - Export `requireAuth(ctx: QueryCtx | MutationCtx)`: Check `ctx.auth.getUserIdentity()`, throw "Not authenticated" if null, return identity
   - Export `requireOwnership<T extends { userId: string }>(resource: T | null, userId: string, resourceType: string)`: Throw "Not authorized" if resource null or userId mismatch
 
-- [ ] Update `convex/sets.ts` - Replace inline validation in `logSet` mutation (lines 18-34)
+- [x] Update `convex/sets.ts` - Replace inline validation in `logSet` mutation (lines 18-34)
   - Import validators from `./lib/validate`
   - Replace line 18-21 reps check with: `validateReps(args.reps)`
   - Replace lines 24-34 weight/unit validation with: `const weight = validateWeight(args.weight); validateUnit(args.unit, weight);`

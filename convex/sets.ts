@@ -1,5 +1,12 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import {
+  requireAuth,
+  requireOwnership,
+  validateReps,
+  validateWeight,
+  validateUnit,
+} from "./lib/validate";
 
 // Log a new set
 export const logSet = mutation({
@@ -10,43 +17,22 @@ export const logSet = mutation({
     unit: v.optional(v.string()), // "lbs" or "kg" - required when weight is provided
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const identity = await requireAuth(ctx);
 
-    // Validate reps
-    if (args.reps <= 0) {
-      throw new Error("Reps must be greater than 0");
-    }
-
-    // Validate weight and unit if provided
-    if (args.weight !== undefined) {
-      // Validate weight is a valid positive number
-      if (!isFinite(args.weight) || args.weight < 0) {
-        throw new Error("Weight must be a positive number");
-      }
-
-      // Validate unit is provided and is valid
-      if (!args.unit || (args.unit !== "lbs" && args.unit !== "kg")) {
-        throw new Error("Unit must be 'lbs' or 'kg' when weight is provided");
-      }
-    }
+    // Validate inputs
+    validateReps(args.reps);
+    const weight = validateWeight(args.weight);
+    validateUnit(args.unit, weight);
 
     // Verify exercise exists and belongs to user
     const exercise = await ctx.db.get(args.exerciseId);
-    if (!exercise) {
-      throw new Error("Exercise not found");
-    }
-    if (exercise.userId !== identity.subject) {
-      throw new Error("Not authorized to log sets for this exercise");
-    }
+    requireOwnership(exercise, identity.subject, "exercise");
 
     const setId = await ctx.db.insert("sets", {
       userId: identity.subject,
       exerciseId: args.exerciseId,
       reps: args.reps,
-      weight: args.weight,
+      weight, // Use validated/rounded weight
       unit: args.unit, // Store the unit with the set for data integrity
       performedAt: Date.now(),
     });
@@ -94,20 +80,10 @@ export const deleteSet = mutation({
     id: v.id("sets"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const identity = await requireAuth(ctx);
 
     const set = await ctx.db.get(args.id);
-    if (!set) {
-      throw new Error("Set not found");
-    }
-
-    // Verify ownership
-    if (set.userId !== identity.subject) {
-      throw new Error("Not authorized to delete this set");
-    }
+    requireOwnership(set, identity.subject, "set");
 
     await ctx.db.delete(args.id);
   },
