@@ -64,7 +64,7 @@
   - Add before closing `</body>` tag (after ConvexClientProvider): `<Toaster position="bottom-right" theme="dark" toastOptions={{ style: { background: 'var(--terminal-bg-secondary)', border: '1px solid var(--terminal-border)', color: 'var(--terminal-text)' } }} />`
   - Success: Toasts render with terminal theme styling
 
-- [ ] Create `src/lib/error-handler.ts` with centralized error handling
+- [x] Create `src/lib/error-handler.ts` with centralized error handling
   - Export `handleMutationError(error: unknown, context: string)`: Log error to console with context, extract message from Error or use "Unknown error", call getUserFriendlyMessage, show toast.error with 4s duration
   - Export `getUserFriendlyMessage(errorMessage: string)`: Map "Not authenticated" → "Please sign in to continue", "Not authorized" → "You don't have permission for this action", pass through validation errors (contain "Reps must", "Weight must", "Unit must", "Exercise name"), "not found" → "Item not found. It may have been deleted.", default → "Something went wrong. Please try again."
   - Import `toast` from "sonner"
