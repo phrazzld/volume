@@ -1,5 +1,10 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import {
+  requireAuth,
+  requireOwnership,
+  validateExerciseName,
+} from "./lib/validate";
 
 // Create a new exercise
 export const createExercise = mutation({
@@ -7,19 +12,26 @@ export const createExercise = mutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const identity = await requireAuth(ctx);
 
-    // Basic validation
-    if (!args.name || args.name.trim().length === 0) {
-      throw new Error("Exercise name is required");
+    // Validate and normalize exercise name
+    const normalizedName = validateExerciseName(args.name);
+
+    // Check for duplicate (case-insensitive)
+    const existing = await ctx.db
+      .query("exercises")
+      .withIndex("by_user_name", (q) =>
+        q.eq("userId", identity.subject).eq("name", normalizedName)
+      )
+      .first();
+
+    if (existing) {
+      throw new Error("Exercise with this name already exists");
     }
 
     const exerciseId = await ctx.db.insert("exercises", {
       userId: identity.subject,
-      name: args.name.trim(),
+      name: normalizedName,
       createdAt: Date.now(),
     });
 
@@ -53,28 +65,29 @@ export const updateExercise = mutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const identity = await requireAuth(ctx);
 
-    // Basic validation
-    if (!args.name || args.name.trim().length === 0) {
-      throw new Error("Exercise name is required");
-    }
+    // Validate and normalize exercise name
+    const normalizedName = validateExerciseName(args.name);
 
+    // Verify exercise exists and user owns it
     const exercise = await ctx.db.get(args.id);
-    if (!exercise) {
-      throw new Error("Exercise not found");
-    }
+    requireOwnership(exercise, identity.subject, "exercise");
 
-    // Verify ownership
-    if (exercise.userId !== identity.subject) {
-      throw new Error("Not authorized to update this exercise");
+    // Check for duplicate (excluding current exercise)
+    const existing = await ctx.db
+      .query("exercises")
+      .withIndex("by_user_name", (q) =>
+        q.eq("userId", identity.subject).eq("name", normalizedName)
+      )
+      .first();
+
+    if (existing && existing._id !== args.id) {
+      throw new Error("Exercise with this name already exists");
     }
 
     await ctx.db.patch(args.id, {
-      name: args.name.trim(),
+      name: normalizedName,
     });
   },
 });
@@ -85,20 +98,10 @@ export const deleteExercise = mutation({
     id: v.id("exercises"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const identity = await requireAuth(ctx);
 
     const exercise = await ctx.db.get(args.id);
-    if (!exercise) {
-      throw new Error("Exercise not found");
-    }
-
-    // Verify ownership
-    if (exercise.userId !== identity.subject) {
-      throw new Error("Not authorized to delete this exercise");
-    }
+    requireOwnership(exercise, identity.subject, "exercise");
 
     await ctx.db.delete(args.id);
   },

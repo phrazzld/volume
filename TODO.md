@@ -25,7 +25,7 @@
   - Use validated/rounded weight value in db.insert (not raw args.weight)
   - Success: Mutation rejects 5.5 reps, rounds 22.555 to 22.56, enforces unit requirement
 
-- [ ] Update `convex/exercises.ts` - Add duplicate detection to `createExercise` mutation (after line 17)
+- [x] Update `convex/exercises.ts` - Add duplicate detection to `createExercise` mutation (after line 17)
   - Import validators from `./lib/validate`
   - Replace lines 15-18 validation with: `const normalizedName = validateExerciseName(args.name);`
   - Query for existing exercise: `const existing = await ctx.db.query("exercises").withIndex("by_user_name", (q) => q.eq("userId", identity.subject).eq("name", normalizedName)).first();`
@@ -33,7 +33,7 @@
   - Insert with normalizedName (uppercase) instead of args.name.trim()
   - Success: Prevents "Push-ups" when "PUSH-UPS" exists, stores all names as uppercase
 
-- [ ] Update `convex/exercises.ts` - Add validation to `updateExercise` mutation (after line 64)
+- [x] Update `convex/exercises.ts` - Add validation to `updateExercise` mutation (after line 64)
   - Import validators from `./lib/validate`
   - Replace lines 61-64 with: `const normalizedName = validateExerciseName(args.name);`
   - Query for duplicate (excluding current exercise): Check by_user_name index for normalizedName, filter out current exercise ID
