@@ -25,6 +25,11 @@ pnpm convex dev         # Start Convex dev server (run in separate terminal)
 pnpm typecheck          # Run TypeScript compiler checks (tsc --noEmit)
 pnpm lint               # Run ESLint
 
+# Testing
+pnpm test               # Run tests (watch mode)
+pnpm test:ui            # Run tests with UI
+pnpm test:coverage      # Run tests with coverage report
+
 # Production
 pnpm build              # Build for production
 pnpm start              # Start production server
