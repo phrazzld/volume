@@ -43,7 +43,7 @@
 
 ### Type Safety
 
-- [ ] Update `convex/_generated/dataModel.d.ts` imports in validation utilities
+- [x] Update `convex/_generated/dataModel.d.ts` imports in validation utilities
   - Import `QueryCtx`, `MutationCtx` from `convex/_generated/server.d.ts` for auth helpers
   - Ensure all validator functions have proper TypeScript signatures
   - Success: No TypeScript errors, full type inference in mutations
@@ -54,7 +54,7 @@
 
 ### Infrastructure Setup
 
-- [ ] Install Sonner toast library
+- [x] Install Sonner toast library
   - Run: `pnpm add sonner`
   - Verify installation in package.json
   - Success: Sonner appears in dependencies
