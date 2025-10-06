@@ -59,7 +59,7 @@
   - Verify installation in package.json
   - Success: Sonner appears in dependencies
 
-- [ ] Add Toaster component to root layout in `src/app/layout.tsx`
+- [x] Add Toaster component to root layout in `src/app/layout.tsx`
   - Import: `import { Toaster } from "sonner";`
   - Add before closing `</body>` tag (after ConvexClientProvider): `<Toaster position="bottom-right" theme="dark" toastOptions={{ style: { background: 'var(--terminal-bg-secondary)', border: '1px solid var(--terminal-border)', color: 'var(--terminal-text)' } }} />`
   - Success: Toasts render with terminal theme styling
