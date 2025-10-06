@@ -37,8 +37,12 @@ describe('validateWeight', () => {
 
   it('rounds to 2 decimal places', () => {
     expect(validateWeight(22.555)).toBe(22.56);
-    expect(validateWeight(99.999)).toBe(100.0);
+    expect(validateWeight(99.999)).toBe(100);
     expect(validateWeight(10.1234)).toBe(10.12);
+  });
+
+  it('accepts minimum weight 0.1', () => {
+    expect(validateWeight(0.1)).toBe(0.1);
   });
 
   it('rejects values below 0.1', () => {
