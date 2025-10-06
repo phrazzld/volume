@@ -7,6 +7,7 @@ import { Nav } from "@/components/layout/nav";
 import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { WeightUnitProvider } from "@/contexts/WeightUnitContext";
+import { Toaster } from "sonner";
 
 const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500", "600", "700"],
@@ -37,6 +38,17 @@ export default function RootLayout({
               </ConvexClientProvider>
             </WeightUnitProvider>
           </ThemeProvider>
+          <Toaster
+            position="bottom-right"
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "var(--terminal-bg-secondary)",
+                border: "1px solid var(--terminal-border)",
+                color: "var(--terminal-text)",
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

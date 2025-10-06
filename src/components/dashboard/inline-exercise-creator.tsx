@@ -4,6 +4,8 @@ import { useMutation } from "convex/react";
 import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { toast } from "sonner";
+import { handleMutationError } from "@/lib/error-handler";
 
 interface InlineExerciseCreatorProps {
   onCreated: (exerciseId: Id<"exercises">) => void;
@@ -30,10 +32,10 @@ export function InlineExerciseCreator({
     setIsCreating(true);
     try {
       const exerciseId = await createExercise({ name: name.trim() });
+      toast.success("Exercise created");
       onCreated(exerciseId);
     } catch (error) {
-      console.error("Failed to create exercise:", error);
-      alert("Failed to create exercise. Please try again.");
+      handleMutationError(error, "Create Exercise");
     } finally {
       setIsCreating(false);
     }

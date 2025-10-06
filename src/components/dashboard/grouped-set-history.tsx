@@ -6,6 +6,8 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { toast } from "sonner";
+import { handleMutationError } from "@/lib/error-handler";
 
 interface Set {
   _id: Id<"sets">;
@@ -47,9 +49,9 @@ export function GroupedSetHistory({
     setDeletingId(set._id);
     try {
       await onDelete(set._id);
+      toast.success("Set deleted");
     } catch (error) {
-      console.error("Failed to delete set:", error);
-      alert("Failed to delete set. Please try again.");
+      handleMutationError(error, "Delete Set");
       setDeletingId(null);
     }
   };
