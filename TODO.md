@@ -135,19 +135,22 @@
 
 ---
 
-## Phase 4: Validation Edge Cases
+## Phase 4: Validation Edge Cases ✅ VERIFIED
 
-- [ ] Add integer validation for reps in `convex/sets.ts`
+- [x] Add integer validation for reps in `convex/sets.ts`
   - Ensure `validateReps()` uses `Number.isInteger()` check
   - Success: Rejects 5.5, 10.1, any float value
+  - ✅ VERIFIED: convex/lib/validate.ts:11 uses `Number.isInteger(reps)`
 
-- [ ] Add weight precision rounding in `convex/sets.ts`
+- [x] Add weight precision rounding in `convex/sets.ts`
   - Ensure `validateWeight()` returns `Math.round(weight * 100) / 100`
   - Success: 22.555 becomes 22.56, 99.999 becomes 100.00
+  - ✅ VERIFIED: convex/lib/validate.ts:36 uses `Math.round(weight * 100) / 100`
 
-- [ ] Verify case-insensitive duplicate detection in `convex/exercises.ts`
+- [x] Verify case-insensitive duplicate detection in `convex/exercises.ts`
   - Query using normalized (uppercase) name
   - Success: "push-ups" blocked if "PUSH-UPS" exists, "BENCH PRESS" blocked if "bench press" exists
+  - ✅ VERIFIED: convex/lib/validate.ts:74 converts to uppercase, convex/exercises.ts:24 queries with normalized name
 
 ---
 
