@@ -5,7 +5,6 @@ import { useMemo, useState, useRef } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { DailyStatsCard } from "@/components/dashboard/daily-stats-card";
-import { ExerciseManager } from "@/components/dashboard/exercise-manager";
 import { QuickLogForm, QuickLogFormHandle } from "@/components/dashboard/quick-log-form";
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import { UndoToast } from "@/components/dashboard/undo-toast";
@@ -17,6 +16,7 @@ import {
   groupSetsByDay,
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
+import { getTodayRange } from "@/lib/date-utils";
 
 export function Dashboard() {
   const [undoToastVisible, setUndoToastVisible] = useState(false);
@@ -25,28 +25,35 @@ export function Dashboard() {
   const { unit } = useWeightUnit();
 
   // Fetch data from Convex
-  const sets = useQuery(api.sets.listSets, {});
+  const allSets = useQuery(api.sets.listSets, {});
   const exercises = useQuery(api.exercises.listExercises);
 
   // Delete set mutation
   const deleteSet = useMutation(api.sets.deleteSet);
 
+  // Filter sets to today only (midnight to midnight in user's timezone)
+  const todaysSets = useMemo(() => {
+    if (!allSets) return undefined;
+    const { start, end } = getTodayRange();
+    return allSets.filter((set) => set.performedAt >= start && set.performedAt <= end);
+  }, [allSets]);
+
   // Calculate daily stats (convert all volumes to user's preferred unit)
-  const dailyStats = useMemo(() => calculateDailyStats(sets, unit), [sets, unit]);
+  const dailyStats = useMemo(() => calculateDailyStats(todaysSets, unit), [todaysSets, unit]);
 
   // Calculate per-exercise daily stats (convert all volumes to user's preferred unit)
   const exerciseStats = useMemo(
-    () => calculateDailyStatsByExercise(sets, exercises, unit),
-    [sets, exercises, unit]
+    () => calculateDailyStatsByExercise(todaysSets, exercises, unit),
+    [todaysSets, exercises, unit]
   );
 
-  // Group sets by day
-  const groupedSets = useMemo(() => groupSetsByDay(sets), [sets]);
+  // Group today's sets by time
+  const groupedSets = useMemo(() => groupSetsByDay(todaysSets), [todaysSets]);
 
   // Sort exercises by recency (most recently used first)
   const exercisesByRecency = useMemo(
-    () => sortExercisesByRecency(exercises, sets),
-    [exercises, sets]
+    () => sortExercisesByRecency(exercises, allSets),
+    [exercises, allSets]
   );
 
   // Handle delete set
@@ -91,7 +98,7 @@ export function Dashboard() {
   };
 
   // Loading state
-  if (sets === undefined || exercises === undefined) {
+  if (allSets === undefined || exercises === undefined) {
     return (
       <main className="min-h-screen p-3 sm:p-4 lg:p-6 max-w-4xl mx-auto">
         <div className="space-y-3">
@@ -162,18 +169,12 @@ export function Dashboard() {
               onSetLogged={handleSetLogged}
             />
 
-            {/* Grouped Set History */}
+            {/* Today's Set History */}
             <GroupedSetHistory
               groupedSets={groupedSets}
               exercises={exercisesByRecency}
               onRepeat={handleRepeatSet}
               onDelete={handleDeleteSet}
-            />
-
-            {/* Exercise Manager - MOVED TO BOTTOM */}
-            <ExerciseManager
-              exercises={exercises || []}
-              sets={sets || []}
             />
           </>
         )}
