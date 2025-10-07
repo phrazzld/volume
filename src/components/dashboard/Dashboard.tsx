@@ -10,6 +10,7 @@ import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import { UndoToast } from "@/components/dashboard/undo-toast";
 import { FirstRunExperience } from "@/components/dashboard/first-run-experience";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { handleMutationError } from "@/lib/error-handler";
 import {
   calculateDailyStats,
   calculateDailyStatsByExercise,
@@ -17,6 +18,15 @@ import {
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
 import { getTodayRange } from "@/lib/date-utils";
+
+interface Set {
+  _id: Id<"sets">;
+  exerciseId: Id<"exercises">;
+  reps: number;
+  weight?: number;
+  unit?: string;
+  performedAt: number;
+}
 
 export function Dashboard() {
   const [undoToastVisible, setUndoToastVisible] = useState(false);
@@ -61,13 +71,12 @@ export function Dashboard() {
     try {
       await deleteSet({ id: setId });
     } catch (error) {
-      console.error("Failed to delete set:", error);
-      alert("Failed to delete set. Please try again.");
+      handleMutationError(error, "Delete Set");
     }
   };
 
   // Handle repeat set
-  const handleRepeatSet = (set: any) => {
+  const handleRepeatSet = (set: Set) => {
     formRef.current?.repeatSet(set);
   };
 
@@ -85,8 +94,7 @@ export function Dashboard() {
         setUndoToastVisible(false);
         setLastLoggedSetId(null);
       } catch (error) {
-        console.error("Failed to undo set:", error);
-        alert("Failed to undo set. Please try again.");
+        handleMutationError(error, "Undo Set");
       }
     }
   };
