@@ -74,6 +74,28 @@ export const listSets = query({
   },
 });
 
+// List all sets with pagination (for history page)
+export const listSetsPaginated = query({
+  args: {
+    paginationOpts: v.optional(v.object({
+      numItems: v.number(),
+      cursor: v.optional(v.string()),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
+    return await ctx.db
+      .query("sets")
+      .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
+      .order("desc")
+      .paginate(args.paginationOpts ?? { numItems: 25 });
+  },
+});
+
 // Delete a set
 export const deleteSet = mutation({
   args: {
