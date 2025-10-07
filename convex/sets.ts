@@ -79,7 +79,7 @@ export const listSetsPaginated = query({
   args: {
     paginationOpts: v.optional(v.object({
       numItems: v.number(),
-      cursor: v.optional(v.string()),
+      cursor: v.union(v.string(), v.null()),
     })),
   },
   handler: async (ctx, args) => {
@@ -92,7 +92,7 @@ export const listSetsPaginated = query({
       .query("sets")
       .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
       .order("desc")
-      .paginate(args.paginationOpts ?? { numItems: 25 });
+      .paginate(args.paginationOpts ?? { numItems: 25, cursor: null });
   },
 });
 
