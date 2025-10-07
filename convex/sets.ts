@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import {
   requireAuth,
   requireOwnership,
@@ -77,10 +78,7 @@ export const listSets = query({
 // List all sets with pagination (for history page)
 export const listSetsPaginated = query({
   args: {
-    paginationOpts: v.optional(v.object({
-      numItems: v.number(),
-      cursor: v.union(v.string(), v.null()),
-    })),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -92,7 +90,7 @@ export const listSetsPaginated = query({
       .query("sets")
       .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
       .order("desc")
-      .paginate(args.paginationOpts ?? { numItems: 25, cursor: null });
+      .paginate(args.paginationOpts);
   },
 });
 

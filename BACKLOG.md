@@ -1,436 +1,480 @@
 # BACKLOG: Volume Workout Tracker
 
-*A map of opportunities to improve the product, codebase, and development experience.*
+*A comprehensive map of opportunities to improve product, codebase, and development experience.*
 
-**Last Updated:** 2025-10-06
-**Status:** Post-MVP - Clean codebase, ready for strategic improvements
+**Last Groomed:** 2025-10-07
+**Status:** Post-MVP - Clean codebase with critical security issue requiring immediate attention
+**Audit Method:** 6-perspective analysis (complexity, architecture, security, performance, maintainability, UX)
 
 ---
 
 ## Immediate Concerns
 
-*Issues that need attention right now - security, reliability, critical UX problems.*
-
-### 1. Enhanced Input Validation ⚠️ PR REVIEW - CRITICAL FIXES NEEDED
-**Effort:** 2 hours + 30 min fixes | **Value:** HIGH - Data integrity & security
-
-**Status:** PR #4 under review. Critical bugs found, must fix before merge. See TODO.md Phase 5 for details.
-
-**PR Review Findings (2025-10-06):**
-- 🚨 **P1 Bug**: Client-side `parseInt()` bypasses server validation (data corruption risk)
-- 🚨 **P1 Bug**: Weight lower bound inconsistency (0.1 vs 0 check)
-- ✅ Enhancement: Empty exercise name error message
-
-**PR Link:** https://github.com/phrazzld/volume/pull/4
-
-**Implementation:**
-- Integer-only reps validation (reject decimals)
-- 2-decimal precision weight rounding
-- Case-insensitive duplicate exercise detection (all names stored uppercase)
-- Sonner toast notifications replacing alert()
-- Centralized error handler utility
-
-**Future Enhancements** (defer to post-implementation):
-- ConvexError integration for structured error data (when error codes/retry logic needed)
-- ESLint rule to enforce try-catch blocks on mutations
-- Error tracking service (Sentry) integration with structured context
-- Advanced validation: RPE (1-10 scale), tempo patterns, set tags
-- Field-level validation errors (highlight specific form fields)
+*Issues requiring attention right now - security vulnerabilities, data loss scenarios, critical UX problems.*
 
 ---
 
-### 2. Error Boundary Implementation
-**Effort:** 1 hour | **Value:** HIGH - Prevents catastrophic failures
+### 1. 🚨 [Security] IDOR Vulnerability in listSets Query - CRITICAL DATA BREACH RISK
+**File**: `convex/sets.ts:45-74`
+**Perspectives**: security-sentinel
+**Severity**: **CRITICAL**
+**Category**: OWASP A01:2021 - Broken Access Control
 
-**Current State:** No error boundaries exist. Any uncaught error crashes the entire app (white screen of death).
+**Vulnerability**: Missing ownership verification when filtering sets by exerciseId allows any authenticated user to view any other user's workout data.
 
-**Impact:**
-- ❌ Poor user experience on runtime errors
-- ❌ Complete loss of user state/data on crash
-- ❌ No graceful degradation
+**Attack Scenario**:
+1. Attacker creates account and discovers exerciseId format
+2. Attacker enumerates exerciseIds (predictable Convex IDs)
+3. Attacker calls `listSets({ exerciseId: "j57..." })` with victim's exerciseId
+4. System returns ALL sets for victim's exercise, bypassing userId filter
+5. Complete exposure of personal fitness data (reps, weight, timestamps)
 
-**Fix:** Create `src/components/ErrorBoundary.tsx`:
+**Current Code**:
 ```typescript
-"use client";
-
-import { Component, ReactNode } from "react";
-
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error?: Error;
-}
-
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error("Error caught by boundary:", error, errorInfo);
-    // TODO: Send to error tracking service (Sentry)
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="border border-terminal-danger p-6 max-w-md">
-            <h2 className="text-terminal-danger font-bold mb-2">ERROR</h2>
-            <p className="text-terminal-text mb-4">
-              Something went wrong. Please refresh the page.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-terminal-info text-terminal-bg"
-            >
-              RELOAD
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
+if (args.exerciseId) {
+  // ❌ NO OWNERSHIP CHECK - CRITICAL VULNERABILITY
+  sets = await ctx.db
+    .query("sets")
+    .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId!))
+    .order("desc")
+    .collect();
 }
 ```
 
-Then wrap in `src/app/layout.tsx` around `<ConvexClientProvider>`.
+**Fix**:
+```typescript
+if (args.exerciseId) {
+  // ✅ Verify exercise ownership before querying sets
+  const exercise = await ctx.db.get(args.exerciseId);
+  if (!exercise || exercise.userId !== identity.subject) {
+    return []; // Return empty for unauthorized access
+  }
 
-**Benefits:**
-- ✅ Graceful error recovery instead of blank screen
-- ✅ User can reload and retry
-- ✅ Foundation for error tracking integration
+  sets = await ctx.db
+    .query("sets")
+    .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId))
+    .order("desc")
+    .collect();
+}
+```
+
+**Effort**: 15 minutes
+**Risk**: **CRITICAL** - Horizontal privilege escalation, GDPR/CCPA violation, complete data breach
 
 ---
 
-### 3. Type Safety Fixes
-**Effort:** 30 minutes | **Value:** MEDIUM - Prevents runtime bugs
+### 2. 🚨 [Security] Missing Rate Limiting on Mutations - HIGH ABUSE RISK
+**File**: All mutation endpoints (`convex/exercises.ts`, `convex/sets.ts`)
+**Perspectives**: security-sentinel
+**Severity**: **HIGH**
+**Category**: OWASP A05:2021 - Security Misconfiguration
 
-**Current State:** Two type safety violations found:
+**Vulnerability**: No rate limiting allows attackers to spam mutations, causing:
+- Database pollution (create thousands of bogus exercises/sets)
+- Denial of service (exhaust Convex limits)
+- Cost exploitation (drive up database/compute costs)
 
-**Issue 1:** `src/app/page.tsx:63` - `any` type defeats TypeScript
+**Fix**: Implement Convex rate limiting using convex-helpers:
 ```typescript
-const handleRepeatSet = (set: any) => {  // ❌ Unsafe
-  formRef.current?.repeatSet(set);
-}
-```
+import { rateLimiter } from "convex-helpers/server/rate-limiter";
 
-**Issue 2:** `src/app/page.tsx:139` - Unsafe cast and dummy data
-```typescript
-setTimeout(() => {
-  formRef.current?.repeatSet({
-    _id: "" as Id<"sets">,  // ❌ Empty string cast to ID
-    exerciseId,
-    reps: 0,  // ❌ Dummy data
-    performedAt: Date.now(),
-  });
-}, 100);
-```
+const createExerciseRateLimiter = rateLimiter({
+  createExercise: { kind: "token bucket", rate: 10, period: 60_000 },
+});
 
-**Fix:**
-```typescript
-// Import proper type
-import { Doc } from "@/convex/_generated/dataModel";
-type Set = Doc<"sets">;
+export const createExercise = mutation({
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);
 
-// Fix handleRepeatSet
-const handleRepeatSet = (set: Set) => {
-  formRef.current?.repeatSet(set);
-};
-
-// Fix first exercise created - use selectExercise method instead
-const handleFirstExerciseCreated = (exerciseId: Id<"exercises">) => {
-  setTimeout(() => {
-    formRef.current?.selectExercise(exerciseId);
-  }, 100);
-};
-```
-
-Update `QuickLogForm` interface:
-```typescript
-export interface QuickLogFormHandle {
-  repeatSet: (set: Set) => void;
-  selectExercise: (exerciseId: Id<"exercises">) => void;  // NEW
-}
-```
-
-**Benefits:**
-- ✅ Full TypeScript safety restored
-- ✅ Prevents runtime type errors
-- ✅ Better IDE autocomplete and refactoring
-
----
-
-### 3A. Exercise Name Uppercase Migration 🆕 FROM PR REVIEW
-**Effort:** 15 minutes | **Value:** MEDIUM - Data consistency
-
-**Status:** Deferred from PR #4, recommended for post-merge cleanup.
-
-**Context:**
-PR #4 implements uppercase normalization for exercise names (all stored as "PUSH-UPS" not "push-ups"). However, normalization is gradual - only applies when exercises are created or updated. This creates potential issues:
-- Mixed-case exercises coexist indefinitely if never edited
-- Duplicate detection only works for new/updated exercises
-- User confusion: "push-ups" and "PUSH-UPS" could both exist
-
-**Migration Script:**
-```typescript
-// convex/migrations/uppercaseExerciseNames.ts
-import { mutation } from "./_generated/server";
-
-/**
- * One-time migration: Convert all exercise names to uppercase.
- * Run once after PR #4 is merged.
- */
-export default mutation({
-  handler: async (ctx) => {
-    const exercises = await ctx.db.query("exercises").collect();
-    let updated = 0;
-
-    for (const exercise of exercises) {
-      const uppercase = exercise.name.toUpperCase();
-      if (exercise.name !== uppercase) {
-        await ctx.db.patch(exercise._id, { name: uppercase });
-        updated++;
-      }
-    }
-
-    return { total: exercises.length, updated };
+    await createExerciseRateLimiter(ctx, {
+      key: identity.subject,
+      throws: true,
+    });
+    // ... rest of handler
   },
 });
 ```
 
-**Execution:**
-```bash
-# After PR #4 is merged and deployed
-pnpm convex run migrations/uppercaseExerciseNames
-# Expected output: { total: 15, updated: 12 } (example)
-```
+**Recommended Limits**:
+- `createExercise`: 10/minute per user
+- `logSet`: 60/minute per user
+- `deleteExercise`: 5/minute per user
+- `deleteSet`: 20/minute per user
 
-**Benefits:**
-- ✅ Immediate data consistency (all exercises uppercase)
-- ✅ Duplicate detection works for all exercises, not just new ones
-- ✅ Prevents user confusion from mixed-case names
-- ✅ Clean slate for production data
-
-**Risks:** LOW - Non-destructive transformation, idempotent (safe to re-run)
-
-**Source:** Claude AI Review feedback on PR #4
+**Effort**: 2 hours (add `convex-helpers` dependency + implement across mutations)
+**Risk**: **HIGH** - DoS, cost exploitation, data integrity
 
 ---
 
-### 4. Loading States for Mutations
-**Effort:** 2 hours | **Value:** MEDIUM - Prevents UX issues
+### 3. 🚨 [Security] Missing Security Headers - MEDIUM
+**File**: `next.config.ts:1-7`
+**Perspectives**: security-sentinel
+**Severity**: **MEDIUM**
+**Category**: OWASP A05:2021 - Security Misconfiguration
 
-**Current State:** Mutations lack loading states, allowing:
-- Double-clicks causing duplicate operations
-- No feedback during slow network conditions
-- User confusion about action success
+**Missing Headers**:
+- `Content-Security-Policy`: No CSP to prevent XSS
+- `X-Frame-Options`: App can be embedded in iframe (clickjacking risk)
+- `X-Content-Type-Options`: Browser could MIME-sniff responses
+- `Referrer-Policy`: Referer header leaks URLs
+- `Permissions-Policy`: No control over browser features
 
-**Locations:**
-- `src/components/dashboard/exercise-manager.tsx:52-63` - Update exercise
-- `src/components/dashboard/inline-exercise-creator.tsx` - Create exercise
-- Various delete operations
-
-**Example Fix** (`exercise-manager.tsx`):
+**Fix**: Add security headers to `next.config.ts`:
 ```typescript
-const [isUpdating, setIsUpdating] = useState(false);
-
-const handleSaveEdit = async (exerciseId: Id<"exercises">) => {
-  if (!editingName.trim() || isUpdating) return;
-
-  setIsUpdating(true);
-  try {
-    await updateExercise({ id: exerciseId, name: editingName.trim() });
-    setEditingId(null);
-    setEditingName("");
-  } catch (error) {
-    console.error("Failed to update exercise:", error);
-    // TODO: Replace with toast notification
-    alert("Failed to update exercise. Please try again.");
-  } finally {
-    setIsUpdating(false);
-  }
-};
-
-// In JSX
-<button
-  onClick={() => handleSaveEdit(exercise._id)}
-  disabled={isUpdating}
-  className={isUpdating ? "opacity-50 cursor-not-allowed" : ""}
->
-  {isUpdating ? <span>...</span> : <Check className="h-5 w-5" />}
-</button>
+async headers() {
+  return [{
+    source: "/:path*",
+    headers: [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+      {
+        key: "Content-Security-Policy",
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.*.com https://*.convex.cloud; ..."
+      },
+    ],
+  }];
+},
 ```
 
-**Apply to:**
-- Exercise create/update/delete
-- Set logging/deletion
-- All mutation operations
+**Effort**: 1 hour (testing CSP compatibility)
+**Risk**: **MEDIUM** - Defense in depth against XSS/clickjacking
 
-**Benefits:**
-- ✅ Prevents race conditions from double-clicks
-- ✅ Clear feedback during network operations
-- ✅ Better perceived performance
+---
+
+### 4. ⚠️ [UX] Exercise Deletion Orphans Sets - CRITICAL DATA LOSS
+**File**: `src/components/dashboard/exercise-manager.tsx:67-84`
+**Perspectives**: user-experience-advocate
+**Severity**: **CRITICAL UX**
+
+**Current UX**: User deletes exercise with 200 logged sets. Sets remain in database but now show "Unknown exercise" in history. User loses all context about what they did - permanent data corruption from user perspective.
+
+**User Impact**: Devastating - imagine deleting "Bench Press" and losing context for entire bench press history.
+
+**Fix**: Prevent deletion of exercises with sets:
+```typescript
+const handleDelete = async (exercise: Exercise) => {
+  const setCount = setCountByExercise[exercise._id] || 0;
+
+  if (setCount > 0) {
+    toast.error(
+      `Cannot delete "${exercise.name}" - it has ${setCount} logged set${setCount === 1 ? '' : 's'}. ` +
+      `Archive feature coming soon!`
+    );
+    return;
+  }
+
+  if (!confirm(`Delete "${exercise.name}"? This cannot be undone.`)) return;
+  // ... proceed
+}
+```
+
+**Better Long-Term**: Add archive feature - hide from active list but preserve history integrity.
+
+**Effort**: 30m (block deletion) + 2h (archive feature)
+**Value**: **CRITICAL** - Prevents permanent data context loss
+
+---
+
+### 5. ⚠️ [UX] Alert() Dialogs Still Present - Poor Error UX
+**Files**: `src/components/dashboard/Dashboard.tsx:58, 82`, `src/components/dashboard/first-run-experience.tsx:44`
+**Perspectives**: user-experience-advocate, maintainability-maven
+**Severity**: **HIGH**
+
+**Current UX**: Some mutation failures still use browser `alert()` dialogs - modal, blocking, scary. Especially jarring on mobile.
+
+**User Impact**: Users perceive failures as catastrophic system errors. No recovery path. Inconsistent with rest of app (modern toast notifications).
+
+**Fix**: Replace remaining alert() calls with handleMutationError():
+```typescript
+// Dashboard.tsx:58
+} catch (error) {
+  handleMutationError(error, "Delete Set");
+}
+
+// Dashboard.tsx:82
+} catch (error) {
+  handleMutationError(error, "Undo Set");
+}
+
+// first-run-experience.tsx:44
+} catch (error) {
+  handleMutationError(error, "Create Exercise");
+  setIsCreating(false); // Allow retry
+}
+```
+
+**Effort**: 15 minutes
+**Value**: **HIGH** - Consistent, professional error handling
+
+---
+
+### 6. ⚠️ [Architecture] Type Duplication Across 5+ Files - CRITICAL CHANGE AMPLIFICATION
+**Files**: `src/lib/dashboard-utils.ts:3,36`, `src/components/dashboard/set-card.tsx:10,19`, `src/components/dashboard/grouped-set-history.tsx:12,21`, `src/components/dashboard/quick-log-form.tsx:13,18`, `src/components/dashboard/exercise-manager.tsx:13,19`
+**Perspectives**: architecture-guardian, complexity-archaeologist
+**Severity**: **CRITICAL**
+**Violations**: Modularity (Single Source of Truth), Explicitness, DRY
+
+**Issue**: `Set` and `Exercise` interfaces redefined in 5 separate locations. Adding a field (e.g., `notes`, `rpe`) requires editing 5+ files.
+
+**Impact**:
+- Change Amplification: Schema changes require 5+ file edits
+- Drift Risk: Some include `createdAt`, others don't
+- Testing: Mocks must match 5 different but similar interfaces
+
+**Fix**: Extract shared domain types:
+```typescript
+// NEW: src/types/domain.ts
+import { Id } from "../../convex/_generated/dataModel";
+
+export type WeightUnit = "lbs" | "kg";
+
+export interface Exercise {
+  _id: Id<"exercises">;
+  name: string;
+  createdAt: number;
+}
+
+export interface Set {
+  _id: Id<"sets">;
+  exerciseId: Id<"exercises">;
+  reps: number;
+  weight?: number;
+  unit?: WeightUnit;
+  performedAt: number;
+}
+
+// Then update all 5 files:
+import { Exercise, Set } from "@/types/domain";
+```
+
+**Effort**: 1.5h (create types module + update 5+ import sites)
+**Impact**: **HIGH** - Enables safe schema evolution, prevents future drift
+
+---
+
+### 7. ⚠️ [Maintainability] Inconsistent Error Handling Patterns
+**Files**: Multiple
+**Perspectives**: maintainability-maven, user-experience-advocate
+**Severity**: **HIGH**
+
+**Issue**: Three different error handling approaches across codebase:
+- **Pattern A** (`error-handler.ts`): Centralized handler with toast notifications ✅
+- **Pattern B** (`Dashboard.tsx:56-59, 81-83`): Direct `console.error` + `alert()` ❌
+- **Pattern C** (`first-run-experience.tsx:43`): Only `console.error`, no user feedback ❌
+
+**Developer Impact**: New developers don't know which pattern to use. Inconsistent UX.
+
+**Fix**: Standardize on Pattern A everywhere - already addressed in item #5 above.
+
+**Effort**: Covered by item #5
+**Benefit**: **HIGH** - Consistent UX, easier error tracking integration
 
 ---
 
 ## High-Value Improvements
 
-*Changes that would significantly improve user experience, developer velocity, or system reliability.*
-
-### 5. Comprehensive Accessibility Audit
-**Effort:** 3-4 hours | **Value:** HIGH - Inclusive design, WCAG compliance
-
-**Current State:** Minimal ARIA attributes. Issues found:
-- No `role` attributes on custom interactive elements
-- No `aria-live` regions for dynamic content updates
-- No `aria-expanded` on collapsible panels
-- Missing `aria-label` on icon-only buttons
-- No keyboard event handlers for custom clickable elements
-
-**Specific Fixes Needed:**
-
-**TerminalPanel Collapsible** (`src/components/ui/terminal-panel.tsx`):
-```typescript
-<div
-  className={...}
-  onClick={toggleCollapsed}
-  role="button"
-  tabIndex={0}
-  aria-expanded={!isCollapsed}
-  aria-controls={`panel-${storageKey}`}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleCollapsed();
-    }
-  }}
->
-```
-
-**UndoToast Live Region** (`src/components/dashboard/undo-toast.tsx`):
-```typescript
-<div
-  className="..."
-  role="status"
-  aria-live="polite"
-  aria-atomic="true"
->
-```
-
-**Icon Buttons** (exercise-manager, set-card, etc.):
-```typescript
-<button
-  onClick={handleDelete}
-  aria-label="Delete exercise"
-  title="Delete exercise"
->
-  <Trash2 className="h-5 w-5" />
-</button>
-```
-
-**DailyStatsCard Collapsible** (`src/components/dashboard/daily-stats-card.tsx:113-116`):
-```typescript
-<button
-  onClick={() => setShowBreakdown(!showBreakdown)}
-  aria-expanded={showBreakdown}
-  aria-controls="exercise-breakdown"
->
-```
-
-**Checklist:**
-- [ ] Add ARIA roles to all custom interactive elements
-- [ ] Add aria-label to all icon-only buttons
-- [ ] Add aria-expanded to collapsible sections
-- [ ] Add aria-live regions for dynamic updates (toasts, form submissions)
-- [ ] Add keyboard event handlers (Enter, Space) for custom clickables
-- [ ] Test with screen reader (VoiceOver on macOS)
-- [ ] Verify focus visible styles on all interactive elements
-- [ ] Run axe DevTools accessibility audit
-
-**Benefits:**
-- ✅ WCAG 2.1 AA compliance
-- ✅ Better experience for screen reader users
-- ✅ Full keyboard-only navigation support
-- ✅ Broader audience reach
+*Changes that significantly improve user experience, developer velocity, or system reliability.*
 
 ---
 
-### 6. Optimistic Updates
-**Effort:** 3-4 hours | **Value:** MEDIUM-HIGH - Better perceived performance
+### 8. [Architecture] Dashboard God Component - 6 Responsibilities
+**File**: `src/components/dashboard/Dashboard.tsx:1-190`
+**Perspectives**: architecture-guardian, complexity-archaeologist
+**Severity**: **HIGH**
+**Violations**: Single Responsibility Principle, Modularity
 
-**Current State:** All mutations wait for server response before updating UI. This feels slow, especially on mobile networks.
+**Metrics**:
+- 190 lines
+- 6 responsibilities: data fetching, stats calculation, undo state, mutation orchestration, child coordination, flow control
+- High coupling: knows about QuickLogForm internals, toast behavior, stat calculations
 
-**Implementation:** Use Convex's `.withOptimisticUpdate()` for instant feedback:
+**Impact**: Blocks feature development, hard to test, change amplification.
+
+**Fix**: Extract responsibilities into focused hooks:
 
 ```typescript
-// Example: Delete set with optimistic update
-const deleteSet = useMutation(api.sets.deleteSet).withOptimisticUpdate(
-  (localStore, args) => {
-    // Remove set immediately from local state
-    const currentSets = localStore.getQuery(api.sets.listSets, {});
-    if (currentSets) {
-      localStore.setQuery(
-        api.sets.listSets,
-        {},
-        currentSets.filter(s => s._id !== args.id)
-      );
-    }
-  }
-);
+// NEW: src/hooks/useDashboardData.ts
+export function useDashboardData() {
+  const sets = useQuery(api.sets.listSets, {});
+  const exercises = useQuery(api.exercises.listExercises);
+  const { unit } = useWeightUnit();
 
-// Example: Log set with optimistic update
-const logSet = useMutation(api.sets.logSet).withOptimisticUpdate(
-  (localStore, args) => {
-    const currentSets = localStore.getQuery(api.sets.listSets, {});
-    if (currentSets) {
-      // Add new set to local state immediately
-      const optimisticSet = {
-        _id: "temp" as Id<"sets">, // Temporary ID
-        ...args,
-        userId: "current-user",
-        performedAt: Date.now(),
-        _creationTime: Date.now(),
-      };
-      localStore.setQuery(
-        api.sets.listSets,
-        {},
-        [optimisticSet, ...currentSets]
-      );
-    }
-  }
-);
+  return {
+    sets,
+    exercises,
+    dailyStats: useMemo(() => calculateDailyStats(sets, unit), [sets, unit]),
+    exerciseStats: useMemo(() => calculateDailyStatsByExercise(sets, exercises, unit), [sets, exercises, unit]),
+    groupedSets: useMemo(() => groupSetsByDay(sets), [sets]),
+    exercisesByRecency: useMemo(() => sortExercisesByRecency(exercises, sets), [exercises, sets]),
+  };
+}
+
+// NEW: src/hooks/useUndoableDelete.ts
+export function useUndoableDelete() {
+  // Undo toast state management
+}
+
+// UPDATED: Dashboard.tsx (now 80 lines instead of 190)
+export function Dashboard() {
+  const data = useDashboardData();
+  const undo = useUndoableDelete();
+  // Just composition, no business logic
+}
 ```
 
-**Apply to:**
-- Create/delete exercises
-- Log/delete sets
-- Update exercise names
+**Effort**: 3h (extract hooks + update tests)
+**Impact**: **HIGH** - 190 → 80 lines (58% reduction), reusable hooks, testable
 
-**Query Optimization (Related - from PR review):**
-Currently `quick-log-form.tsx:60-68` fetches ALL sets then filters client-side to find last set for selected exercise. This wastes bandwidth and CPU.
+---
 
-**Better approach:**
+### 9. [Architecture] Missing Domain Service Layer - Tight Convex Coupling
+**Files**: `src/components/dashboard/quick-log-form.tsx:47`, `src/components/dashboard/exercise-manager.tsx:35-36`, `src/components/dashboard/inline-exercise-creator.tsx:22`, 6+ others
+**Perspectives**: architecture-guardian
+**Severity**: **HIGH**
+**Violations**: Dependency Inversion, Modularity
+
+**Issue**: UI components directly depend on Convex implementation (`api.sets.logSet`, `api.exercises.createExercise`). No abstraction layer.
+
+**Impact**:
+- Cannot switch backend without editing 10+ components
+- Cannot implement offline support (no interception point)
+- Testing requires full Convex mock setup
+- Coupling Score: 8/10 (very tight)
+
+**Fix**: Introduce domain service layer:
+
 ```typescript
-// Current (inefficient)
+// NEW: src/services/workout-service.ts
+export interface WorkoutService {
+  logSet(params: LogSetParams): Promise<Id<"sets">>;
+  deleteSet(id: Id<"sets">): Promise<void>;
+  createExercise(name: string): Promise<Id<"exercises">>;
+  // ... other operations
+}
+
+// NEW: src/services/convex-workout-service.ts
+export function useWorkoutService(): WorkoutService {
+  const logSetMutation = useMutation(api.sets.logSet);
+  // ... wrap mutations with error handling
+
+  return {
+    logSet: async (params) => {
+      try {
+        return await logSetMutation(params);
+      } catch (error) {
+        handleMutationError(error, "Log Set");
+        throw error;
+      }
+    },
+    // ...
+  };
+}
+
+// Components use abstraction:
+const workoutService = useWorkoutService();
+await workoutService.logSet({ ... });
+```
+
+**Effort**: 4h (create service interface + implement Convex adapter + update 6+ components)
+**Impact**: **HIGH** - Enables offline support, improves testability, migration path
+
+---
+
+### 10. [Complexity] Temporal Decomposition in dashboard-utils.ts
+**File**: `src/lib/dashboard-utils.ts:1-252`
+**Perspectives**: complexity-archaeologist
+**Severity**: **HIGH**
+**Violations**: Ousterhout - Decompose by Functionality, Not Timeline
+
+**Issue**: 251-line file with 6 unrelated functions grouped by "used in dashboard" rather than domain:
+- Weight conversion (domain: units)
+- Stats aggregation (domain: analytics)
+- Date grouping (domain: formatting)
+- Exercise sorting (domain: sorting)
+
+**Impact**: Discoverability, change amplification, unfocused responsibility.
+
+**Fix**: Split by domain concern:
+```typescript
+// NEW: src/lib/stats/weight-conversion.ts
+export { convertWeight };
+
+// NEW: src/lib/stats/aggregation.ts
+export { calculateDailyStats, calculateDailyStatsByExercise };
+
+// NEW: src/lib/formatting/date-grouping.ts
+export { groupSetsByDay, formatDateGroup };
+
+// NEW: src/lib/sorting/exercise-sorting.ts
+export { sortExercisesByRecency };
+```
+
+**Effort**: 3h (split file + update imports + test)
+**Impact**: **HIGH** - Clear domain boundaries, easier to extend
+
+---
+
+### 11. [Performance] O(n) Exercise Lookups in Render Loop - SCALING ISSUE
+**Files**: `src/components/dashboard/grouped-set-history.tsx:109`, `src/lib/dashboard-utils.ts:187`
+**Perspectives**: performance-pathfinder
+**Severity**: **HIGH** (scaling concern)
+
+**Issue**: Exercise name lookups using `.find()` inside `.map()` loops:
+```typescript
+const rows = group.sets.map((set) => {
+  const exercise = exercises.find((ex) => ex._id === set.exerciseId); // O(n) lookup!
+});
+```
+
+**Complexity**: O(sets × exercises) - with 100 sets and 20 exercises = 2,000 array scans
+
+**User Impact**:
+- Currently negligible (tens of sets)
+- **Noticeable at 500+ sets**: 10ms → 50-100ms render lag
+- **Visible jank at 1000+ sets**: 100ms+ interaction latency
+
+**Optimization**: Build Map index once, use O(1) lookups:
+```typescript
+const exerciseMap = useMemo(
+  () => new Map(exercises.map(ex => [ex._id, ex])),
+  [exercises]
+);
+
+// In render loop
+const exercise = exerciseMap.get(set.exerciseId); // O(1) lookup
+```
+
+**Expected Speedup**: O(n × m) → O(n + m), **50-100x faster** with large datasets
+
+**Effort**: 30m (2 file changes)
+**Priority**: **HIGH** - Easy fix, prevents future lag
+
+---
+
+### 12. [Performance] Client-Side Filtering Wasteful - Optimize Last Set Query
+**File**: `src/components/dashboard/quick-log-form.tsx:60-68`
+**Perspectives**: performance-pathfinder, user-experience-advocate
+**Severity**: **MEDIUM**
+
+**Issue**: Fetches ALL user sets then filters client-side to find last set for selected exercise.
+
+**User Impact**:
+- Currently: ~5KB payload, <10ms processing
+- At 1,000 sets: ~50KB, 20-30ms
+- At 10,000 sets: ~500KB, 100-200ms, **noticeable lag**
+
+**Optimization**: Query only sets for selected exercise (backend already supports this):
+```typescript
+// Instead of:
 const allSets = useQuery(api.sets.listSets, {});
 const lastSet = useMemo(() => {
   const exerciseSets = allSets?.filter(s => s.exerciseId === selectedExerciseId);
   return exerciseSets?.[0] ?? null;
 }, [selectedExerciseId, allSets]);
 
-// Optimized (query only needed sets)
+// Use:
 const exerciseSets = useQuery(
   api.sets.listSets,
   selectedExerciseId ? { exerciseId: selectedExerciseId } : "skip"
@@ -438,317 +482,194 @@ const exerciseSets = useQuery(
 const lastSet = exerciseSets?.[0] ?? null;
 ```
 
-**Benefits:**
-- ✅ Reduced data transfer (only fetch sets for one exercise, not all)
-- ✅ Faster client-side processing (no filtering needed)
-- ✅ Better performance as dataset grows
+**Expected Speedup**: 500KB → <1KB payload, 200ms → <5ms at scale
 
-**Source:** Claude AI Review feedback on PR #4
-
-**Benefits:**
-- ✅ Instant UI updates (feels native-app fast)
-- ✅ Better mobile experience on slow connections
-- ✅ Users can continue workflow immediately
-- ✅ Automatic rollback on failure (Convex handles this)
+**Effort**: 15m
+**Priority**: **MEDIUM** - Better data efficiency
 
 ---
 
-### 7. Modern Error Handling System ✅ BEING IMPLEMENTED
-**Effort:** 2 hours | **Value:** MEDIUM - Better UX, more professional
+### 13. [UX] No Way to Edit Logged Sets - Must Delete and Re-Log
+**Perspectives**: user-experience-advocate
+**Severity**: **HIGH**
 
-**Status:** Being implemented as part of Enhanced Input Validation (item #1). See TODO.md Phase 2.
+**Current UX**: User logs set with typo (typed 12 instead of 10). Only option is delete and re-log. Loses timestamp.
 
-**Implementation Approach:** Using Sonner library instead of custom toast component.
-- ✅ Sonner (by Emil Kowalski) - 3KB, battle-tested, accessible
-- ✅ Centralized error handler utility (`src/lib/error-handler.ts`)
-- ✅ Terminal theme styling
-- ✅ User-friendly error message mapping
+**User Impact**: Common use case. Typos happen, especially on mobile numeric keyboard. Deleting to fix breaks flow and loses exact timestamp.
 
-**Original Plan (SUPERSEDED):** ~~Extend existing `UndoToast` pattern into generic `Toast` component~~
+**Improved Experience**: Add edit button next to delete button on set cards:
+- Click edit → fields become editable inline
+- User corrects reps/weight
+- Click save → updates set
+- Preserves original timestamp
 
-**Why Sonner:** Don't reinvent the wheel - Sonner provides polish, accessibility, and features that would take weeks to replicate. Used by Vercel, shadcn/ui, and thousands of production apps.
+**Implementation**:
+1. Add `updateSet` mutation in `convex/sets.ts`
+2. Add edit mode state to SetCard component
+3. Inline editing UI (similar to exercise name editing)
 
-**Step 1 (SUPERSEDED):** ~~Extend existing `UndoToast` pattern into generic `Toast` component~~
-```typescript
-// src/components/ui/toast.tsx
-export type ToastType = "success" | "error" | "info" | "warning";
-
-interface ToastProps {
-  message: string;
-  type: ToastType;
-  onClose: () => void;
-}
-
-export function Toast({ message, type, onClose }: ToastProps) {
-  const colors = {
-    success: "border-terminal-success text-terminal-success",
-    error: "border-terminal-danger text-terminal-danger",
-    info: "border-terminal-info text-terminal-info",
-    warning: "border-terminal-warning text-terminal-warning",
-  };
-
-  return (
-    <div className={`fixed bottom-4 right-4 ${colors[type]} ...`}>
-      {message}
-      <button onClick={onClose}>×</button>
-    </div>
-  );
-}
-```
-
-**Step 2:** Create toast context/hook:
-```typescript
-// src/contexts/ToastContext.tsx
-export function useToast() {
-  return {
-    success: (message: string) => { /* ... */ },
-    error: (message: string) => { /* ... */ },
-    info: (message: string) => { /* ... */ },
-  };
-}
-```
-
-**Step 3:** Create error handler utility:
-```typescript
-// src/lib/error-handler.ts
-export function handleMutationError(
-  error: unknown,
-  context: string,
-  toast: ReturnType<typeof useToast>
-) {
-  const message = error instanceof Error ? error.message : "Unknown error";
-
-  // Log for debugging
-  console.error(`[${context}]:`, error);
-
-  // Show user-friendly message
-  toast.error(getUserFriendlyMessage(message));
-
-  // TODO: Send to error tracking service (Sentry)
-}
-
-function getUserFriendlyMessage(errorMessage: string): string {
-  // Map technical errors to friendly messages
-  if (errorMessage.includes("Not authenticated")) {
-    return "Please sign in to continue";
-  }
-  if (errorMessage.includes("Not authorized")) {
-    return "You don't have permission for this action";
-  }
-  return "Something went wrong. Please try again.";
-}
-```
-
-**Step 4:** Replace all `alert()` calls with toast notifications:
-```typescript
-// Before
-} catch (error) {
-  console.error("Failed to delete set:", error);
-  alert("Failed to delete set. Please try again.");
-}
-
-// After
-} catch (error) {
-  handleMutationError(error, "Delete Set", toast);
-}
-```
-
-**Locations to update:**
-- `quick-log-form.tsx:103, 127`
-- `grouped-set-history.tsx:44, 51`
-- `set-card.tsx:33`
-- `exercise-manager.tsx:62, 77, 94`
-- `inline-exercise-creator.tsx:39`
-
-**Benefits:**
-- ✅ Non-modal, dismissible notifications
-- ✅ Mobile-friendly
-- ✅ Consistent UX across all errors
-- ✅ User-friendly error messages
-- ✅ Foundation for error tracking integration
+**Effort**: 3h
+**Value**: **HIGH** - Fixes common frustration, reduces data loss from typos
 
 ---
 
-### 8. Rate Limiting on Mutations
-**Effort:** 2-3 hours | **Value:** MEDIUM - Prevents abuse, cost control
+### 14. [UX] Undo Toast Auto-Dismisses Too Fast
+**File**: `src/components/dashboard/undo-toast.tsx:14-18`
+**Perspectives**: user-experience-advocate
+**Severity**: **HIGH**
 
-**Current State:** No rate limiting. Users can spam mutations:
-- Create thousands of exercises/sets rapidly
-- Database pollution
-- Increased Convex costs
-- Potential DoS attack vector
+**Current UX**: Undo toast appears for 3 seconds then auto-dismisses. Power users logging sets rapidly often miss undo opportunity.
 
-**Implementation:**
+**User Impact**: By the time user notices mistake, toast is gone. Must manually re-log set. Frustrating.
 
-**Option 1: Client-side throttling** (Quick win):
+**Improved Experience**:
+1. Extend timeout to 5-7 seconds (industry standard)
+2. Pause auto-dismiss on hover/focus (accessibility best practice)
+3. Show countdown indicator
+
+**Implementation**:
 ```typescript
-// src/hooks/useThrottledMutation.ts
-import { useMutation } from "convex/react";
-import { useRef } from "react";
+const UNDO_TIMEOUT_MS = 6000; // 6 seconds instead of 3
 
-export function useThrottledMutation<Args, Result>(
-  mutation: any,
-  cooldownMs: number = 1000
-) {
-  const lastCall = useRef<number>(0);
-  const base = useMutation(mutation);
-
-  return async (args: Args): Promise<Result> => {
-    const now = Date.now();
-    if (now - lastCall.current < cooldownMs) {
-      throw new Error("Please wait before trying again");
-    }
-    lastCall.current = now;
-    return await base(args);
-  };
-}
-
-// Usage
-const logSet = useThrottledMutation(api.sets.logSet, 500); // 500ms cooldown
+// Add hover pause logic
+const [isPaused, setIsPaused] = useState(false);
 ```
 
-**Option 2: Server-side rate limiting** (Better security):
-```typescript
-// convex/rateLimit.ts
-import { mutation } from "./_generated/server";
-
-const RATE_LIMITS = {
-  createExercise: { limit: 10, windowMs: 60000 }, // 10 per minute
-  logSet: { limit: 60, windowMs: 60000 },         // 60 per minute
-  deleteSet: { limit: 30, windowMs: 60000 },      // 30 per minute
-};
-
-// TODO: Implement rate limit check using Convex storage
-// Store user:action:timestamp entries, check count within window
-```
-
-**Recommendation:** Start with client-side throttling (quick), add server-side later.
-
-**Benefits:**
-- ✅ Prevents accidental spam (double-clicks, stuck keys)
-- ✅ Protects against malicious abuse
-- ✅ Controls backend costs
-- ✅ Better user experience (intentional throttling)
+**Effort**: 1h
+**Value**: **HIGH** - Prevents frustrating data re-entry
 
 ---
 
-### 9. Custom Convex Hooks (DRY Up Query/Mutation Usage)
-**Effort:** 2 hours | **Value:** MEDIUM - Better code organization
+### 15. [Accessibility] Missing ARIA Live Regions - Screen Readers Silent on Toasts
+**Files**: `src/components/dashboard/undo-toast.tsx`, all Sonner toast usage
+**Perspectives**: user-experience-advocate
+**Severity**: **MEDIUM-HIGH**
+**Violations**: WCAG 2.1 Level A
 
-**Current State:** Direct `useQuery`/`useMutation` calls scattered across components. This leads to:
-- Code duplication
-- Inconsistent error handling
-- Hard to add cross-cutting concerns (logging, analytics)
+**Current UX**: Screen reader users don't hear toast notifications. When set is logged, visual toast appears but screen reader silent.
 
-**Implementation:** Create custom hooks that encapsulate common patterns:
+**User Impact**: Blind users can't use app. Violates accessibility compliance.
 
+**Improved Experience**: Add ARIA live regions to toast notifications:
+```tsx
+<div
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  <span className="sr-only">Set logged successfully</span>
+  {/* Visual content */}
+</div>
+```
+
+**Note**: Sonner may already handle this - need to verify. If missing, add aria-live to toast container.
+
+**Effort**: 30m
+**Value**: **MEDIUM-HIGH** - Critical for accessibility compliance
+
+---
+
+### 16. [Accessibility] Collapsible Panels Missing Keyboard Support
+**File**: `src/components/ui/terminal-panel.tsx`
+**Perspectives**: user-experience-advocate
+**Severity**: **MEDIUM**
+**Violations**: WCAG 2.1 keyboard navigation
+
+**Current UX**: Panels collapsible by clicking title bar. Keyboard-only users can't collapse/expand - no keyboard handlers.
+
+**Fix**: Add keyboard support:
+```tsx
+<div
+  onClick={toggle}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    }
+  }}
+  role="button"
+  tabIndex={0}
+  aria-expanded={!isCollapsed}
+  aria-controls={`panel-${storageKey}`}
+>
+```
+
+**Effort**: 1h
+**Value**: **MEDIUM** - Accessibility compliance
+
+---
+
+### 17. [Security] Lack of Audit Logging for Security Events
+**Files**: All mutation endpoints
+**Perspectives**: security-sentinel
+**Severity**: **MEDIUM**
+**Category**: OWASP A09:2021 - Security Logging Failures
+
+**Missing Logs**:
+- Exercise deletion (no record of who deleted what)
+- Set deletion (undo functionality but no permanent audit)
+- Authentication failures
+- Authorization failures (silent failure)
+
+**Impact**: Can't investigate security incidents, GDPR compliance risk, no abuse detection.
+
+**Fix**: Add audit logging to critical mutations:
 ```typescript
-// src/hooks/useExercises.ts
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useToast } from "@/contexts/ToastContext";
-
-export function useExercises() {
-  const toast = useToast();
-  const exercises = useQuery(api.exercises.listExercises);
-  const createMutation = useMutation(api.exercises.createExercise);
-  const updateMutation = useMutation(api.exercises.updateExercise);
-  const deleteMutation = useMutation(api.exercises.deleteExercise);
-
-  const createExercise = async (name: string) => {
-    try {
-      const id = await createMutation({ name });
-      toast.success(`Created "${name}"`);
-      return id;
-    } catch (error) {
-      handleMutationError(error, "Create Exercise", toast);
-      throw error;
-    }
-  };
-
-  const updateExercise = async (id: Id<"exercises">, name: string) => {
-    try {
-      await updateMutation({ id, name });
-      toast.success("Exercise updated");
-    } catch (error) {
-      handleMutationError(error, "Update Exercise", toast);
-      throw error;
-    }
-  };
-
-  const deleteExercise = async (id: Id<"exercises">) => {
-    try {
-      await deleteMutation({ id });
-      toast.success("Exercise deleted");
-    } catch (error) {
-      handleMutationError(error, "Delete Exercise", toast);
-      throw error;
-    }
-  };
-
-  return {
-    exercises,
-    createExercise,
-    updateExercise,
-    deleteExercise,
-    isLoading: exercises === undefined,
-  };
+// convex/lib/audit.ts
+export async function auditLog(ctx, event) {
+  await ctx.db.insert("audit_logs", {
+    action: event.action,
+    resourceType: event.resourceType,
+    resourceId: event.resourceId,
+    userId: event.userId,
+    timestamp: Date.now(),
+    metadata: event.metadata,
+  });
 }
 
-// src/hooks/useSets.ts
-export function useSets(exerciseId?: Id<"exercises">) {
-  const toast = useToast();
-  const sets = useQuery(api.sets.listSets, { exerciseId });
-  const logMutation = useMutation(api.sets.logSet);
-  const deleteMutation = useMutation(api.sets.deleteSet);
+// Usage:
+await auditLog(ctx, {
+  action: "delete_exercise",
+  resourceType: "exercise",
+  resourceId: args.id,
+  userId: identity.subject,
+  metadata: { name: exercise.name },
+});
+```
 
-  const logSet = async (args: LogSetArgs) => {
-    try {
-      const id = await logMutation(args);
-      toast.success("Set logged!");
-      return id;
-    } catch (error) {
-      handleMutationError(error, "Log Set", toast);
-      throw error;
-    }
-  };
+**Effort**: 3h
+**Risk**: **MEDIUM** - Forensics and compliance
 
-  const deleteSet = async (id: Id<"sets">) => {
-    try {
-      await deleteMutation({ id });
-      toast.success("Set deleted");
-    } catch (error) {
-      handleMutationError(error, "Delete Set", toast);
-      throw error;
-    }
-  };
+---
 
-  return {
-    sets,
-    logSet,
-    deleteSet,
-    isLoading: sets === undefined,
-  };
+### 18. [Maintainability] Duplicate Time Formatting Logic (3 Implementations)
+**Files**: `src/components/dashboard/quick-log-form.tsx:71-80`, `src/components/dashboard/grouped-set-history.tsx:59-76`, `src/components/dashboard/set-card.tsx:50-64`
+**Perspectives**: maintainability-maven, complexity-archaeologist
+**Severity**: **MEDIUM**
+**Violations**: DRY
+
+**Issue**: Same time formatting logic implemented 3 different ways with different formats:
+- `quick-log-form.tsx`: "5 MIN AGO", "2 HR AGO"
+- `grouped-set-history.tsx`: "5M AGO", "2H AGO", "JUST NOW"
+- `set-card.tsx`: "5m ago", "2h ago", "Just now"
+
+**Impact**: Which format is correct? Can't update globally. Testing requires 3x effort.
+
+**Fix**: Extract to shared utility:
+```typescript
+// NEW: src/lib/time-utils.ts
+export type TimeFormat = 'terminal' | 'compact' | 'friendly';
+
+export function formatTimeAgo(
+  timestamp: number,
+  format: TimeFormat = 'friendly'
+): string {
+  // Single implementation
 }
 ```
 
-**Usage in components:**
-```typescript
-// Before
-const exercises = useQuery(api.exercises.listExercises);
-const createExercise = useMutation(api.exercises.createExercise);
-// ... handle errors, show toasts, etc.
-
-// After
-const { exercises, createExercise, isLoading } = useExercises();
-```
-
-**Benefits:**
-- ✅ Centralized error handling
-- ✅ Consistent toast notifications
-- ✅ Easy to add analytics, logging, etc.
-- ✅ Simpler component code
-- ✅ Better testability
+**Effort**: 1h (extract + update call sites + tests)
+**Benefit**: **MEDIUM** - Single source of truth, consistent UX
 
 ---
 
@@ -756,467 +677,203 @@ const { exercises, createExercise, isLoading } = useExercises();
 
 *Refactorings and improvements that make future development easier and faster.*
 
-### 10. Test Suite Implementation
-**Effort:** 1-2 days (initial setup + critical tests) | **Value:** HIGH - Long-term velocity
+---
 
-**Current State:** Zero automated tests. Risks:
-- Regressions when adding features
-- Fear of refactoring
-- No validation of business logic
-- Manual testing overhead
+### 19. [Testing] Critical Business Logic Untested - dashboard-utils.ts
+**File**: `src/lib/dashboard-utils.ts` (251 lines)
+**Perspectives**: maintainability-maven
+**Severity**: **HIGH**
 
-**Implementation Plan:**
+**Current State**: Only validation functions have tests. The 251-line `dashboard-utils.ts` contains complex calculations, mathematical operations, edge cases - **zero tests**.
 
-**Step 1:** Install testing dependencies
-```bash
-pnpm add -D vitest @testing-library/react @testing-library/jest-dom \
-  @testing-library/user-event @vitejs/plugin-react
-```
+**Developer Impact**:
+- Afraid to refactor (no safety net)
+- Bugs in volume/stats calculations could corrupt user data
+- Can't verify weight conversion accuracy (critical for fitness app)
+- Edge cases undocumented
 
-**Step 2:** Configure Vitest (`vitest.config.ts`):
+**Fix**: Add comprehensive test suite:
 ```typescript
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    globals: true,
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-});
-```
-
-**Step 3:** Test priority order:
-
-**High Priority (Business Logic):**
-- [ ] `src/lib/dashboard-utils.test.ts`
-  - `convertWeight()` - Critical for data integrity
-  - `calculateDailyStats()` - Ensure accurate stats
-  - `calculateDailyStatsByExercise()` - Group by logic
-  - `groupSetsByDay()` - Date grouping edge cases
-
-**Medium Priority (Components):**
-- [ ] `src/components/dashboard/quick-log-form.test.tsx`
-  - Form validation (empty reps, invalid weight)
-  - Unit toggle functionality
-  - Auto-focus behavior
-  - Repeat set functionality
-
-**Lower Priority (UI Components):**
-- [ ] Smoke tests for each page
-- [ ] Navigation component tests
-- [ ] Theme toggle tests
-
-**Example Test:**
-```typescript
-// src/lib/dashboard-utils.test.ts
-import { describe, it, expect } from 'vitest';
-import { convertWeight, calculateDailyStats } from './dashboard-utils';
-
+// dashboard-utils.test.ts
 describe('convertWeight', () => {
-  it('converts lbs to kg correctly', () => {
-    expect(convertWeight(220, 'lbs', 'kg')).toBeCloseTo(99.79, 2);
-  });
-
-  it('converts kg to lbs correctly', () => {
-    expect(convertWeight(100, 'kg', 'lbs')).toBeCloseTo(220.46, 2);
-  });
-
-  it('returns same value for same unit', () => {
-    expect(convertWeight(100, 'lbs', 'lbs')).toBe(100);
-  });
+  it('converts lbs to kg accurately');
+  it('converts kg to lbs accurately');
+  it('handles unknown units gracefully');
 });
 
 describe('calculateDailyStats', () => {
-  it('returns null for empty sets', () => {
-    expect(calculateDailyStats([])).toBeNull();
-  });
+  it('filters to today only');
+  it('correctly sums total volume across different units');
+  it('handles sets without weight');
+  it('returns null for empty input');
+});
 
-  it('filters to today\'s sets only', () => {
-    const yesterday = Date.now() - 86400000;
-    const sets = [
-      { performedAt: Date.now(), reps: 10, exerciseId: "ex1" },
-      { performedAt: yesterday, reps: 20, exerciseId: "ex1" },
-    ];
-    const stats = calculateDailyStats(sets);
-    expect(stats?.totalReps).toBe(10); // Only today's reps
-  });
-
-  it('converts weights to target unit for volume calculation', () => {
-    const sets = [
-      { performedAt: Date.now(), reps: 10, weight: 100, unit: 'kg', exerciseId: "ex1" },
-    ];
-    const stats = calculateDailyStats(sets, 'lbs');
-    expect(stats?.totalVolume).toBeCloseTo(2204.6, 1); // 10 reps * ~220.46 lbs
-  });
+describe('groupSetsByDay', () => {
+  it('groups sets by calendar day');
+  it('sorts newest first');
+  it('handles timezone edge cases');
 });
 ```
 
-**Add npm scripts:**
-```json
-{
-  "scripts": {
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
-  }
-}
-```
-
-**Benefits:**
-- ✅ Catch regressions before deployment
-- ✅ Confidence to refactor
-- ✅ Documentation via tests
-- ✅ Faster development (no manual testing)
+**Effort**: 4h
+**Benefit**: **HIGH** - Prevents data corruption bugs, enables confident refactoring
 
 ---
 
-### 11. Shared Validation Layer
-**Effort:** 2 hours | **Value:** MEDIUM - DRY principle, consistency
+### 20. [Testing] Error Message Mapping Untested
+**File**: `src/lib/error-handler.ts`
+**Perspectives**: maintainability-maven
+**Severity**: **MEDIUM**
 
-**Current State:** Validation logic scattered across mutations. Leads to:
-- Duplication if we add client-side validation
-- Inconsistency between endpoints
-- Hard to update validation rules
+**Issue**: `getUserFriendlyMessage()` function maps technical errors to user-facing messages, but no tests verify mappings are correct.
 
-**Implementation:**
-
+**Fix**: Add unit tests:
 ```typescript
-// convex/validators.ts
-export const validateReps = (reps: number): void => {
-  if (!Number.isInteger(reps) || reps <= 0 || reps > 1000) {
-    throw new Error("Reps must be a positive integer between 1 and 1000");
-  }
-};
+// error-handler.test.ts
+describe('getUserFriendlyMessage', () => {
+  it('maps auth errors correctly');
+  it('maps authorization errors');
+  it('passes through validation errors');
+  it('handles not found errors');
+  it('provides generic fallback');
+});
+```
 
-export const validateWeight = (weight: number | undefined): number | undefined => {
-  if (weight === undefined) return undefined;
+**Effort**: 1h
+**Benefit**: **MEDIUM** - Prevent user-facing message bugs
 
-  if (!isFinite(weight) || weight <= 0 || weight > 10000) {
-    throw new Error("Weight must be between 0.1 and 10000");
-  }
+---
 
-  // Round to 2 decimal places
-  return Math.round(weight * 100) / 100;
-};
+### 21. [Code Quality] Magic Numbers Without Explanation
+**Files**: `src/components/dashboard/Dashboard.tsx:137`, `src/components/dashboard/quick-log-form.tsx:89,119`, `src/lib/dashboard-utils.ts:23-29`
+**Perspectives**: maintainability-maven
+**Severity**: **MEDIUM**
 
-export const validateUnit = (unit: string | undefined, weight: number | undefined): void => {
-  if (weight !== undefined) {
-    if (!unit || (unit !== "lbs" && unit !== "kg")) {
-      throw new Error("Unit must be 'lbs' or 'kg' when weight is provided");
+**Issue**: Hardcoded numbers with no context:
+- `setTimeout(..., 100)` - Why 100ms? React render? Random?
+- `2.20462` - Weight conversion factor, no documentation
+
+**Fix**: Extract to named constants with documentation:
+```typescript
+// React needs one render cycle before focusing
+const REACT_RENDER_DELAY_MS = 100;
+
+// Standard conversion factor: 1 kg = 2.20462 lbs (exact)
+const LBS_PER_KG = 2.20462;
+```
+
+**Effort**: 30m
+**Benefit**: **MEDIUM** - Self-documenting code
+
+---
+
+### 22. [Code Quality] Module-Level Documentation Missing
+**File**: `src/lib/dashboard-utils.ts`
+**Perspectives**: maintainability-maven
+**Severity**: **MEDIUM**
+
+**Issue**: 251-line file with 6 exported functions, no module-level documentation.
+
+**Fix**: Add module overview:
+```typescript
+/**
+ * Dashboard Utilities
+ *
+ * Core calculation and formatting functions for workout dashboard.
+ * Handles daily statistics, volume calculations, and data grouping.
+ *
+ * Key Functions:
+ * - convertWeight: Convert between lbs and kg
+ * - calculateDailyStats: Aggregate today's workout totals
+ * - calculateDailyStatsByExercise: Per-exercise breakdown
+ * ...
+ */
+```
+
+**Effort**: 15m
+**Benefit**: **MEDIUM** - Faster onboarding
+
+---
+
+### 23. [Code Quality] Hydration Mismatch in WeightUnitContext
+**File**: `src/contexts/WeightUnitContext.tsx:16-32`
+**Perspectives**: complexity-archaeologist
+**Severity**: **MEDIUM**
+
+**Issue**: Initializes state from localStorage during render, causing hydration mismatch (server renders "lbs", client may have "kg" in localStorage).
+
+**Fix**: Always start with default to match SSR, sync after hydration:
+```typescript
+const [unit, setUnit] = useState<WeightUnit>("lbs");
+const [isHydrated, setIsHydrated] = useState(false);
+
+useEffect(() => {
+  try {
+    const stored = localStorage.getItem("weightUnit");
+    if (stored === "kg" || stored === "lbs") {
+      setUnit(stored);
     }
+  } catch (error) {
+    console.warn("Failed to read weight unit preference:", error);
   }
-};
+  setIsHydrated(true);
+}, []);
+```
 
-export const validateExerciseName = (name: string): string => {
-  const trimmed = name.trim();
+**Effort**: 30m
+**Benefit**: **MEDIUM** - No hydration warnings
 
-  if (trimmed.length < 2 || trimmed.length > 100) {
-    throw new Error("Exercise name must be 2-100 characters");
-  }
+---
 
-  return trimmed;
-};
+### 24. [Maintainability] Poor Naming - `any` Type Usage
+**File**: `src/components/dashboard/Dashboard.tsx:63`
+**Perspectives**: maintainability-maven, architecture-guardian
+**Severity**: **HIGH**
 
-// Composite validators for common patterns
-export interface ValidatedSetInput {
-  reps: number;
-  weight?: number;
-  unit?: "lbs" | "kg";
-}
-
-export const validateSetInput = (input: {
-  reps: number;
-  weight?: number;
-  unit?: string;
-}): ValidatedSetInput => {
-  validateReps(input.reps);
-  const weight = validateWeight(input.weight);
-  validateUnit(input.unit, weight);
-
-  return {
-    reps: input.reps,
-    weight,
-    unit: input.unit as "lbs" | "kg" | undefined,
-  };
+**Issue**: `any` type defeats TypeScript safety:
+```typescript
+const handleRepeatSet = (set: any) => {
+  formRef.current?.repeatSet(set);
 };
 ```
 
-**Usage in mutations:**
+**Fix**: Use proper type:
 ```typescript
-// convex/sets.ts
-import { validateSetInput } from "./validators";
+import { Set } from "@/types/domain";
 
-export const logSet = mutation({
-  args: { /* ... */ },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+const handleRepeatSet = (set: Set) => {
+  formRef.current?.repeatSet(set);
+};
+```
 
-    // Single line validation
-    const validated = validateSetInput(args);
+**Effort**: 15m (once types are centralized in item #6)
+**Benefit**: **HIGH** - Type safety prevents runtime errors
 
-    // Verify exercise ownership
-    const exercise = await ctx.db.get(args.exerciseId);
-    // ...
+---
 
-    await ctx.db.insert("sets", {
-      userId: identity.subject,
-      exerciseId: args.exerciseId,
-      ...validated,
-      performedAt: Date.now(),
-    });
+### 25. [Code Quality] Console Logging in Production
+**Files**: Multiple (`error-handler.ts:12`, `Dashboard.tsx:57,81`, `first-run-experience.tsx:43`, `terminal-panel.tsx:46,58`, `WeightUnitContext.tsx:28,42`)
+**Perspectives**: maintainability-maven, security-sentinel
+**Severity**: **LOW**
+
+**Issue**: `console.error` and `console.warn` calls remain in production build. Could leak error details, performance overhead.
+
+**Fix**: Replace with production-safe logging:
+```typescript
+// lib/logger.ts
+export const logger = {
+  error: (message: string, error?: unknown) => {
+    if (process.env.NODE_ENV === 'production') {
+      // Send to error tracking service (Sentry, etc.)
+    } else {
+      console.error(message, error);
+    }
   },
-});
-```
-
-**Benefits:**
-- ✅ Single source of truth for validation rules
-- ✅ Easy to add client-side validation (import same validators)
-- ✅ Consistent error messages
-- ✅ Testable in isolation
-- ✅ Easy to update rules globally
-
----
-
-### 12. Extract Duplicate Time Formatting Logic
-**Effort:** 30 minutes | **Value:** LOW-MEDIUM - Code quality
-
-**Current State:** Duplicate relative time formatting in 3 components with slight variations:
-- `quick-log-form.tsx:68-77`
-- `grouped-set-history.tsx:56-73`
-- `set-card.tsx:45-59`
-
-**Fix:** Create shared utility:
-
-```typescript
-// src/lib/time-utils.ts
-
-/**
- * Format a timestamp as relative time (e.g., "2m ago", "3h ago", "2d ago")
- * @param timestamp - Unix timestamp in milliseconds
- * @returns Formatted relative time string
- */
-export function formatRelativeTime(timestamp: number): string {
-  const now = Date.now();
-  const diffMs = now - timestamp;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffSec < 60) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHour < 24) return `${diffHour}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
-
-  // Older than 7 days: show date
-  const date = new Date(timestamp);
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-/**
- * Format absolute time (e.g., "2:34 PM")
- * @param timestamp - Unix timestamp in milliseconds
- * @returns Formatted time string
- */
-export function formatAbsoluteTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-```
-
-**Replace in components:**
-```typescript
-// Before (68-77 lines of duplicate logic)
-const formatTimeAgo = (timestamp: number) => {
-  const now = Date.now();
-  const diffMs = now - timestamp;
-  // ... 10 more lines ...
 };
-
-// After (1 import, 1 line)
-import { formatRelativeTime } from "@/lib/time-utils";
-<span className="...">{formatRelativeTime(set.performedAt)}</span>
 ```
 
-**Benefits:**
-- ✅ DRY principle - single source of truth
-- ✅ Consistent formatting across app
-- ✅ Easier to test in isolation
-- ✅ Easier to add i18n later
-
----
-
-### 13. Extract Magic Numbers
-**Effort:** 5 minutes | **Value:** LOW - Code clarity
-
-**Current State:** Hardcoded `setTimeout(..., 100)` in `quick-log-form.tsx:86, 121`
-
-**Fix:**
-```typescript
-// At top of quick-log-form.tsx
-/**
- * Small delay to allow DOM to update before focusing next input.
- * Prevents race condition where ref is not yet attached.
- */
-const FOCUS_DELAY_MS = 100;
-
-// Usage
-setTimeout(() => {
-  repsInputRef.current?.select();
-}, FOCUS_DELAY_MS);
-```
-
-**Benefits:**
-- ✅ Self-documenting code
-- ✅ Easy to adjust if needed
-- ✅ Searchable constant name
-
----
-
-### 14. Fix Hydration Mismatch in WeightUnitContext
-**Effort:** 30 minutes | **Value:** MEDIUM - Prevents React warnings
-
-**Current State:** `src/contexts/WeightUnitContext.tsx:16-32` initializes state from localStorage during render, causing hydration mismatch:
-- Server renders with "lbs"
-- Client may have "kg" in localStorage
-- React hydration warning
-
-**Fix:**
-```typescript
-// src/contexts/WeightUnitContext.tsx
-export function WeightUnitProvider({ children }: { children: React.ReactNode }) {
-  // Always start with default to match SSR
-  const [unit, setUnit] = useState<WeightUnit>("lbs");
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  // Sync with localStorage after hydration
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("weightUnit");
-      if (stored === "kg" || stored === "lbs") {
-        setUnit(stored);
-      }
-    } catch (error) {
-      console.warn("Failed to read weight unit preference:", error);
-    }
-    setIsHydrated(true);
-  }, []);
-
-  // Update localStorage when unit changes
-  useEffect(() => {
-    if (!isHydrated) return; // Don't write during initial hydration
-
-    try {
-      localStorage.setItem("weightUnit", unit);
-    } catch (error) {
-      console.warn("Failed to save weight unit preference:", error);
-    }
-  }, [unit, isHydrated]);
-
-  const toggleUnit = () => {
-    setUnit((prev) => (prev === "lbs" ? "kg" : "lbs"));
-  };
-
-  return (
-    <WeightUnitContext.Provider value={{ unit, toggleUnit }}>
-      {children}
-    </WeightUnitContext.Provider>
-  );
-}
-```
-
-**Benefits:**
-- ✅ No hydration warnings
-- ✅ No flash of wrong content
-- ✅ Cleaner separation of SSR/client logic
-
----
-
-### 15. Focus Management for Keyboard Navigation
-**Effort:** 1 hour | **Value:** MEDIUM - Accessibility
-
-**Current State:** Modal-like components (toasts, inline creators) don't trap focus, allowing keyboard users to tab out.
-
-**Implementation:** Add focus trap to:
-- `inline-exercise-creator.tsx` - When creating exercise inline
-- Toast notifications (when implemented)
-
-**Example:**
-```typescript
-// src/hooks/useFocusTrap.ts
-import { useEffect, useRef } from 'react';
-
-export function useFocusTrap(isActive: boolean) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isActive) return;
-
-    const container = containerRef.current;
-    if (!container) return;
-
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstElement) {
-          e.preventDefault();
-          lastElement?.focus();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement?.focus();
-        }
-      }
-    };
-
-    container.addEventListener('keydown', handleTab);
-    firstElement?.focus();
-
-    return () => {
-      container.removeEventListener('keydown', handleTab);
-    };
-  }, [isActive]);
-
-  return containerRef;
-}
-
-// Usage in inline-exercise-creator.tsx
-const trapRef = useFocusTrap(isCreating);
-
-<div ref={trapRef}>
-  <input ref={inputRef} ... />
-  <button>Create</button>
-</div>
-```
-
-**Benefits:**
-- ✅ Better keyboard navigation
-- ✅ Prevents focus escaping from active UI
-- ✅ WCAG 2.1 compliance
+**Effort**: 1h
+**Benefit**: **LOW** - Production-safe logging
 
 ---
 
@@ -1224,337 +881,212 @@ const trapRef = useFocusTrap(isCreating);
 
 *Improvements that would be valuable but aren't urgent - optimizations, polish, quality-of-life.*
 
-### 16. Fix Hardcoded Colors in UndoToast
-**Effort:** 5 minutes | **Value:** LOW - Visual consistency
-
-**Location:** `src/components/dashboard/undo-toast.tsx:27-30`
-
-**Current:**
-```typescript
-<CornerBracket position="top-left" color="#00ff00" />
-```
-
-**Fix:**
-```typescript
-<CornerBracket position="top-left" color="var(--terminal-success)" />
-```
-
-**Benefits:**
-- ✅ Respects theme changes
-- ✅ Consistent with design system
-
 ---
 
-### 17. Dependency Updates
-**Effort:** 10 minutes | **Value:** LOW - Security patches, bug fixes
+### 26. [Performance] Missing React.memo on Table Rows
+**File**: `src/components/dashboard/grouped-set-history.tsx:106-162`
+**Perspectives**: performance-pathfinder
+**Severity**: **LOW-MEDIUM**
 
-**Current State:** Some minor updates available:
-- `@clerk/nextjs`: 6.33.1 → 6.33.2 (patch)
-- `eslint`: 9.36.0 → 9.37.0 (minor)
+**Issue**: All table rows re-render when any set changes.
 
-**⚠️ WARNING:** DO NOT upgrade to Tailwind v4.x - major breaking changes
+**User Impact**:
+- Currently: Imperceptible
+- At 500+ sets: 10-20ms re-render delay
+- At 1000+ sets: 50ms+ visible lag
 
-**Command:**
-```bash
-pnpm update @clerk/nextjs eslint
-pnpm audit  # Check for security vulnerabilities
-```
-
-**Benefits:**
-- ✅ Latest bug fixes
-- ✅ Security patches
-
----
-
-### 18. Bundle Size Optimization
-**Effort:** 1 hour | **Value:** LOW - Performance (not critical at current scale)
-
-**Current State:** Importing entire `lucide-react` package. Could optimize by importing specific icons.
-
-**Analysis needed:**
-```bash
-pnpm build
-# Check .next/analyze or use @next/bundle-analyzer
-```
-
-**Potential optimizations:**
-- Import specific icons instead of entire package
-- Code splitting by route (already done by Next.js)
-- Consider switching to lighter icon library if needed
-
-**Only pursue if bundle exceeds 300KB initial load.**
-
----
-
-### 19. Error Tracking Service Integration
-**Effort:** 2 hours | **Value:** LOW-MEDIUM - Production monitoring
-
-**When to implement:** After MVP gains users
-
-**Options:**
-- Sentry (recommended - great DX, generous free tier)
-- LogRocket (session replay + error tracking)
-- Rollbar (simpler alternative)
-
-**Implementation outline:**
-```bash
-pnpm add @sentry/nextjs
-```
-
+**Optimization**: Extract row builder to memoized component:
 ```typescript
-// sentry.client.config.ts
-import * as Sentry from "@sentry/nextjs";
-
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1,
-  beforeSend(event, hint) {
-    // Filter out known issues, PII, etc.
-    return event;
-  },
+const SetRow = React.memo(({ set, exercise, onRepeat, onDelete }) => {
+  // Row rendering logic
 });
 ```
 
-**Benefits:**
-- ✅ Automatic error reporting
-- ✅ Stack traces from production
-- ✅ User context (affected users)
-- ✅ Performance monitoring
+**Effort**: 1-2h
+**Priority**: **LOW** - Future-proofing
 
 ---
 
-### 20. Pagination for Large Datasets
-**Effort:** 3 hours | **Value:** LOW - Future-proofing
+### 27. [Performance] Missing Pagination (Future Consideration)
+**File**: `convex/sets.ts:44-75`
+**Perspectives**: performance-pathfinder
+**Severity**: **LOW**
 
-**Current State:** `listSets` fetches ALL sets. This is fine for MVP but will become slow with:
-- 1000+ sets
-- Multiple years of data
+**Issue**: `.collect()` fetches all user sets without limit.
 
-**When to implement:** When users report slow loading or you see query performance issues
+**User Impact**:
+- Currently: Non-issue (MVP users have <100 sets)
+- At 10,000 sets: ~500KB payload, 200-500ms query, **slow initial load**
 
-**Implementation:**
-```typescript
-// convex/sets.ts
-export const listSetsPaginated = query({
-  args: {
-    paginationOpts: paginationOptsValidator,
-  },
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return { page: [], isDone: true, continueCursor: "" };
+**Optimization**: Add pagination + infinite scroll when users accumulate 1000+ sets (months/years of use).
 
-    return await ctx.db
-      .query("sets")
-      .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
-      .order("desc")
-      .paginate(args.paginationOpts);
-  },
-});
-```
-
-**Frontend:**
-```typescript
-const { results, status, loadMore } = usePaginatedQuery(
-  api.sets.listSetsPaginated,
-  {},
-  { initialNumItems: 50 }
-);
-```
-
-**Benefits:**
-- ✅ Faster initial load
-- ✅ Reduced memory usage
-- ✅ Better UX for power users
+**Effort**: 4-6h
+**Priority**: **LOW** - Not needed until dataset grows significantly
 
 ---
 
-### 21. Virtualized Scrolling for Long Lists
-**Effort:** 2 hours | **Value:** LOW - Performance optimization
+### 28. [UX] No Search/Filter for Exercises
+**Perspectives**: user-experience-advocate
+**Severity**: **LOW-MEDIUM**
 
-**Current State:** Rendering all sets in DOM. Fine for <100 sets, but 1000+ sets will lag.
+**Current UX**: User with 50+ exercises must scroll through entire list. No search, no filter.
 
-**When to implement:** When users report scroll lag
+**Improved Experience**: Add search input above exercise selector.
 
-**Library:** `react-window` or `@tanstack/react-virtual`
+**Effort**: 2h
+**Value**: **MEDIUM** - Quality of life for power users
 
-```bash
-pnpm add react-window
-```
+---
 
-```typescript
-import { FixedSizeList } from 'react-window';
+### 29. [UX] Loading Skeleton Layout Shift
+**File**: `src/components/dashboard/Dashboard.tsx:95-130`
+**Perspectives**: user-experience-advocate
+**Severity**: **LOW**
 
-<FixedSizeList
-  height={600}
-  itemCount={sets.length}
-  itemSize={80}
-  width="100%"
->
-  {({ index, style }) => (
-    <div style={style}>
-      <SetCard set={sets[index]} />
-    </div>
-  )}
-</FixedSizeList>
-```
+**Issue**: Loading skeleton roughly matches final UI but minor layout shift on load.
 
-**Benefits:**
-- ✅ Smooth scrolling with 1000+ items
-- ✅ Lower memory usage
-- ✅ Better mobile performance
+**Fix**: Ensure skeleton exactly matches final layout dimensions.
+
+**Effort**: 30m
+**Value**: **LOW** - Visual polish
+
+---
+
+### 30. [Code Quality] Hardcoded Colors in UndoToast
+**File**: `src/components/dashboard/undo-toast.tsx:27-30`
+**Perspectives**: maintainability-maven
+**Severity**: **LOW**
+
+**Current**: `<CornerBracket position="top-left" color="#00ff00" />`
+**Fix**: `<CornerBracket position="top-left" color="var(--terminal-success)" />`
+
+**Effort**: 5m
+**Benefit**: **LOW** - Respects theme changes
 
 ---
 
 ## Post-MVP Features
 
-*Features from original backlog, reorganized by strategic value.*
+*Feature roadmap from original backlog - organized by strategic value.*
+
+---
 
 ### High Priority (v1.1) - User Requested Features
 
 #### Analytics & Insights
-**Effort:** 2-3 days | **Value:** HIGH - Core value proposition
+**Effort**: 2-3 days | **Value**: HIGH - Core value proposition
 
 - [ ] **Daily/weekly/monthly aggregation stats**
   - Total reps per exercise per period
   - Total volume (reps × weight) for weighted exercises
   - Average reps/sets per day
-  - *Implementation:* Add `daily_exercise_stats` aggregation table in Convex, cron job for rollups
 
 - [ ] **Charts and visualizations**
   - Line chart: reps/volume over time per exercise
   - Bar chart: total volume by exercise this week/month
-  - Use Recharts (recommended - good bundle size, easy API)
-  - *Location:* New `/analytics` page
+  - Use Recharts (recommended)
+  - Location: New `/analytics` page
 
 - [ ] **Personal Records (PRs)**
   - Track max reps (bodyweight exercises)
   - Track max weight (weighted exercises)
-  - "New PR!" celebration when beaten with confetti animation
+  - "New PR!" celebration with confetti
   - PR history timeline
 
 - [ ] **Streak tracking**
   - Consecutive days with ≥1 set logged
   - Per-exercise streaks
   - Calendar heatmap view (GitHub-style)
-  - Streak recovery (grace period for missed days)
-
-**Dependencies:** None - can start immediately after current improvements
+  - Streak recovery (grace period)
 
 ---
 
 #### Offline-First Architecture
-**Effort:** 3-4 days | **Value:** MEDIUM-HIGH - Enables true anywhere usage
+**Effort**: 3-4 days | **Value**: MEDIUM-HIGH - Enables anywhere usage
 
 - [ ] **Add Dexie.js for local IndexedDB storage**
   - Mirror Convex schema locally
   - Write to Dexie first (instant feedback)
   - Background sync queue to Convex
-  - Use ULID-based IDs for offline creation
+  - ULID-based IDs for offline creation
 
 - [ ] **Sync conflict resolution**
   - Last-write-wins strategy
   - Maintain `updatedAt` timestamps
-  - Handle concurrent edits across devices
 
 - [ ] **Offline indicator UI**
-  - Online/offline status badge in nav
+  - Online/offline status badge
   - Pending sync count indicator
   - Manual "sync now" button
-  - Sync error notifications
 
 - [ ] **Service Worker for PWA**
   - Cache static assets
   - Background sync API
-  - Push notifications (optional)
 
-**When to implement:** When users request offline support or gym has poor connectivity
+**When to implement**: When users request offline support or gym connectivity is poor
 
 ---
 
 #### Data Portability
-**Effort:** 1 day | **Value:** MEDIUM - Builds trust, enables migration
+**Effort**: 1 day | **Value**: MEDIUM - Builds trust
 
 - [ ] **Export functionality**
   - CSV export: `exercise_name, reps, weight, unit, timestamp`
   - JSON export: Full data with IDs (for re-import)
-  - Download as file (client-side with Blob API)
-  - Include schema version in exports
+  - Download as file (client-side Blob API)
 
 - [ ] **Import functionality**
   - Parse CSV/JSON with validation
   - Deduplication by ULID + timestamp
-  - Merge strategy: skip duplicates, add new
   - Support Strong/FitNotes CSV formats
   - Progress indicator for large imports
-
-- [ ] **Backup automation** (Future)
-  - Daily auto-backup to Convex storage
-  - Restore from backup UI
-  - Version history (last 30 days)
-
-**Dependencies:** Enhanced validation layer (item #11)
 
 ---
 
 ### Medium Priority (v1.2) - UX Polish
 
 #### Enhanced Set Logging UI
-**Effort:** 2 days | **Value:** MEDIUM - Improves daily usage
+**Effort**: 2 days | **Value**: MEDIUM
 
 - [ ] **Additional set metadata**
   - RPE (Rate of Perceived Exertion) 1-10 slider
-  - Notes field (optional, e.g., "felt strong today")
-  - Timestamp adjuster (backlog sets from earlier)
+  - Notes field (optional)
+  - Timestamp adjuster (backlog sets)
   - Tags: "warmup", "dropset", "amrap"
 
-- [ ] **Undo functionality** (already partially implemented)
-  - Extend current undo toast to all operations
-  - Action queue for undo/redo
-  - 5s timeout before permanent deletion
+- [ ] **Rest timer between sets**
+  - Set-to-set rest countdown
+  - Customizable per exercise
+  - Notification when rest complete
 
 - [ ] **Quick-log shortcuts**
   - Pin favorite exercises to home
   - One-tap to repeat last set (already implemented)
-  - Recent exercises at top (already implemented via recency sort)
-
-- [ ] **Custom numeric keypad** (mobile-specific)
-  - Touch-optimized for mobile
-  - Quick +5 reps button
-  - Decimal support for weight (e.g., 22.5kg)
-  - Large tap targets (≥48px) with haptic feedback
-
-**Design notes:**
-- Zero layout shift during input
-- Maintain current fast keyboard flow on desktop
-- Progressive enhancement for mobile
 
 ---
 
 #### Exercise Management Enhancements
-**Effort:** 1 day | **Value:** MEDIUM
+**Effort**: 1 day | **Value**: MEDIUM
 
 - [ ] **Exercise types**
   - Bodyweight vs Weighted vs Timed vs Distance
-  - Default unit per exercise (kg/lb/none/seconds/meters)
+  - Default unit per exercise
   - Type-specific UI hints
 
 - [ ] **Exercise library**
   - Pre-populated common exercises (100+ exercises)
-  - Custom user-created exercises (keep current flow)
   - Search and filter
   - Exercise templates with suggested rep ranges
 
 - [ ] **Tags and categories**
   - Multi-tag support (e.g., "push", "upper", "compound")
-  - Filter exercises by tag
+  - Filter by tag
   - Color coding
-  - Smart suggestions based on usage patterns
 
 ---
 
 #### Workout Sessions (Optional Grouping)
-**Effort:** 2 days | **Value:** LOW-MEDIUM - Organization feature
+**Effort**: 2 days | **Value**: LOW-MEDIUM
 
 - [ ] **Session concept**
   - Group sets into named sessions (e.g., "Upper Body A")
@@ -1567,97 +1099,90 @@ import { FixedSizeList } from 'react-window';
   - Repeat session feature
   - Compare sessions over time
 
-- [ ] **Rest timer**
-  - Set-to-set rest countdown
-  - Customizable per exercise
-  - Notification when rest complete
-  - Auto-start option
-
-**Note:** Optional feature - sets work standalone without sessions
+**Note**: Optional feature - sets work standalone without sessions
 
 ---
 
 ## Completed & Archived
 
-### Recently Completed
+### Recently Completed (Last Month)
+- ✅ **Landing page** (PR #6) - Terminal aesthetic hero
+- ✅ **Vitest infrastructure** (PR #5) - Unit test setup with validator tests
+- ✅ **Enhanced input validation** (PR #4) - Integer reps, weight rounding, duplicate detection
+- ✅ **Sonner toast notifications** (PR #4) - Replaced alert() calls (most places)
+- ✅ **Centralized error handler** (PR #4) - handleMutationError utility
 - ✅ **Weight unit system** (PR #3) - kg/lbs toggle with data integrity
 - ✅ **Mobile UX polish** (PR #3) - Responsive design, touch targets
 - ✅ **Pre-commit hooks** - ESLint on commit with husky + lint-staged
 - ✅ **SSR hydration fixes** - Resolved theme and clerk hydration issues
 - ✅ **Undo toast** - Delete confirmation with undo functionality
 
-### Deferred from PR #3 Review
-*Valid suggestions deferred to maintain PR focus. Addressed above in appropriate sections.*
-
-- Replace alert/confirm with Toast System → Item #7
-- Extract time formatting utility → Item #12
-- Extract magic numbers → Item #13
-- Add ARIA labels → Item #5
-- Add screen reader live regions → Item #5
-- Verify color contrast ratios → Item #5
-- Add JSDoc comments → Future documentation task
-- Optimize Convex query for last set → Item #20 (pagination)
-- Add loading/error states → Item #4
-- Handle edge case: deleted exercise → Will handle with error boundaries
-- Add TypeCheck to lint-staged → Evaluate performance, defer for now
-- Add global weight unit toggle → Current in-form toggle is sufficient
-- Add visual hint for Enter key → Current UX is discoverable
-- Make "USE" button more prominent → Current design is functional
+### Deferred (Valid Suggestions for Future)
+- Make "USE" button more prominent in last set display
+- Add global weight unit toggle to nav/settings
+- Add visual hint for Enter key functionality
+- Add TypeCheck to lint-staged (may slow commits)
+- JSDoc comments for all exported functions
 
 ### Archived (Not Pursuing)
-- **Add TypeCheck to lint-staged** - May slow commits excessively, run in CI instead
-- **Native app features** - PWA sufficient for now, reassess based on user demand
-- **Social features** - Product direction decision, not v1 scope
-- **Advanced AI insights** - Experimental, unclear value proposition
+- Native app features - PWA sufficient for now
+- Social features - Not v1 scope
+- Advanced AI insights - Unclear value proposition
 
 ---
 
 ## Decision Framework
 
 ### Prioritization Criteria
-1. **User Value**: Does this solve a real user problem?
-2. **Data Integrity**: Does this protect user data quality?
-3. **Developer Velocity**: Does this make future development faster?
-4. **Risk**: What's likelihood of failure/scope creep?
-5. **Dependencies**: What must exist before this?
+1. **Security**: Vulnerabilities blocking production deployment
+2. **User Value**: Solves real user problems, prevents data loss
+3. **Data Integrity**: Protects user data quality
+4. **Developer Velocity**: Makes future development faster
+5. **Risk**: Likelihood of failure/scope creep
+6. **Dependencies**: What must exist before this?
 
 ### When to Implement Features
-- **Immediate Concerns**: Before production deployment
-- **High-Value Improvements**: Next 1-2 sprints
+- **Immediate Concerns**: Before production deployment (security, data loss)
+- **High-Value Improvements**: Next 1-2 sprints (architecture, critical UX)
 - **Technical Debt**: When slowing down development or before major refactor
 - **Nice to Have**: When metrics show need (slow load, user feedback)
 - **Post-MVP Features**: After gathering real user feedback
 
-### Future Architecture Decisions Needed
-- When to add Dexie? → User complaints about offline or data persistence
-- When to go native? → Widget requests, HealthKit demand, performance issues
-- When to add auth complexity? → Coach sharing, social features demand
-- How to handle scale? → 1M+ sets per user (pagination, archiving)
+---
+
+## Summary Statistics
+
+**Total Issues Identified**: 30+ new findings from comprehensive audit
+
+**By Priority**:
+- **CRITICAL**: 7 (security vulnerabilities, data loss, type duplication)
+- **HIGH**: 11 (architecture, performance, critical UX)
+- **MEDIUM**: 8 (technical debt, code quality)
+- **LOW**: 4+ (polish, future-proofing)
+
+**Cross-Validated (Multiple Perspectives)**:
+- Type duplication (architecture + complexity)
+- Dashboard god component (architecture + complexity + maintainability)
+- Error handling inconsistency (maintainability + UX)
+- Time formatting duplication (maintainability + complexity)
+
+**Estimated Effort to Address All Critical/High**:
+- **Immediate (CRITICAL)**: ~6h (security + data loss + types)
+- **High-Value**: ~30h (architecture + performance + UX)
+- **Total**: ~36 hours of focused work
+
+**Top 5 Quick Wins** (High Value, Low Effort):
+1. Fix listSets IDOR vulnerability (15m) - CRITICAL security
+2. Replace remaining alert() calls (15m) - UX consistency
+3. Optimize last set query (15m) - Performance improvement
+4. Fix O(n) exercise lookups (30m) - 50-100x performance gain
+5. Block exercise deletion with sets (30m) - Data loss prevention
 
 ---
 
-## How to Use This Backlog
-
-### For Development
-1. **Start at the top** - Work through "Immediate Concerns" first
-2. **Batch related items** - Group related improvements into coherent PRs
-3. **Measure impact** - Track metrics before/after changes
-4. **Gather feedback** - Validate assumptions with real users
-
-### For Planning
-1. **Sprint planning** - Pull from appropriate priority tier
-2. **Effort estimation** - Use provided estimates as starting point
-3. **Risk assessment** - Flag dependencies and unknowns
-4. **Stakeholder communication** - Reference specific items by number
-
-### For Prioritization Adjustments
-- **User feedback** - Elevate items users request
-- **Production issues** - Promote items causing problems
-- **Strategic shifts** - Reprioritize based on product direction
-- **Technical constraints** - Adjust based on discovered limitations
-
----
-
-**Remember:** The best feature is the one users actually need, not the one that's technically impressive.
+**Remember**: The best feature is the one users actually need, not the one that's technically impressive.
 
 *This backlog is a living document. Update priorities based on real-world usage, user feedback, and measured impact.*
+
+**Last Groomed**: 2025-10-07 by 6-perspective parallel audit
+**Next Groom**: Quarterly or when priorities shift significantly
