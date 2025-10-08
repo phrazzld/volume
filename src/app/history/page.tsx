@@ -9,12 +9,14 @@ import { groupSetsByDay } from "@/lib/dashboard-utils";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Id } from "../../../convex/_generated/dataModel";
 
+const PAGINATION_PAGE_SIZE = 25;
+
 export default function HistoryPage() {
-  // Fetch paginated sets (25 per page)
+  // Fetch paginated sets
   const { results, status, loadMore } = usePaginatedQuery(
     api.sets.listSetsPaginated,
     {},
-    { initialNumItems: 25 }
+    { initialNumItems: PAGINATION_PAGE_SIZE }
   );
 
   // Fetch exercises for names
@@ -26,12 +28,8 @@ export default function HistoryPage() {
   // Group sets by day
   const groupedSets = useMemo(() => groupSetsByDay(results), [results]);
 
-  // Handle repeat set - not applicable in history view
-  // User should navigate to dashboard to log new set
-  const handleRepeat = () => {
-    // Could implement navigation to dashboard with prefilled data
-    // For now, this is a no-op in history view
-  };
+  // No-op: Repeat functionality not applicable in history view
+  const handleRepeat = () => {};
 
   // Handle delete set
   const handleDelete = async (setId: Id<"sets">) => {
@@ -95,7 +93,7 @@ export default function HistoryPage() {
       {status === "CanLoadMore" && (
         <div className="flex justify-center mt-6">
           <button
-            onClick={() => loadMore(25)}
+            onClick={() => loadMore(PAGINATION_PAGE_SIZE)}
             className="px-6 py-2 bg-terminal-success text-terminal-bg font-mono uppercase text-sm hover:opacity-90 transition-opacity border border-terminal-success"
             type="button"
           >

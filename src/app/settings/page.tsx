@@ -4,8 +4,16 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ExerciseManager } from "@/components/dashboard/exercise-manager";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
-import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { useWeightUnit, WeightUnit } from "@/contexts/WeightUnitContext";
 import { PageLayout } from "@/components/layout/page-layout";
+
+// Helper to generate unit button classes
+const getUnitButtonClasses = (isActive: boolean) =>
+  `px-4 py-2 font-mono text-sm uppercase transition-colors border ${
+    isActive
+      ? "bg-terminal-success text-terminal-bg border-terminal-success"
+      : "bg-terminal-bg text-terminal-text border-terminal-border hover:bg-terminal-bgSecondary"
+  }`;
 
 export default function SettingsPage() {
   // Fetch exercises and sets for ExerciseManager
@@ -62,22 +70,14 @@ export default function SettingsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setUnit("lbs")}
-                className={`px-4 py-2 font-mono text-sm uppercase transition-colors border ${
-                  unit === "lbs"
-                    ? "bg-terminal-success text-terminal-bg border-terminal-success"
-                    : "bg-terminal-bg text-terminal-text border-terminal-border hover:bg-terminal-bgSecondary"
-                }`}
+                className={getUnitButtonClasses(unit === "lbs")}
                 type="button"
               >
                 LBS
               </button>
               <button
                 onClick={() => setUnit("kg")}
-                className={`px-4 py-2 font-mono text-sm uppercase transition-colors border ${
-                  unit === "kg"
-                    ? "bg-terminal-success text-terminal-bg border-terminal-success"
-                    : "bg-terminal-bg text-terminal-text border-terminal-border hover:bg-terminal-bgSecondary"
-                }`}
+                className={getUnitButtonClasses(unit === "kg")}
                 type="button"
               >
                 KG
