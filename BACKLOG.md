@@ -3,7 +3,7 @@
 *A comprehensive map of opportunities to improve product, codebase, and development experience.*
 
 **Last Groomed:** 2025-10-07
-**Status:** Post-MVP - Clean codebase with critical security issue requiring immediate attention
+**Status:** Post-MVP - Clean codebase, IDOR vulnerability FIXED (2025-10-07)
 **Audit Method:** 6-perspective analysis (complexity, architecture, security, performance, maintainability, UX)
 
 ---
@@ -14,25 +14,24 @@
 
 ---
 
-### 1. 🚨 [Security] IDOR Vulnerability in listSets Query - CRITICAL DATA BREACH RISK
+### ✅ 1. [FIXED] IDOR Vulnerability in listSets Query - CRITICAL DATA BREACH RISK
 **File**: `convex/sets.ts:45-74`
-**Perspectives**: security-sentinel
-**Severity**: **CRITICAL**
-**Category**: OWASP A01:2021 - Broken Access Control
+**Status**: **FIXED on 2025-10-07**
+**Fix**: Added exercise ownership verification before filtering sets by exerciseId
+**Tests**: Comprehensive security test suite added in `convex/sets.test.ts` (9 tests, all passing)
 
-**Vulnerability**: Missing ownership verification when filtering sets by exerciseId allows any authenticated user to view any other user's workout data.
+**What Was Fixed**:
+- Added `requireOwnership()` check to verify user owns the exercise before querying its sets
+- Throws explicit "Not authorized" error for unauthorized access attempts
+- Prevents horizontal privilege escalation (any user accessing any other user's workout data)
 
-**Attack Scenario**:
-1. Attacker creates account and discovers exerciseId format
-2. Attacker enumerates exerciseIds (predictable Convex IDs)
-3. Attacker calls `listSets({ exerciseId: "j57..." })` with victim's exerciseId
-4. System returns ALL sets for victim's exercise, bypassing userId filter
-5. Complete exposure of personal fitness data (reps, weight, timestamps)
-
-**Current Code**:
+**Implementation**:
 ```typescript
 if (args.exerciseId) {
-  // ❌ NO OWNERSHIP CHECK - CRITICAL VULNERABILITY
+  // ✅ Verify exercise ownership before querying sets (IDOR vulnerability fix)
+  const exercise = await ctx.db.get(args.exerciseId);
+  requireOwnership(exercise, identity.subject, "exercise");
+
   sets = await ctx.db
     .query("sets")
     .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId!))
@@ -41,25 +40,14 @@ if (args.exerciseId) {
 }
 ```
 
-**Fix**:
-```typescript
-if (args.exerciseId) {
-  // ✅ Verify exercise ownership before querying sets
-  const exercise = await ctx.db.get(args.exerciseId);
-  if (!exercise || exercise.userId !== identity.subject) {
-    return []; // Return empty for unauthorized access
-  }
+**Security Tests Added**:
+- ✅ Authorized access (user queries own exercise)
+- ✅ Unauthorized access (user cannot query another's exercise)
+- ✅ Unauthenticated access (returns empty array)
+- ✅ User isolation (each user only sees their data)
+- ✅ Edge cases (deleted exercises, empty sets, ordering)
 
-  sets = await ctx.db
-    .query("sets")
-    .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId))
-    .order("desc")
-    .collect();
-}
-```
-
-**Effort**: 15 minutes
-**Risk**: **CRITICAL** - Horizontal privilege escalation, GDPR/CCPA violation, complete data breach
+**Impact**: Critical vulnerability eliminated - users' private fitness data now properly protected.
 
 ---
 
@@ -1155,7 +1143,7 @@ const SetRow = React.memo(({ set, exercise, onRepeat, onDelete }) => {
 **Total Issues Identified**: 30+ new findings from comprehensive audit
 
 **By Priority**:
-- **CRITICAL**: 7 (security vulnerabilities, data loss, type duplication)
+- **CRITICAL**: 6 (~~7~~) - **1 FIXED: IDOR vulnerability** ✅
 - **HIGH**: 11 (architecture, performance, critical UX)
 - **MEDIUM**: 8 (technical debt, code quality)
 - **LOW**: 4+ (polish, future-proofing)
@@ -1167,12 +1155,12 @@ const SetRow = React.memo(({ set, exercise, onRepeat, onDelete }) => {
 - Time formatting duplication (maintainability + complexity)
 
 **Estimated Effort to Address All Critical/High**:
-- **Immediate (CRITICAL)**: ~6h (security + data loss + types)
+- **Immediate (CRITICAL)**: ~~6h~~ **3h remaining** (~~security~~ ✅ + data loss + types)
 - **High-Value**: ~30h (architecture + performance + UX)
-- **Total**: ~36 hours of focused work
+- **Total**: ~~36 hours~~ **33 hours remaining** of focused work
 
 **Top 5 Quick Wins** (High Value, Low Effort):
-1. Fix listSets IDOR vulnerability (15m) - CRITICAL security
+1. ~~Fix listSets IDOR vulnerability (15m) - CRITICAL security~~ ✅ **COMPLETED**
 2. Replace remaining alert() calls (15m) - UX consistency
 3. Optimize last set query (15m) - Performance improvement
 4. Fix O(n) exercise lookups (30m) - 50-100x performance gain

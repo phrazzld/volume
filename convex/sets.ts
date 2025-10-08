@@ -56,6 +56,11 @@ export const listSets = query({
     let sets;
 
     if (args.exerciseId) {
+      // Verify exercise ownership before querying sets (IDOR vulnerability fix)
+      // This prevents users from accessing other users' sets by guessing exercise IDs
+      const exercise = await ctx.db.get(args.exerciseId);
+      requireOwnership(exercise, identity.subject, "exercise");
+
       // Filter by exercise
       sets = await ctx.db
         .query("sets")

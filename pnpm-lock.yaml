@@ -63,6 +63,9 @@ importers:
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
+      convex-test:
+        specifier: ^0.0.38
+        version: 0.0.38(convex@1.27.3(@clerk/clerk-react@5.49.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0))
       eslint:
         specifier: ^9.36.0
         version: 9.36.0(jiti@1.21.7)
@@ -1329,6 +1332,11 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  convex-test@0.0.38:
+    resolution: {integrity: sha512-1o/3GvUR9gMLjiqq7SxchI/0OYQaWwbQC4INmB1SNt1WLBjUgEM8+brgpqrZwJ+Vb1DdGZokCVeihwT5IPk49w==}
+    peerDependencies:
+      convex: ^1.16.4
 
   convex@1.27.3:
     resolution: {integrity: sha512-Ebr9lPgXkL7JO5IFr3bG+gYvHskyJjc96Fx0BBNkJUDXrR/bd9/uI4q8QszbglK75XfDu068vR0d/HK2T7tB9Q==}
@@ -4200,6 +4208,10 @@ snapshots:
       yargs: 17.7.2
 
   convert-source-map@2.0.0: {}
+
+  convex-test@0.0.38(convex@1.27.3(@clerk/clerk-react@5.49.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)):
+    dependencies:
+      convex: 1.27.3(@clerk/clerk-react@5.49.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)
 
   convex@1.27.3(@clerk/clerk-react@5.49.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0):
     dependencies:

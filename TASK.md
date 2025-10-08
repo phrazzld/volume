@@ -1,34 +1,26 @@
-# PRD: Dashboard Reorganization - Multi-Page Navigation
+# TASK: Fix IDOR Vulnerability in listSets Query
+
+**Status**: Ready for Implementation
+**Priority**: CRITICAL - Security Vulnerability
+**Estimated Effort**: 2-3 hours
+**Category**: Security Fix (OWASP A01:2021 - Broken Access Control)
+
+---
 
 ## Executive Summary
 
-**Problem**: The current dashboard is a 190-line monolithic component displaying all features (daily stats, logging, full history, exercise management) on a single page. Users must scroll to reach history or manage exercises, creating friction and cognitive overload.
+Fix critical IDOR (Insecure Direct Object Reference) vulnerability in `convex/sets.ts:listSets` query that allows authenticated users to access other users' workout data by providing any exerciseId. Implement exercise ownership verification before returning filtered sets, add security tests to prevent regression, and document the secure pattern for future development.
 
-**Solution**: Split dashboard into 3 focused pages (Dashboard, History, Settings) with mobile-first bottom navigation. Dashboard shows only today's data + quick logging, History shows all historical data (paginated), Settings consolidates exercise management and preferences.
-
-**User Value**: Faster navigation (1 tap to history vs. scrolling), reduced cognitive load (single purpose per page), better mobile ergonomics (thumb-friendly bottom nav), cleaner codebase (focused components vs. god component).
-
-**Success Criteria**: Users can access history in 1 tap, dashboard load time improves (smaller initial component), mobile users report easier navigation in user testing.
+**Impact**: Prevents horizontal privilege escalation attack exposing personal fitness data (reps, weight, timestamps, unit preferences) across all users.
 
 ---
 
 ## User Context
 
-### Who Uses This
-- **Primary**: Fitness enthusiasts tracking workout progress on mobile devices (80%+ mobile usage expected)
-- **Secondary**: Power users on desktop managing exercise libraries and analyzing historical data
-
-### Problems Being Solved
-1. **Navigation friction**: Users must scroll through entire dashboard to view past workouts or manage exercises
-2. **Cognitive overload**: Too many features on one screen makes it unclear where to focus
-3. **Poor mobile UX**: Scrolling on mobile is tedious; bottom navigation is ergonomic (thumb reach zones)
-4. **Code maintainability**: 190-line Dashboard component with 6 responsibilities is hard to extend
-
-### Measurable Benefits
-- **Reduced taps to history**: 1 tap (bottom nav) vs. ~3 scrolls on mobile
-- **Faster dashboard load**: ~40% smaller bundle (history/exercise management deferred)
-- **Improved maintainability**: Dashboard splits from 190 lines → ~80 lines
-- **Better mobile ergonomics**: Bottom nav hits "natural thumb zone" (bottom 1/3 of screen)
+**Who**: All authenticated users (current and future)
+**Problem**: Any user can read another user's workout sets by guessing/enumerating exercise IDs
+**Benefit**: Data privacy guaranteed - users can only access their own workout data
+**Success Criteria**: Unauthorized access attempts throw explicit errors and are logged
 
 ---
 
@@ -36,429 +28,370 @@
 
 ### Functional Requirements
 
-**FR1: Dashboard Page (/ route)**
-- Display daily stats card (sets/reps/volume) filtered to today only (midnight to midnight, user's timezone)
-- Display quick log form (create exercises inline, log sets)
-- Display today's set history (grouped by time, most recent first)
-- Show loading skeleton while data fetches
-- Empty state: "No sets today - Let's go! 💪"
-
-**FR2: History Page (/history route)**
-- Display all historical workout data (grouped by date, chronological order)
-- Paginate with "Load More" button (initial load: 20-30 sets)
-- Show exercise names for each set (with fallback for deleted exercises)
-- Allow "Repeat" and "Delete" actions on each set
-- Show loading skeleton while paginating
-- Empty state: "No workout history yet"
-
-**FR3: Settings Page (/settings route)**
-- Display exercise manager (list all exercises with set counts)
-- Allow inline editing of exercise names
-- Allow deleting exercises (with confirmation + block if sets exist)
-- Display weight unit toggle (lbs/kg)
-- Future: Account preferences, export/import, help docs
-
-**FR4: Bottom Navigation (Mobile < 768px)**
-- Fixed position at bottom of screen
-- 3 navigation items: Dashboard | History | Settings
-- Show active state (highlight current route)
-- Icons + labels for clarity
-- Handle iOS safe area insets (notch/home indicator)
-
-**FR5: Top Navigation (Desktop ≥ 768px)**
-- Horizontal nav in existing top bar (next to logo)
-- Same 3 items: Dashboard | History | Settings
-- Active state with underline or color change
-- Responsive breakpoint at 768px
-
-**FR6: Inline Exercise Creation (Preserved)**
-- Users can still create exercises inline in QuickLogForm
-- No change to existing workflow (fast logging)
-- Settings page provides bulk management (rename, delete, view all)
+1. **Ownership Verification**: When `listSets` is called with `exerciseId` parameter, verify the exercise belongs to the authenticated user before returning sets
+2. **Error Handling**: Throw explicit error with message "Not authorized to access this exercise" when user attempts to access another user's exercise
+3. **Authorized Access**: Return sets normally when user queries their own exercises
+4. **Unauthenticated Access**: Existing behavior maintained (returns empty array)
 
 ### Non-Functional Requirements
 
-**NFR1: Performance**
-- Dashboard initial load: < 1.5s on 3G
-- History pagination: < 500ms per "Load More"
-- Navigation transitions: Instant (no loading spinners between pages)
-
-**NFR2: Mobile-First Design**
-- Bottom nav optimized for thumb reach zones (ergonomic)
-- Touch targets: ≥ 48px × 48px (WCAG 2.1 AAA)
-- Works on viewports down to 320px width (iPhone SE)
-
-**NFR3: Data Integrity**
-- Today's sets calculated correctly across timezones (use client-side date-fns)
-- History pagination preserves chronological order (no duplicate/missing sets)
-- Exercise deletion blocked if sets exist (data context preserved)
-
-**NFR4: Browser Compatibility**
-- iOS Safari (handle 100vh issues with 100dvh)
-- Chrome/Firefox/Safari on desktop
-- Handle iOS safe areas (notch, home indicator)
-
-**NFR5: Code Quality**
-- Dashboard component reduces from 190 → ~80 lines
-- History and Settings components < 150 lines each
-- Shared components reused (TerminalPanel, TerminalTable)
-- TypeScript strict mode (no `any` types)
+1. **Performance**: Use existing indexes (`by_exercise`, `by_user_performed`) - no schema migration required
+2. **Security**: Zero tolerance for data leakage - fail closed on authorization errors
+3. **Maintainability**: Follow existing `requireOwnership()` pattern from codebase
+4. **Reliability**: Comprehensive tests prevent regression
 
 ---
 
 ## Architecture Decision
 
-### Selected Approach: 3-Page Structure with Hybrid Navigation
+### Selected Approach: Exercise Ownership Verification
 
-**Pages**:
-1. **Dashboard (/)**: Today's stats + quick log + today's sets
-2. **History (/history)**: All historical data (paginated)
-3. **Settings (/settings)**: Exercise CRUD + preferences
-
-**Navigation**:
-- Mobile: Fixed bottom nav (3 items)
-- Desktop: Horizontal top nav (same 3 items)
-- Active state: `usePathname()` detection
+**Description**: Before filtering sets by exerciseId, fetch the exercise document and verify ownership using existing `requireOwnership()` helper. This enforces authorization at the application layer using current database indexes.
 
 **Rationale**:
-- **Simplicity**: Only 3 pages needed for MVP (analytics deferred)
-- **User Value**: Matches mental model ("Today" vs. "Past" vs. "Configuration")
-- **Explicitness**: Clear separation of concerns (no feature overlap)
+- **Simplicity**: 5 lines of code, uses existing helpers and indexes
+- **User Value**: Fixes critical vulnerability immediately without infrastructure changes
+- **Explicitness**: Clear ownership check, explicit error messages, follows codebase conventions
+- **Risk**: Low - minimal changes, existing pattern, comprehensive tests
 
 ### Alternatives Considered
 
-| Approach | User Value | Simplicity | Risk | Why Not Chosen |
-|----------|-----------|-----------|------|----------------|
-| **3-Page + Bottom Nav (SELECTED)** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Low | **Best balance** - Mobile-first, clear boundaries |
-| Tabbed Interface (Single Page) | ⭐⭐⭐ | ⭐⭐⭐ | Low | Still monolithic component, no URL state |
-| Hamburger Menu (Hidden Nav) | ⭐⭐ | ⭐⭐⭐⭐⭐ | Medium | Poor discoverability (~20% lower engagement) |
-| 5-Page Structure (Add Analytics + Exercises) | ⭐⭐⭐⭐ | ⭐⭐ | High | Premature - analytics not ready, exercises fits in settings |
-| Modal-Based Navigation | ⭐⭐ | ⭐⭐ | Medium | No URL state, poor mobile UX, breaks back button |
+| Approach | Simplicity | Performance | Security | Why Not Chosen |
+|----------|-----------|-------------|----------|----------------|
+| **Compound Index** (`by_user_exercise`) | Medium | Excellent | Excellent | Premature optimization for MVP scale. Can add later if needed. |
+| **Always Filter by User** | Medium | Good | Excellent | More complex query logic. Ownership check is clearer and more maintainable. |
+| **Silent Return** (`return []`) | High | Excellent | Good | Poor UX, harder debugging, no audit trail for attacks. |
 
 ### Module Boundaries
 
-**1. Dashboard Module** (`src/app/page.tsx` + components)
-- **Interface**: Displays today's data, accepts set logging
-- **Responsibility**: Filter sets to today, calculate daily stats, orchestrate quick log form
-- **Hidden Complexity**: Timezone-aware date filtering, undo toast state management
+**Modified Module**: `convex/sets.ts:listSets` query handler
+**Interface**: No changes to query signature or return type
+**Responsibility**: Enforces authorization before data access
+**Hidden Complexity**: Exercise existence and ownership verification details
 
-**2. History Module** (`src/app/history/page.tsx` + components)
-- **Interface**: Displays all historical data, accepts pagination requests
-- **Responsibility**: Fetch paginated sets, group by date, handle repeat/delete actions
-- **Hidden Complexity**: Convex pagination cursor management, grouping logic
-
-**3. Settings Module** (`src/app/settings/page.tsx` + components)
-- **Interface**: Displays exercise list, accepts CRUD operations
-- **Responsibility**: Exercise management (create, rename, delete), preferences (weight unit)
-- **Hidden Complexity**: Exercise ownership verification, deletion blocking (if sets exist)
-
-**4. Navigation Module** (`src/components/layout/bottom-nav.tsx`, `top-nav.tsx`)
-- **Interface**: Displays nav items, highlights active route
-- **Responsibility**: Route detection, responsive layout, iOS safe area handling
-- **Hidden Complexity**: Active state calculation, z-index stacking, viewport height fixes
-
-**5. Date Filtering Module** (New: `src/lib/date-utils.ts`)
-- **Interface**: `getTodayRange()` → `{ start: number, end: number }`
-- **Responsibility**: Calculate midnight-to-midnight timestamps in user's timezone
-- **Hidden Complexity**: Timezone detection, DST handling, edge cases (crossing midnight)
+**New Module**: `convex/sets.test.ts` (test suite)
+**Interface**: Security test cases
+**Responsibility**: Validates authorization logic
+**Hidden Complexity**: Mock data setup, auth context simulation
 
 ### Abstraction Layers
 
-**Layer 1: UI Components** (React components, terminal aesthetic)
-- Vocabulary: "Dashboard", "History", "Settings", "BottomNav"
-- Handles: User interactions, rendering, styling
+- **Layer 1 (Client)**: Calls `listSets({ exerciseId })` - unchanged
+- **Layer 2 (Query Handler)**: Validates auth, verifies ownership, fetches data - **modified**
+- **Layer 3 (Database)**: Executes indexed queries - unchanged
 
-**Layer 2: Data Fetching** (Convex hooks: `useQuery`, `useMutation`, `usePaginatedQuery`)
-- Vocabulary: "Sets", "Exercises", "Pagination", "Mutations"
-- Handles: Real-time subscriptions, optimistic updates, error handling
-
-**Layer 3: Business Logic** (Utility functions: `dashboard-utils.ts`, `date-utils.ts`)
-- Vocabulary: "Stats", "Volume", "Grouping", "Today Range"
-- Handles: Calculations, transformations, filtering
-
-**Layer 4: Data Storage** (Convex backend: queries, mutations, schema)
-- Vocabulary: "Tables", "Indexes", "Auth", "Validation"
-- Handles: Database queries, ownership verification, data integrity
-
-Each layer changes vocabulary and abstracts away lower-layer complexity.
+Each layer maintains its vocabulary: Client thinks "get my sets", Handler thinks "authorize then fetch", Database thinks "index lookup".
 
 ---
 
 ## Dependencies & Assumptions
 
-### External Dependencies
-- **Next.js 15**: App Router for routing, `usePathname()` for active state
-- **Convex**: Real-time queries, pagination API (`usePaginatedQuery`)
-- **date-fns**: Timezone-aware date calculations (`startOfDay`, `endOfDay`)
-- **Lucide React**: Icons for navigation (Home, History, Settings)
-- **Tailwind CSS**: Responsive classes (`md:hidden`, `md:block`), safe area utilities
+### Dependencies
+- **External**: None
+- **Internal**: `convex/lib/validate.ts:requireOwnership` helper (already exists)
+- **Schema**: Current `exercises` and `sets` tables with existing indexes
 
 ### Assumptions
-- **Scale**: Users have < 10,000 sets (pagination sufficient, no need for virtualization)
-- **Mobile Usage**: 80%+ of users on mobile (justifies bottom nav priority)
-- **Timezone**: Users primarily work out in one timezone (edge case: traveling users cross midnight)
-- **Browser**: Modern browsers (Safari 15+, Chrome 90+, Firefox 88+)
-- **iOS**: Safe area insets supported (iOS 11+, 99% of devices)
+- **Scale**: Current MVP dataset (<1000 exercises, <10000 sets per user) - existing indexes sufficient
+- **Auth**: Clerk authentication provides reliable `identity.subject` (already in use)
+- **Environment**: Convex dev environment running (required for tests)
+- **Browser Compatibility**: No client-side changes needed
 
-### Environment Requirements
-- **Client-side Date Calculation**: Browser must expose `Intl.DateTimeFormat().resolvedOptions().timeZone`
-- **Viewport Height**: Support for `100dvh` CSS unit (fallback to `100vh` for older browsers)
-- **Navigation**: JavaScript enabled (no SSR fallback for bottom nav active state)
-
-### Integration Points
-- **Clerk Middleware**: All new routes (`/history`, `/settings`) already protected by existing middleware
-- **Existing Components**: Reuse `TerminalPanel`, `TerminalTable`, `DailyStatsCard`, `QuickLogForm`, `GroupedSetHistory`, `ExerciseManager`
-- **Convex Schema**: No changes required (existing indexes support new queries)
+### Explicit Constraints
+- No schema migrations (use existing indexes)
+- No breaking API changes (query signature unchanged)
+- Maintain existing error handling patterns (`requireOwnership` throws)
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: MVP (Core Functionality)
-**Goal**: Ship 3-page navigation with today/history split
+### Phase 1: Core Fix (30 minutes)
+**Goal**: Patch vulnerability with minimal changes
 
-**Tasks**:
-1. **Create Date Utilities** (`src/lib/date-utils.ts`)
-   - `getTodayRange()` function (midnight to midnight in user's timezone)
-   - Handle DST transitions (date-fns automatically handles)
-   - Unit tests for timezone edge cases
+1. Add exercise ownership verification in `listSets` handler before filtering by exerciseId
+2. Use existing `requireOwnership()` helper for consistency
+3. Verify fix locally with manual testing (create two users, attempt cross-user access)
 
-2. **Create Bottom Navigation** (`src/components/layout/bottom-nav.tsx`)
-   - Fixed position with `z-50`, `pb-safe` for iOS
-   - 3 items: Dashboard | History | Settings
-   - Active state with `usePathname()`
-   - Icons + labels (Lucide React)
+**Acceptance Criteria**:
+- Querying own exercise returns sets successfully
+- Querying another user's exercise throws "Not authorized" error
+- Querying without exerciseId returns all user's sets (unchanged behavior)
 
-3. **Create Top Navigation** (`src/components/layout/top-nav.tsx`)
-   - Horizontal layout in existing Nav component
-   - Same 3 items, responsive with `hidden md:block`
-   - Active state (underline or color change)
+### Phase 2: Security Tests (1 hour)
+**Goal**: Prevent regression with comprehensive test coverage
 
-4. **Update Root Layout** (`src/app/layout.tsx`)
-   - Add bottom nav (mobile only)
-   - Add content padding (`pb-20 md:pb-0`)
-   - Add safe area utilities to globals.css
-   - Use `100dvh` instead of `100vh`
+1. Create `convex/sets.test.ts` test file
+2. Add test utilities for auth mocking (if not already available)
+3. Write 4 core test cases:
+   - Authorized access: User can list their own exercise's sets
+   - Unauthorized access: User cannot list another user's exercise's sets
+   - Unauthenticated access: Returns empty array
+   - No filter: Returns all user's sets
 
-5. **Refactor Dashboard** (`src/app/page.tsx`)
-   - Filter sets to today only (use `getTodayRange()`)
-   - Remove `GroupedSetHistory` (move to history page)
-   - Remove `ExerciseManager` (move to settings page)
-   - Keep `DailyStatsCard`, `QuickLogForm`, today's set list
-   - Reduce from 190 → ~80 lines
+**Acceptance Criteria**:
+- All tests pass with `pnpm test`
+- Coverage includes both success and failure paths
+- Tests use realistic mock data
 
-6. **Create History Page** (`src/app/history/page.tsx`)
-   - Import `GroupedSetHistory` component
-   - Use `usePaginatedQuery` for sets (initial: 20-30 items)
-   - "Load More" button (show when `status === "CanLoadMore"`)
-   - Loading skeleton (show when `status === "LoadingMore"`)
-   - Empty state: "No workout history yet"
+### Phase 3: Documentation (30 minutes)
+**Goal**: Help future developers avoid similar vulnerabilities
 
-7. **Create Settings Page** (`src/app/settings/page.tsx`)
-   - Import `ExerciseManager` component
-   - Add weight unit toggle (reuse `WeightUnitContext`)
-   - Section headers: "Exercise Management", "Preferences"
-   - Future: Account settings, export/import
+1. Add inline comment documenting the security pattern in `listSets`
+2. Update `CLAUDE.md` (if applicable) with secure query pattern example
+3. Update BACKLOG.md to mark item #1 as completed
+4. Git commit with detailed message referencing OWASP category
 
-8. **Add Pagination to Convex** (`convex/sets.ts`)
-   - Create `listSetsPaginated` query
-   - Use `.paginate(args.paginationOpts)` (Convex API)
-   - Preserve `by_user_performed` index for performance
-
-**Deliverables**:
-- 3 functional pages with navigation
-- Today's sets filtered correctly
-- History paginated (20-30 items per load)
-- Bottom nav works on mobile, top nav on desktop
-
-**Estimated Effort**: 6-8 hours
-
-### Phase 2: Hardening (Polish & Edge Cases)
-**Goal**: Handle edge cases, improve UX, fix iOS issues
-
-**Tasks**:
-1. **Loading Skeletons**
-   - Dashboard: Stats card + form + set list skeletons
-   - History: Grouped set skeletons (3-5 groups)
-   - Settings: Exercise list skeleton
-   - Match final layout dimensions (no layout shift)
-
-2. **Error Boundaries**
-   - Page-level error boundaries (catch data fetching errors)
-   - Graceful degradation (show error message + retry button)
-   - Toast notifications for mutation errors
-
-3. **iOS Testing & Fixes**
-   - Test on iPhone SE, 14 Pro, 15 Pro Max (various safe areas)
-   - Verify bottom nav doesn't cover content
-   - Test in Safari (address bar hiding/showing)
-   - Verify `100dvh` works correctly
-
-4. **Empty States**
-   - Dashboard: "No sets today - Let's go! 💪" (with CTA to log set)
-   - History: "No workout history yet" (with CTA to log first set)
-   - Settings: "No exercises yet" (with CTA to create first exercise)
-
-5. **Performance Optimization**
-   - Lazy load history page (dynamic import)
-   - Lazy load settings page (dynamic import)
-   - Memoize expensive calculations (`useMemo` for stats)
-
-**Deliverables**:
-- Smooth loading states (no flashes or layout shift)
-- Error handling for all failure scenarios
-- iOS safe area working correctly
-- Empty states with clear CTAs
-
-**Estimated Effort**: 3-4 hours
-
-### Phase 3: Future Enhancements (Post-MVP)
-**Goal**: Add features as user needs emerge
-
-**Potential Additions**:
-1. **History Filters**
-   - Date range picker (last 7 days, last 30 days, custom range)
-   - Exercise filter (dropdown: "All Exercises" or specific exercise)
-   - Search bar (filter by exercise name)
-
-2. **Settings Expansion**
-   - Account settings (email, password, delete account)
-   - Export/import (CSV, JSON)
-   - Notification preferences (future: push notifications)
-   - Help/documentation links
-
-3. **Analytics Page** (`/analytics`)
-   - Add 4th nav item: Dashboard | History | Analytics | Settings
-   - PRs, streaks, charts (see BACKLOG.md)
-   - Requires data aggregation logic (defer until user request)
-
-4. **Keyboard Shortcuts**
-   - `g d` → Dashboard
-   - `g h` → History
-   - `g s` → Settings
-   - Terminal aesthetic: Show shortcuts in footer
-
-**Estimated Effort**: Variable (defer until user feedback)
+**Acceptance Criteria**:
+- Code includes clear comments explaining authorization check
+- Pattern is documented for reuse
+- BACKLOG.md updated
 
 ---
 
 ## Risks & Mitigation
 
 | Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| **Timezone edge cases** (DST, traveling users) | Medium | Medium | Use date-fns (handles DST), test with multiple timezones, document behavior (today = device timezone) |
-| **iOS safe area issues** (notch, home indicator) | Medium | High | Use `pb-safe` utility (env(safe-area-inset-bottom)), test on multiple iOS devices, fallback to fixed padding |
-| **Pagination performance** (10,000+ sets) | Low | Medium | Convex handles pagination efficiently, add virtualization if needed (future), monitor query performance |
-| **Bottom nav covers content** | Medium | High | Add `pb-20` to content wrapper, test on multiple devices, ensure footer visible (flexbox layout) |
-| **Active route detection fails** | Low | Low | `usePathname()` is reliable, add fallback (default to dashboard), test all route transitions |
-| **Users miss inline exercise creation** | Low | Medium | Keep inline creation in QuickLogForm (no workflow change), add tooltip/hint on first use |
-| **Mobile users don't find settings** | Low | Medium | Bottom nav always visible (no hidden menus), use clear icons + labels, test with 5 users |
+|------|-----------|--------|------------|
+| **Production users exploited** | Medium | CRITICAL | Deploy immediately after testing. No public announcement (avoid alerting attackers). |
+| **Performance regression** | Low | Low | Uses existing indexes. Monitor query latency after deploy. |
+| **Test complexity** | Medium | Medium | Start with simple cases. Use Convex test utilities. Reference existing tests. |
+| **Incomplete fix** | Low | CRITICAL | Manual security testing with 2 user accounts. Peer review before merge. |
+| **Breaking client code** | Low | Low | Error throw matches existing pattern. Clients already handle query errors. |
 
 ---
 
 ## Key Decisions
 
-### Decision 1: 3 Pages (Not 4 or 5)
-**What**: Dashboard, History, Settings (defer Analytics, merge Exercises into Settings)
-
-**Alternatives**:
-- 4 pages: Add dedicated Exercises page
-- 5 pages: Add Analytics page now
-
+### Decision 1: Throw Error vs. Return Empty Array
+**What**: When user queries exercise they don't own
+**Alternatives**: Silent return `[]` (hides issue), throw error (explicit)
+**Selected**: Throw error
 **Rationale**:
-- **User Value**: 3 pages match mental model (Today, Past, Config)
-- **Simplicity**: Exercises fit naturally in Settings (both are configuration)
-- **Explicitness**: Analytics not ready yet (avoid "Coming Soon" placeholder)
+- **User Value**: Clear feedback enables better UX ("please select your exercise")
+- **Simplicity**: Matches existing `requireOwnership()` pattern
+- **Explicitness**: Logs security events, easier debugging
 
-**Tradeoffs**:
-- Pro: Cleaner nav, faster to ship
-- Con: Settings page may grow large (mitigate with tabs/sections later)
+**Tradeoffs**: Minor information leakage (confirms exercise exists) - acceptable for authenticated app
 
-### Decision 2: Bottom Nav on Mobile (Not Hamburger Menu)
-**What**: Fixed bottom nav with 3 always-visible items
-
-**Alternatives**:
-- Hamburger menu (hidden drawer)
-- Floating action button + menu
-
+### Decision 2: Use Existing Indexes vs. Add Compound Index
+**What**: Database query strategy
+**Alternatives**: Add `by_user_exercise` index (optimal), use existing indexes (simpler)
+**Selected**: Use existing indexes
 **Rationale**:
-- **User Value**: Always visible = faster navigation (~20% higher engagement vs. hamburger)
-- **Simplicity**: No state management (open/close), no overlay
-- **Explicitness**: All features discoverable (no "out of sight, out of mind")
+- **User Value**: Fixes vulnerability now without deployment complexity
+- **Simplicity**: No schema migration, no index bloat
+- **Explicitness**: Query logic is clear with ownership check
 
-**Tradeoffs**:
-- Pro: Ergonomic (thumb reach), industry standard (Instagram, Strava)
-- Con: Takes permanent screen space (mitigate with small height: 64px)
+**Tradeoffs**: Slightly less optimal performance (negligible at current scale). Can optimize later if needed.
 
-### Decision 3: "Load More" Button (Not Infinite Scroll)
-**What**: History page uses button to load next 20 sets
-
-**Alternatives**:
-- Infinite scroll (auto-load on scroll)
-- Traditional pagination (numbered pages)
-
+### Decision 3: Security Tests Required
+**What**: Test coverage for fix
+**Alternatives**: Manual testing only (faster), automated tests (safer)
+**Selected**: Automated tests
 **Rationale**:
-- **User Value**: Predictable, user controls loading, footer always reachable
-- **Simplicity**: Convex `usePaginatedQuery` makes this trivial
-- **Explicitness**: User sees loading state, knows when more data exists
+- **User Value**: Prevents regression that could re-expose user data
+- **Simplicity**: Forces clear thinking about edge cases
+- **Explicitness**: Documents expected behavior
 
-**Tradeoffs**:
-- Pro: Simple implementation, good UX on mobile
-- Con: Extra tap required (acceptable for fitness app - users don't browse deep history often)
-
-### Decision 4: Midnight-to-Midnight (Not Last 24 Hours)
-**What**: "Today" means calendar day (midnight to midnight in user's timezone)
-
-**Alternatives**:
-- Last 24 hours (rolling window)
-- Current workout session (since app opened)
-
-**Rationale**:
-- **User Value**: Matches mental model ("What did I do today?")
-- **Simplicity**: Clear boundary (resets at midnight)
-- **Explicitness**: Users understand "today" = calendar day (no confusion)
-
-**Tradeoffs**:
-- Pro: Intuitive, aligns with daily habits
-- Con: Edge case: User crosses midnight mid-workout (acceptable - stats recalculate on next page load)
-
-### Decision 5: Client-Side Date Filtering (Not Server-Side)
-**What**: Calculate today's date range in browser, pass timestamps to Convex
-
-**Alternatives**:
-- Server-side calculation (Convex function)
-- Hybrid (server detects timezone from request)
-
-**Rationale**:
-- **User Value**: Accurate timezone (browser knows user's current location)
-- **Simplicity**: No timezone passing required, works offline (PWA future)
-- **Explicitness**: Browser API is authoritative source for user's timezone
-
-**Tradeoffs**:
-- Pro: Handles traveling users, DST transitions automatic
-- Con: Requires JavaScript enabled (acceptable - app already requires JS)
+**Tradeoffs**: Additional 1 hour development time - worth it for critical security issue
 
 ---
 
-## Summary
+## Implementation Guide
 
-### Approach Selected
-**3-page structure with mobile-first bottom navigation**. Dashboard shows today's data, History shows all paginated data, Settings consolidates exercise management and preferences.
+### Code Changes
 
-### User Value Delivered
-- **1-tap access** to history and settings (vs. scrolling on dashboard)
-- **Reduced cognitive load** (single purpose per page)
-- **Better mobile ergonomics** (bottom nav in thumb reach zone)
-- **Faster dashboard load** (~40% smaller bundle)
+**File**: `convex/sets.ts` (lines 58-64)
 
-### Timeline Estimate
-- **Phase 1 (MVP)**: 6-8 hours
-- **Phase 2 (Hardening)**: 3-4 hours
-- **Total**: 10-12 hours
+**Current (Vulnerable)**:
+```typescript
+if (args.exerciseId) {
+  // ❌ NO OWNERSHIP CHECK
+  sets = await ctx.db
+    .query("sets")
+    .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId!))
+    .order("desc")
+    .collect();
+}
+```
 
-### Complexity Assessment
-**Medium** - Straightforward refactor with clear module boundaries. Main risks are timezone edge cases (mitigated with date-fns) and iOS safe area issues (mitigated with pb-safe utility).
+**Fixed (Secure)**:
+```typescript
+if (args.exerciseId) {
+  // ✅ Verify exercise ownership before querying sets
+  const exercise = await ctx.db.get(args.exerciseId);
+  requireOwnership(exercise, identity.subject, "exercise");
+
+  sets = await ctx.db
+    .query("sets")
+    .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId))
+    .order("desc")
+    .collect();
+}
+```
+
+**File**: `convex/sets.test.ts` (new file)
+
+Create comprehensive security test suite covering authorized access, unauthorized access, unauthenticated access, and edge cases.
 
 ---
 
-**Next Step**: Run `/plan` to break this PRD into implementation tasks.
+## Testing Strategy
+
+### Security Test Cases
+
+1. **Test: Authorized Access**
+   - Setup: User A owns Exercise 1
+   - Action: User A calls `listSets({ exerciseId: Exercise1 })`
+   - Expected: Returns User A's sets for Exercise 1
+
+2. **Test: Unauthorized Access**
+   - Setup: User A owns Exercise 1, User B is authenticated
+   - Action: User B calls `listSets({ exerciseId: Exercise1 })`
+   - Expected: Throws "Not authorized to access this exercise"
+
+3. **Test: Unauthenticated Access**
+   - Setup: No user authenticated
+   - Action: Call `listSets({ exerciseId: Exercise1 })`
+   - Expected: Returns empty array (existing behavior)
+
+4. **Test: Exercise Not Found**
+   - Setup: User A authenticated
+   - Action: User A calls `listSets({ exerciseId: "nonexistent_id" })`
+   - Expected: Throws "exercise not found"
+
+5. **Test: No Filter (Baseline)**
+   - Setup: User A owns multiple exercises with sets
+   - Action: User A calls `listSets({})`
+   - Expected: Returns all User A's sets (existing behavior)
+
+### Manual Testing Checklist
+
+- [ ] Create two test accounts (User A, User B)
+- [ ] User A creates Exercise 1 and logs sets
+- [ ] User B creates Exercise 2 and logs sets
+- [ ] Verify User A can query Exercise 1 sets
+- [ ] Verify User A CANNOT query Exercise 2 sets (throws error)
+- [ ] Verify unauthenticated query returns empty array
+- [ ] Verify no performance regression (check Convex dashboard)
+
+---
+
+## Deployment Strategy
+
+1. **Pre-Deployment**:
+   - Run full test suite: `pnpm test`
+   - Run type checking: `pnpm typecheck`
+   - Manual security testing with 2 accounts
+   - Code review focusing on authorization logic
+
+2. **Deployment**:
+   - Deploy to Convex dev environment first
+   - Verify in Convex dashboard (check query logs)
+   - If production exists, deploy during low-traffic window
+   - Monitor error rates for 1 hour post-deployment
+
+3. **Post-Deployment**:
+   - Verify no spike in error rates (Convex dashboard)
+   - Test production with real accounts
+   - Document fix in commit message and BACKLOG.md
+   - NO public security advisory (avoid alerting attackers to past vulnerability)
+
+---
+
+## Success Metrics
+
+**Security**:
+- ✅ Zero unauthorized data access (verified by security tests)
+- ✅ Explicit errors logged for unauthorized attempts
+- ✅ No client-side code changes required (server-enforced)
+
+**Performance**:
+- ✅ Query latency unchanged (<50ms for typical dataset)
+- ✅ No additional database queries for unfiltered calls
+- ✅ Uses existing indexes efficiently
+
+**Maintainability**:
+- ✅ Follows existing `requireOwnership()` pattern
+- ✅ Clear inline documentation
+- ✅ Comprehensive test coverage
+- ✅ Explicit error messages aid debugging
+
+**User Experience**:
+- ✅ Authorized users experience no change
+- ✅ Unauthorized access fails fast with clear error
+- ✅ No breaking changes to client code
+
+---
+
+## Quality Validation
+
+**Deep Modules**: ✅ Simple interface (`listSets({ exerciseId? })`) hides authorization complexity
+**Information Hiding**: ✅ Ownership verification is implementation detail, not leaked to callers
+**Abstraction Layers**: ✅ Handler layer transforms "get sets" to "authorize then fetch"
+**Strategic Design**: ✅ Investing 2-3 hours prevents future security incidents and sets pattern
+
+**Red Flags Avoided**:
+- ❌ No temporal decomposition (logic grouped by security concern)
+- ❌ No information leakage (ownership check doesn't expose exercise details)
+- ❌ No pass-through (handler adds authorization layer)
+- ❌ No generic names (clear "requireOwnership" helper)
+
+---
+
+## Next Steps
+
+1. **Review this specification** - Ensure alignment with security requirements
+2. **Run `/plan`** - Break down into implementation tasks
+3. **Execute Phase 1** - Fix vulnerability (30 min)
+4. **Execute Phase 2** - Add security tests (1 hour)
+5. **Execute Phase 3** - Document and deploy (30 min)
+
+**Total Timeline**: 2-3 hours from start to production deployment
+
+---
+
+## Appendix: Secure Query Pattern
+
+For future reference, this is the recommended pattern for Convex queries with optional filters on related resources:
+
+```typescript
+export const queryWithOptionalFilter = query({
+  args: {
+    relatedResourceId: v.optional(v.id("relatedResource")),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);
+
+    if (args.relatedResourceId) {
+      // ✅ ALWAYS verify ownership of filter resource first
+      const relatedResource = await ctx.db.get(args.relatedResourceId);
+      requireOwnership(relatedResource, identity.subject, "relatedResource");
+
+      // Then apply filter
+      return ctx.db
+        .query("mainResource")
+        .withIndex("by_related", (q) => q.eq("relatedResourceId", args.relatedResourceId))
+        .collect();
+    }
+
+    // No filter - return all user's resources
+    return ctx.db
+      .query("mainResource")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
+  },
+});
+```
+
+**Key Principles**:
+1. Always get authenticated identity first
+2. Verify ownership of ANY filter parameter before using it
+3. Use existing `requireOwnership()` helper for consistency
+4. Throw explicit errors (don't return empty silently)
+5. Add security tests for each authorization point
+
+---
+
+*This PRD follows the philosophy of strategic programming - investing time upfront to reduce complexity and prevent future security incidents.*
