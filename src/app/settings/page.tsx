@@ -5,6 +5,7 @@ import { api } from "../../../convex/_generated/api";
 import { ExerciseManager } from "@/components/dashboard/exercise-manager";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { PageLayout } from "@/components/layout/page-layout";
 
 export default function SettingsPage() {
   // Fetch exercises and sets for ExerciseManager
@@ -17,10 +18,7 @@ export default function SettingsPage() {
   // Loading state
   if (exercises === undefined || sets === undefined) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold font-mono text-terminal-text uppercase mb-4">
-          SETTINGS
-        </h1>
+      <PageLayout title="SETTINGS">
         <div className="animate-pulse space-y-3">
           {[1, 2].map((i) => (
             <div
@@ -35,16 +33,12 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold font-mono text-terminal-text uppercase mb-4">
-        SETTINGS
-      </h1>
-
+    <PageLayout title="SETTINGS">
       {/* Exercise Management Section */}
       <ExerciseManager exercises={exercises} sets={sets} />
 
@@ -92,6 +86,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </TerminalPanel>
-    </div>
+    </PageLayout>
   );
 }

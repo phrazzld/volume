@@ -6,6 +6,7 @@ import { usePaginatedQuery, useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
 import { groupSetsByDay } from "@/lib/dashboard-utils";
+import { PageLayout } from "@/components/layout/page-layout";
 import { Id } from "../../../convex/_generated/dataModel";
 
 export default function HistoryPage() {
@@ -40,10 +41,7 @@ export default function HistoryPage() {
   // Loading state (first page)
   if (status === "LoadingFirstPage") {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold font-mono text-terminal-text uppercase mb-4">
-          WORKOUT HISTORY
-        </h1>
+      <PageLayout title="WORKOUT HISTORY">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
             <div
@@ -58,17 +56,14 @@ export default function HistoryPage() {
             </div>
           ))}
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   // Empty state
   if (results.length === 0) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold font-mono text-terminal-text uppercase mb-4">
-          WORKOUT HISTORY
-        </h1>
+      <PageLayout title="WORKOUT HISTORY">
         <div className="border border-terminal-border bg-terminal-bg p-12 text-center rounded">
           <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
             NO WORKOUT HISTORY YET
@@ -83,16 +78,12 @@ export default function HistoryPage() {
             </Link>
           </p>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold font-mono text-terminal-text uppercase mb-4">
-        WORKOUT HISTORY
-      </h1>
-
+    <PageLayout title="WORKOUT HISTORY">
       <GroupedSetHistory
         groupedSets={groupedSets}
         exercises={exercises || []}
@@ -123,6 +114,6 @@ export default function HistoryPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }

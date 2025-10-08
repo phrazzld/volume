@@ -11,6 +11,8 @@ import { UndoToast } from "@/components/dashboard/undo-toast";
 import { FirstRunExperience } from "@/components/dashboard/first-run-experience";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { handleMutationError } from "@/lib/error-handler";
+import { PageLayout } from "@/components/layout/page-layout";
+import { LAYOUT } from "@/lib/layout-constants";
 import {
   calculateDailyStats,
   calculateDailyStatsByExercise,
@@ -108,40 +110,38 @@ export function Dashboard() {
   // Loading state
   if (allSets === undefined || exercises === undefined) {
     return (
-      <main className="min-h-screen p-3 sm:p-4 lg:p-6 max-w-4xl mx-auto">
-        <div className="space-y-3">
-          {/* Stats skeleton */}
-          <div className="bg-terminal-bg border border-terminal-border p-3 animate-pulse">
-            <div className="h-4 bg-terminal-bgSecondary w-32 mb-3" />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-px">
-              <div className="h-16 bg-terminal-bgSecondary" />
-              <div className="h-16 bg-terminal-bgSecondary" />
-              <div className="h-16 bg-terminal-bgSecondary" />
-              <div className="h-16 bg-terminal-bgSecondary" />
-            </div>
-          </div>
-
-          {/* Form skeleton */}
-          <div className="bg-terminal-bg border border-terminal-border p-4 animate-pulse">
-            <div className="h-4 bg-terminal-bgSecondary w-24 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="h-10 bg-terminal-bgSecondary" />
-              <div className="h-10 bg-terminal-bgSecondary" />
-              <div className="h-10 bg-terminal-bgSecondary" />
-              <div className="h-10 bg-terminal-bgSecondary" />
-            </div>
-          </div>
-
-          {/* History skeleton */}
-          <div className="bg-terminal-bg border border-terminal-border p-4 animate-pulse">
-            <div className="h-4 bg-terminal-bgSecondary w-32 mb-4" />
-            <div className="space-y-3">
-              <div className="h-20 bg-terminal-bgSecondary" />
-              <div className="h-20 bg-terminal-bgSecondary" />
-            </div>
+      <PageLayout title="DASHBOARD">
+        {/* Stats skeleton */}
+        <div className="bg-terminal-bg border border-terminal-border p-3 animate-pulse">
+          <div className="h-4 bg-terminal-bgSecondary w-32 mb-3" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px">
+            <div className="h-16 bg-terminal-bgSecondary" />
+            <div className="h-16 bg-terminal-bgSecondary" />
+            <div className="h-16 bg-terminal-bgSecondary" />
+            <div className="h-16 bg-terminal-bgSecondary" />
           </div>
         </div>
-      </main>
+
+        {/* Form skeleton */}
+        <div className="bg-terminal-bg border border-terminal-border p-4 animate-pulse">
+          <div className="h-4 bg-terminal-bgSecondary w-24 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="h-10 bg-terminal-bgSecondary" />
+            <div className="h-10 bg-terminal-bgSecondary" />
+            <div className="h-10 bg-terminal-bgSecondary" />
+            <div className="h-10 bg-terminal-bgSecondary" />
+          </div>
+        </div>
+
+        {/* History skeleton */}
+        <div className="bg-terminal-bg border border-terminal-border p-4 animate-pulse">
+          <div className="h-4 bg-terminal-bgSecondary w-32 mb-4" />
+          <div className={LAYOUT.section.spacing}>
+            <div className="h-20 bg-terminal-bgSecondary" />
+            <div className="h-20 bg-terminal-bgSecondary" />
+          </div>
+        </div>
+      </PageLayout>
     );
   }
 
@@ -160,40 +160,38 @@ export function Dashboard() {
   };
 
   return (
-    <main className="min-h-screen p-3 sm:p-4 lg:p-6 max-w-4xl mx-auto">
-      <div className="space-y-3">
-        {exercises.length === 0 ? (
-          /* First Run Experience - Show when no exercises exist */
-          <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
-        ) : (
-          <>
-            {/* Daily Stats Card */}
-            <DailyStatsCard stats={dailyStats} exerciseStats={exerciseStats} />
+    <PageLayout title="DASHBOARD">
+      {exercises.length === 0 ? (
+        /* First Run Experience - Show when no exercises exist */
+        <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
+      ) : (
+        <>
+          {/* Daily Stats Card */}
+          <DailyStatsCard stats={dailyStats} exerciseStats={exerciseStats} />
 
-            {/* Quick Log Form - MOVED TO PRIME POSITION */}
-            <QuickLogForm
-              ref={formRef}
-              exercises={exercisesByRecency}
-              onSetLogged={handleSetLogged}
-            />
+          {/* Quick Log Form - MOVED TO PRIME POSITION */}
+          <QuickLogForm
+            ref={formRef}
+            exercises={exercisesByRecency}
+            onSetLogged={handleSetLogged}
+          />
 
-            {/* Today's Set History */}
-            <GroupedSetHistory
-              groupedSets={groupedSets}
-              exercises={exercisesByRecency}
-              onRepeat={handleRepeatSet}
-              onDelete={handleDeleteSet}
-            />
-          </>
-        )}
+          {/* Today's Set History */}
+          <GroupedSetHistory
+            groupedSets={groupedSets}
+            exercises={exercisesByRecency}
+            onRepeat={handleRepeatSet}
+            onDelete={handleDeleteSet}
+          />
+        </>
+      )}
 
-        {/* Undo Toast */}
-        <UndoToast
-          visible={undoToastVisible}
-          onUndo={handleUndo}
-          onDismiss={handleDismissToast}
-        />
-      </div>
-    </main>
+      {/* Undo Toast - Fixed position overlay, not affected by spacing */}
+      <UndoToast
+        visible={undoToastVisible}
+        onUndo={handleUndo}
+        onDismiss={handleDismissToast}
+      />
+    </PageLayout>
   );
 }
