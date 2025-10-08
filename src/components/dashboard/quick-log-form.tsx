@@ -93,7 +93,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     // Auto-focus flow: exercise selected → focus reps input
     useEffect(() => {
       if (selectedExerciseId && repsInputRef.current) {
-        repsInputRef.current.focus();
+        // Delay focus to allow mobile picker UI to fully dismiss
+        setTimeout(() => repsInputRef.current?.focus(), 100);
       }
     }, [selectedExerciseId]);
 

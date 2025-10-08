@@ -14,6 +14,7 @@ import type {
   FunctionReference,
 } from "convex/server";
 import type * as exercises from "../exercises.js";
+import type * as lib_validate from "../lib/validate.js";
 import type * as sets from "../sets.js";
 
 /**
@@ -26,6 +27,7 @@ import type * as sets from "../sets.js";
  */
 declare const fullApi: ApiFromModules<{
   exercises: typeof exercises;
+  "lib/validate": typeof lib_validate;
   sets: typeof sets;
 }>;
 export declare const api: FilterApi<

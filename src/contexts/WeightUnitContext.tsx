@@ -7,6 +7,7 @@ export type WeightUnit = "lbs" | "kg";
 interface WeightUnitContextType {
   unit: WeightUnit;
   toggleUnit: () => void;
+  setUnit: (unit: WeightUnit) => void;
 }
 
 const WeightUnitContext = createContext<WeightUnitContextType | undefined>(undefined);
@@ -45,8 +46,18 @@ export function WeightUnitProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const setUnitAndSave = (newUnit: WeightUnit) => {
+    setUnit(newUnit);
+    // Save to localStorage with error handling
+    try {
+      localStorage.setItem("weightUnit", newUnit);
+    } catch (error) {
+      console.warn("Failed to save weight unit preference to localStorage:", error);
+    }
+  };
+
   return (
-    <WeightUnitContext.Provider value={{ unit, toggleUnit }}>
+    <WeightUnitContext.Provider value={{ unit, toggleUnit, setUnit: setUnitAndSave }}>
       {children}
     </WeightUnitContext.Provider>
   );

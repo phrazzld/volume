@@ -14,7 +14,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button className="px-3 py-1 border border-terminal-border bg-terminal-bgSecondary text-terminal-textSecondary font-mono text-sm uppercase">
+      <button className="h-10 px-4 border border-terminal-border bg-terminal-bgSecondary text-terminal-textSecondary font-mono text-sm uppercase flex items-center justify-center">
         ———
       </button>
     );
@@ -35,7 +35,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={cycleTheme}
-      className="px-3 py-1 border border-terminal-border bg-terminal-bgSecondary text-terminal-text hover:border-terminal-info hover:text-terminal-info transition-colors font-mono text-sm uppercase"
+      className="h-10 px-4 border border-terminal-border bg-terminal-bgSecondary text-terminal-text hover:border-terminal-info hover:text-terminal-info transition-colors font-mono text-sm uppercase flex items-center justify-center"
       title={`Theme: ${displayTheme} (click to cycle)`}
     >
       {displayTheme}

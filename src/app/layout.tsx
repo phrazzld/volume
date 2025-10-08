@@ -4,6 +4,7 @@ import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Nav } from "@/components/layout/nav";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { WeightUnitProvider } from "@/contexts/WeightUnitContext";
@@ -28,13 +29,17 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning className={ibmPlexMono.variable}>
-        <body className="antialiased bg-terminal-bg pb-12">
+        <body className="antialiased bg-terminal-bg pb-20 md:pb-12">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WeightUnitProvider>
               <ConvexClientProvider>
                 <Nav />
                 {children}
                 <Footer />
+                {/* Bottom navigation - mobile only */}
+                <div className="md:hidden">
+                  <BottomNav />
+                </div>
               </ConvexClientProvider>
             </WeightUnitProvider>
           </ThemeProvider>
