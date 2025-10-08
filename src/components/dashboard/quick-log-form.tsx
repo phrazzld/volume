@@ -183,7 +183,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
           {/* Exercise Selector */}
           <div>
             <label
@@ -205,7 +205,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   setSelectedExerciseId(value as Id<"exercises">);
                 }
               }}
-              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               required
               disabled={isSubmitting}
             >
@@ -220,7 +220,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           </div>
 
           {/* Reps Input */}
-          <div>
+          <div className="md:w-32">
             <label
               htmlFor="reps"
               className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
@@ -238,51 +238,55 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               onChange={(e) => setReps(e.target.value)}
               onKeyDown={handleRepsKeyDown}
               placeholder="HOW MANY?"
-              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+              className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
               disabled={isSubmitting}
               required
             />
           </div>
 
-          {/* Weight Input */}
+          {/* Weight Input (with inline unit toggle) */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label
-                htmlFor="weight"
-                className="text-xs uppercase text-terminal-textSecondary font-mono"
-              >
-                WEIGHT ({unit.toUpperCase()})
-              </label>
+            <label
+              htmlFor="weight"
+              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+            >
+              WEIGHT ({unit.toUpperCase()})
+            </label>
+            <div className="flex gap-1">
+              <input
+                ref={weightInputRef}
+                id="weight"
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min="0"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                onKeyDown={handleWeightKeyDown}
+                placeholder="OPTIONAL"
+                className="w-full md:w-32 h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+                disabled={isSubmitting}
+              />
               <button
                 type="button"
                 onClick={toggleUnit}
-                className="text-xs uppercase font-mono text-terminal-info transition-colors border border-terminal-info px-2 py-0.5 hover:bg-terminal-info hover:text-terminal-bg"
-                aria-label="Toggle weight unit"
+                className="w-20 h-[46px] px-2 text-xs uppercase font-mono text-terminal-info transition-colors border border-terminal-info hover:bg-terminal-info hover:text-terminal-bg"
+                aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
+                title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
               >
-                {unit === "lbs" ? "→ KG" : "→ LBS"}
+                ⟷ {unit === "lbs" ? "KG" : "LBS"}
               </button>
             </div>
-            <input
-              ref={weightInputRef}
-              id="weight"
-              type="number"
-              inputMode="decimal"
-              step="0.5"
-              min="0"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              onKeyDown={handleWeightKeyDown}
-              placeholder="OPTIONAL"
-              className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
-              disabled={isSubmitting}
-            />
           </div>
 
           {/* Submit Button */}
-          <div className="flex items-end">
+          <div>
+            <label className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono opacity-0 pointer-events-none" aria-hidden="true">
+              SUBMIT
+            </label>
             <button
               type="submit"
-              className="w-full px-4 py-3 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full h-[46px] px-6 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity whitespace-nowrap"
               disabled={!selectedExerciseId || !reps || isSubmitting}
             >
               {isSubmitting ? "LOGGING..." : "LOG SET"}

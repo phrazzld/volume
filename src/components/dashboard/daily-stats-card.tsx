@@ -17,7 +17,7 @@ interface DailyStatsCardProps {
 }
 
 export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
-  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showTotals, setShowTotals] = useState(false);
   const { unit } = useWeightUnit();
 
   // Format number with commas for readability
@@ -63,65 +63,76 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
     >
       {stats ? (
         <>
-          {/* Aggregate Totals - Improved Spacing */}
-          <div className="grid grid-cols-4 border-b border-terminal-border">
-            {/* Total Sets - Cyan */}
-            <div className="p-3 border-r border-terminal-border">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
-                SETS
-              </p>
-              <p className="text-xl font-bold text-terminal-info tabular-nums font-mono">
-                {stats.totalSets}
-              </p>
-            </div>
-
-            {/* Total Reps - Green */}
-            <div className="p-3 border-r border-terminal-border">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
-                REPS
-              </p>
-              <p className="text-xl font-bold text-terminal-success tabular-nums font-mono">
-                {stats.totalReps}
-              </p>
-            </div>
-
-            {/* Total Volume - Orange */}
-            <div className="p-3 border-r border-terminal-border">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
-                VOLUME ({unit.toUpperCase()})
-              </p>
-              <p className="text-xl font-bold text-terminal-warning tabular-nums font-mono">
-                {stats.totalVolume > 0 ? formatNumber(stats.totalVolume) : "—"}
-              </p>
-            </div>
-
-            {/* Exercises Worked - Yellow */}
+          {/* Per-Exercise Breakdown - PRIMARY (always visible) */}
+          {exerciseStats.length > 0 ? (
             <div className="p-3">
-              <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
-                EXERCISES
+              <TerminalTable
+                headers={["EXERCISE", "SETS", "REPS", `VOLUME (${unit.toUpperCase()})`]}
+                rows={rows}
+                columnWidths={["", "w-16", "w-20", "w-32"]}
+              />
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
+                NO SETS TODAY
               </p>
-              <p className="text-xl font-bold text-terminal-accent tabular-nums font-mono">
-                {stats.exercisesWorked}
+              <p className="text-terminal-info font-mono text-xs">
+                {"LET'S GO! 💪"}
               </p>
             </div>
-          </div>
+          )}
 
-          {/* Per-Exercise Breakdown - Collapsible */}
+          {/* Aggregate Totals - SECONDARY (collapsible) */}
           {exerciseStats.length > 0 && (
             <>
               <button
-                onClick={() => setShowBreakdown(!showBreakdown)}
+                onClick={() => setShowTotals(!showTotals)}
                 className="w-full px-3 py-2 border-t border-terminal-border text-terminal-textSecondary hover:text-terminal-info hover:bg-terminal-bgSecondary transition-colors text-xs uppercase font-mono text-center"
               >
-                {showBreakdown ? "▲ HIDE BREAKDOWN" : "▼ SHOW BREAKDOWN"}
+                {showTotals ? "▲ HIDE TOTALS" : "▼ SHOW TOTALS"}
               </button>
-              {showBreakdown && (
-                <div className="p-3 border-t border-terminal-border">
-                  <TerminalTable
-                    headers={["EXERCISE", "SETS", "REPS", `VOLUME (${unit.toUpperCase()})`]}
-                    rows={rows}
-                    columnWidths={["", "w-16", "w-20", "w-32"]}
-                  />
+              {showTotals && (
+                <div className="grid grid-cols-4 border-t border-terminal-border">
+                  {/* Total Sets - Cyan */}
+                  <div className="p-3 border-r border-terminal-border">
+                    <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
+                      SETS
+                    </p>
+                    <p className="text-xl font-bold text-terminal-info tabular-nums font-mono">
+                      {stats.totalSets}
+                    </p>
+                  </div>
+
+                  {/* Total Reps - Green */}
+                  <div className="p-3 border-r border-terminal-border">
+                    <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
+                      REPS
+                    </p>
+                    <p className="text-xl font-bold text-terminal-success tabular-nums font-mono">
+                      {stats.totalReps}
+                    </p>
+                  </div>
+
+                  {/* Total Volume - Orange */}
+                  <div className="p-3 border-r border-terminal-border">
+                    <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
+                      VOLUME ({unit.toUpperCase()})
+                    </p>
+                    <p className="text-xl font-bold text-terminal-warning tabular-nums font-mono">
+                      {stats.totalVolume > 0 ? formatNumber(stats.totalVolume) : "—"}
+                    </p>
+                  </div>
+
+                  {/* Exercises Worked - Yellow */}
+                  <div className="p-3">
+                    <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
+                      EXERCISES
+                    </p>
+                    <p className="text-xl font-bold text-terminal-accent tabular-nums font-mono">
+                      {stats.exercisesWorked}
+                    </p>
+                  </div>
                 </div>
               )}
             </>
