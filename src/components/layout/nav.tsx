@@ -53,10 +53,19 @@ export function Nav() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
             {userId ? (
-              <UserButton afterSignOutUrl="/" />
+              <div className="h-10 w-10 flex items-center justify-center">
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-9 w-9",
+                    },
+                  }}
+                />
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
