@@ -4,23 +4,44 @@ Simple workout tracking app with Convex backend and Clerk auth.
 
 **Live at: [volume.fitness](https://volume.fitness)**
 
-## Setup
+## ⚠️ IMPORTANT: Dual Server Architecture
 
-1. Install dependencies:
+This project requires **TWO** dev servers running simultaneously:
+
+1. **Next.js** (port 3000) - Frontend application
+2. **Convex** (cloud) - Backend functions & database
+
+The `pnpm dev` command now runs **BOTH** servers concurrently with color-coded output.
+
+## Quick Start
+
 ```bash
+# Install dependencies
 pnpm install
+
+# Start BOTH servers (Next.js + Convex)
+pnpm dev
 ```
 
-2. Set up Convex:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## First-Time Setup
+
+### 1. Set up Convex
+
 ```bash
 pnpm convex dev
 ```
+
 This will:
 - Create a new Convex project (first time only)
 - Generate `.env.local` with your `NEXT_PUBLIC_CONVEX_URL`
 - Start the Convex dev server
 
-3. Set up Clerk:
+Press Ctrl+C to stop, then use `pnpm dev` for ongoing development.
+
+### 2. Set up Clerk
+
 - Go to [Clerk Dashboard](https://dashboard.clerk.com)
 - Create a new application
 - Copy the API keys and add them to `.env.local`:
@@ -29,12 +50,32 @@ This will:
   CLERK_SECRET_KEY=sk_test_...
   ```
 
-4. Run the development server:
+### 3. Start Development
+
 ```bash
-pnpm dev
+pnpm dev  # Runs BOTH Next.js and Convex
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Troubleshooting
+
+### "Could not find public function" Error
+
+If you see this error after pulling changes:
+
+```bash
+pnpm convex dev  # Syncs Convex functions to your deployment
+```
+
+This is required whenever you pull code with new/modified Convex functions.
+
+### Running Servers Separately
+
+If needed, you can run servers individually:
+
+```bash
+pnpm dev:next    # Next.js only (port 3000)
+pnpm dev:convex  # Convex only (cloud)
+```
 
 ## Tech Stack
 

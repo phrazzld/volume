@@ -1,1 +1,10 @@
 pnpm exec lint-staged
+
+# Warn if Convex functions are being committed
+if git diff --cached --name-only | grep -q "^convex/.*\.ts$"; then
+  echo ""
+  echo "⚠️  You're committing Convex function changes"
+  echo "   Ensure you've tested with: pnpm dev"
+  echo "   (runs both Next.js AND Convex)"
+  echo ""
+fi
