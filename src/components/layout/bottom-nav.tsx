@@ -38,7 +38,7 @@ export function BottomNav() {
                   : "text-terminal-textSecondary hover:text-terminal-text"
               }`}
             >
-              <Icon className={`w-6 h-6 ${active ? "fill-current" : ""}`} />
+              <Icon className="w-6 h-6" />
               <span className="text-xs font-mono uppercase">{item.label}</span>
             </Link>
           );
