@@ -138,7 +138,7 @@ export function GroupedSetHistory({
             <div key="actions" className="flex items-center gap-1">
               <button
                 onClick={() => onRepeat(set)}
-                className="flex items-center gap-1 px-2 py-1 text-terminal-info hover:bg-terminal-info hover:bg-opacity-10 transition-colors rounded"
+                className="flex items-center gap-1 px-2 py-1 text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors rounded"
                 aria-label="Repeat this set"
                 title="Repeat this set"
                 type="button"

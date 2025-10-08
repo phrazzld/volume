@@ -176,7 +176,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                 setWeight(lastSet.weight?.toString() || "");
                 repsInputRef.current?.focus();
               }}
-              className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:bg-opacity-10 transition-colors"
+              className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors"
             >
               USE
             </button>
@@ -256,7 +256,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               <button
                 type="button"
                 onClick={toggleUnit}
-                className="text-xs uppercase font-mono text-terminal-info hover:text-terminal-accent transition-colors border border-terminal-info px-2 py-0.5 hover:bg-terminal-info hover:bg-opacity-10"
+                className="text-xs uppercase font-mono text-terminal-info transition-colors border border-terminal-info px-2 py-0.5 hover:bg-terminal-info hover:text-terminal-bg"
                 aria-label="Toggle weight unit"
               >
                 {unit === "lbs" ? "→ KG" : "→ LBS"}
