@@ -74,8 +74,10 @@ export const listExercises = query({
         .withIndex("by_user_deleted", (q) =>
           q.eq("userId", identity.subject).eq("deletedAt", undefined)
         )
-        .order("desc")
         .collect();
+      // Sort by createdAt descending (newest first)
+      // Note: Cannot use .order("desc") on compound index as it sorts by index fields
+      exercises.sort((a, b) => b.createdAt - a.createdAt);
     }
 
     return exercises;
