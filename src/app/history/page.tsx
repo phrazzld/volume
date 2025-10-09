@@ -19,8 +19,8 @@ export default function HistoryPage() {
     { initialNumItems: PAGINATION_PAGE_SIZE }
   );
 
-  // Fetch exercises for names
-  const exercises = useQuery(api.exercises.listExercises);
+  // Fetch exercises for names (include deleted to show accurate history)
+  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: true });
 
   // Delete mutation
   const deleteSetMutation = useMutation(api.sets.deleteSet);

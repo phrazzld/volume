@@ -38,7 +38,7 @@ export function Dashboard() {
 
   // Fetch data from Convex
   const allSets = useQuery(api.sets.listSets, {});
-  const exercises = useQuery(api.exercises.listExercises);
+  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: true });
 
   // Delete set mutation
   const deleteSet = useMutation(api.sets.deleteSet);

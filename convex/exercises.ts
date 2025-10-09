@@ -17,7 +17,7 @@ export const createExercise = mutation({
     // Validate and normalize exercise name
     const normalizedName = validateExerciseName(args.name);
 
-    // Check for duplicate (case-insensitive)
+    // Check for duplicate (including soft-deleted)
     const existing = await ctx.db
       .query("exercises")
       .withIndex("by_user_name", (q) =>
@@ -26,9 +26,17 @@ export const createExercise = mutation({
       .first();
 
     if (existing) {
+      // If soft-deleted, restore it instead of creating new
+      if (existing.deletedAt !== undefined) {
+        await ctx.db.patch(existing._id, { deletedAt: undefined });
+        return existing._id; // Return restored exercise ID
+      }
+
+      // Active duplicate - still an error
       throw new Error("Exercise with this name already exists");
     }
 
+    // No existing record - create new
     const exerciseId = await ctx.db.insert("exercises", {
       userId: identity.subject,
       name: normalizedName,
@@ -41,18 +49,34 @@ export const createExercise = mutation({
 
 // List all exercises for the current user
 export const listExercises = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    includeDeleted: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return [];
     }
 
-    const exercises = await ctx.db
-      .query("exercises")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-      .order("desc")
-      .collect();
+    let exercises;
+
+    if (args.includeDeleted) {
+      // Include all exercises (active + deleted)
+      exercises = await ctx.db
+        .query("exercises")
+        .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+        .order("desc")
+        .collect();
+    } else {
+      // Active exercises only (default)
+      exercises = await ctx.db
+        .query("exercises")
+        .withIndex("by_user_deleted", (q) =>
+          q.eq("userId", identity.subject).eq("deletedAt", undefined)
+        )
+        .order("desc")
+        .collect();
+    }
 
     return exercises;
   },
@@ -74,6 +98,15 @@ export const updateExercise = mutation({
     const exercise = await ctx.db.get(args.id);
     requireOwnership(exercise, identity.subject, "exercise");
 
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
+
+    // Prevent editing deleted exercises
+    if (exercise.deletedAt !== undefined) {
+      throw new Error("Cannot update a deleted exercise");
+    }
+
     // Check for duplicate (excluding current exercise)
     const existing = await ctx.db
       .query("exercises")
@@ -92,7 +125,7 @@ export const updateExercise = mutation({
   },
 });
 
-// Delete an exercise
+// Delete an exercise (soft delete)
 export const deleteExercise = mutation({
   args: {
     id: v.id("exercises"),
@@ -103,6 +136,36 @@ export const deleteExercise = mutation({
     const exercise = await ctx.db.get(args.id);
     requireOwnership(exercise, identity.subject, "exercise");
 
-    await ctx.db.delete(args.id);
+    // Soft delete: Set deletedAt timestamp instead of removing record
+    await ctx.db.patch(args.id, {
+      deletedAt: Date.now(),
+    });
+  },
+});
+
+// Restore a soft-deleted exercise
+export const restoreExercise = mutation({
+  args: {
+    id: v.id("exercises"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);
+
+    const exercise = await ctx.db.get(args.id);
+    requireOwnership(exercise, identity.subject, "exercise");
+
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
+
+    // Only restore if actually deleted
+    if (exercise.deletedAt === undefined) {
+      throw new Error("Exercise is not deleted");
+    }
+
+    // Clear deletedAt timestamp
+    await ctx.db.patch(args.id, {
+      deletedAt: undefined,
+    });
   },
 });
