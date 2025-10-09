@@ -14,43 +14,6 @@
 
 ---
 
-### ✅ 1. [FIXED] IDOR Vulnerability in listSets Query - CRITICAL DATA BREACH RISK
-**File**: `convex/sets.ts:45-74`
-**Status**: **FIXED on 2025-10-07**
-**Fix**: Added exercise ownership verification before filtering sets by exerciseId
-**Tests**: Comprehensive security test suite added in `convex/sets.test.ts` (9 tests, all passing)
-
-**What Was Fixed**:
-- Added `requireOwnership()` check to verify user owns the exercise before querying its sets
-- Throws explicit "Not authorized" error for unauthorized access attempts
-- Prevents horizontal privilege escalation (any user accessing any other user's workout data)
-
-**Implementation**:
-```typescript
-if (args.exerciseId) {
-  // ✅ Verify exercise ownership before querying sets (IDOR vulnerability fix)
-  const exercise = await ctx.db.get(args.exerciseId);
-  requireOwnership(exercise, identity.subject, "exercise");
-
-  sets = await ctx.db
-    .query("sets")
-    .withIndex("by_exercise", (q) => q.eq("exerciseId", args.exerciseId!))
-    .order("desc")
-    .collect();
-}
-```
-
-**Security Tests Added**:
-- ✅ Authorized access (user queries own exercise)
-- ✅ Unauthorized access (user cannot query another's exercise)
-- ✅ Unauthenticated access (returns empty array)
-- ✅ User isolation (each user only sees their data)
-- ✅ Edge cases (deleted exercises, empty sets, ordering)
-
-**Impact**: Critical vulnerability eliminated - users' private fitness data now properly protected.
-
----
-
 ### 2. 🚨 [Security] Missing Rate Limiting on Mutations - HIGH ABUSE RISK
 **File**: All mutation endpoints (`convex/exercises.ts`, `convex/sets.ts`)
 **Perspectives**: security-sentinel
@@ -128,40 +91,6 @@ async headers() {
 
 **Effort**: 1 hour (testing CSP compatibility)
 **Risk**: **MEDIUM** - Defense in depth against XSS/clickjacking
-
----
-
-### 4. ⚠️ [UX] Exercise Deletion Orphans Sets - CRITICAL DATA LOSS
-**File**: `src/components/dashboard/exercise-manager.tsx:67-84`
-**Perspectives**: user-experience-advocate
-**Severity**: **CRITICAL UX**
-
-**Current UX**: User deletes exercise with 200 logged sets. Sets remain in database but now show "Unknown exercise" in history. User loses all context about what they did - permanent data corruption from user perspective.
-
-**User Impact**: Devastating - imagine deleting "Bench Press" and losing context for entire bench press history.
-
-**Fix**: Prevent deletion of exercises with sets:
-```typescript
-const handleDelete = async (exercise: Exercise) => {
-  const setCount = setCountByExercise[exercise._id] || 0;
-
-  if (setCount > 0) {
-    toast.error(
-      `Cannot delete "${exercise.name}" - it has ${setCount} logged set${setCount === 1 ? '' : 's'}. ` +
-      `Archive feature coming soon!`
-    );
-    return;
-  }
-
-  if (!confirm(`Delete "${exercise.name}"? This cannot be undone.`)) return;
-  // ... proceed
-}
-```
-
-**Better Long-Term**: Add archive feature - hide from active list but preserve history integrity.
-
-**Effort**: 30m (block deletion) + 2h (archive feature)
-**Value**: **CRITICAL** - Prevents permanent data context loss
 
 ---
 
