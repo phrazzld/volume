@@ -96,11 +96,10 @@ export const updateExercise = mutation({
 
     // Verify exercise exists and user owns it
     const exercise = await ctx.db.get(args.id);
-    requireOwnership(exercise, identity.subject, "exercise");
-
     if (!exercise) {
       throw new Error("Exercise not found");
     }
+    requireOwnership(exercise, identity.subject, "exercise");
 
     // Prevent editing deleted exercises
     if (exercise.deletedAt !== undefined) {
