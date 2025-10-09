@@ -56,6 +56,36 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
      * Note: Exercise stays selected after submit for quick multi-set logging
      */
 
+    /**
+     * Robust focus helper for mobile Safari compatibility
+     * Uses double requestAnimationFrame to ensure:
+     * - All React re-renders complete before focusing
+     * - Element is stable in the DOM
+     * - iOS Safari security model is respected
+     *
+     * Research: setTimeout can fail on mobile due to:
+     * 1. React re-render race conditions
+     * 2. iOS focus security restrictions
+     * 3. Virtual keyboard animation conflicts
+     *
+     * Double RAF is the most reliable pattern for mobile focus.
+     */
+    const focusElement = (ref: React.RefObject<HTMLInputElement | null>) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Defensive checks before focusing
+          if (ref.current && document.contains(ref.current)) {
+            try {
+              ref.current.focus();
+            } catch (e) {
+              // Fail silently if focus is not possible
+              console.warn("Focus failed:", e);
+            }
+          }
+        });
+      });
+    };
+
     // Query last set for selected exercise
     const allSets = useQuery(api.sets.listSets, {});
 
@@ -86,15 +116,14 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         setReps(set.reps.toString());
         setWeight(set.weight?.toString() || "");
         // Auto-focus reps input for quick edit
-        setTimeout(() => repsInputRef.current?.focus(), 100);
+        focusElement(repsInputRef);
       },
     }));
 
     // Auto-focus flow: exercise selected → focus reps input
     useEffect(() => {
-      if (selectedExerciseId && repsInputRef.current) {
-        // Delay focus to allow mobile picker UI to fully dismiss
-        setTimeout(() => repsInputRef.current?.focus(), 100);
+      if (selectedExerciseId) {
+        focusElement(repsInputRef);
       }
     }, [selectedExerciseId]);
 
@@ -117,7 +146,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       setWeight("");
 
       // Focus reps input for quick re-logging of same exercise
-      setTimeout(() => repsInputRef.current?.focus(), 100);
+      focusElement(repsInputRef);
 
       // Show success toast
       toast.success("Set logged!");
@@ -174,7 +203,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               onClick={() => {
                 setReps(lastSet.reps.toString());
                 setWeight(lastSet.weight?.toString() || "");
-                repsInputRef.current?.focus();
+                focusElement(repsInputRef);
               }}
               className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors"
             >
