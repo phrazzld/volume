@@ -16,14 +16,14 @@ interface GroupedSetHistoryProps {
     displayDate: string;
     sets: Set[];
   }>;
-  exercises: Exercise[];
+  exerciseMap: Map<Id<"exercises">, Exercise>;
   onRepeat: (set: Set) => void;
   onDelete: (setId: Id<"sets">) => void;
 }
 
 export function GroupedSetHistory({
   groupedSets,
-  exercises,
+  exerciseMap,
   onRepeat,
   onDelete,
 }: GroupedSetHistoryProps) {
@@ -93,7 +93,7 @@ export function GroupedSetHistory({
       {groupedSets.map((group) => {
         // Build table rows for this day
         const rows = group.sets.map((set) => {
-          const exercise = exercises.find((ex) => ex._id === set.exerciseId);
+          const exercise = exerciseMap.get(set.exerciseId); // O(1) lookup instead of O(n)
           const isDeleting = deletingId === set._id;
 
           return [
