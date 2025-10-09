@@ -1,13 +1,6 @@
 import { Id } from "../../convex/_generated/dataModel";
-
-interface Set {
-  _id: Id<"sets">;
-  exerciseId: Id<"exercises">;
-  reps: number;
-  weight?: number;
-  unit?: string; // "lbs" or "kg" - stored with set for data integrity
-  performedAt: number;
-}
+import { Exercise, WeightUnit } from "@/types/domain";
+import type { Set } from "@/types/domain";
 
 /**
  * Convert weight from one unit to another.
@@ -16,7 +9,7 @@ interface Set {
  * @param toUnit - Target unit ("lbs" or "kg")
  * @returns Converted weight value
  */
-export function convertWeight(weight: number, fromUnit: string, toUnit: string): number {
+export function convertWeight(weight: number, fromUnit: WeightUnit, toUnit: WeightUnit): number {
   if (fromUnit === toUnit) return weight;
 
   // Convert lbs to kg: divide by 2.20462
@@ -31,11 +24,6 @@ export function convertWeight(weight: number, fromUnit: string, toUnit: string):
 
   // Unknown units, return as-is
   return weight;
-}
-
-interface Exercise {
-  _id: Id<"exercises">;
-  name: string;
 }
 
 interface DailyStats {
@@ -64,7 +52,7 @@ export interface ExerciseStats {
  */
 export function calculateDailyStats(
   sets: Set[] | undefined,
-  targetUnit: string = "lbs"
+  targetUnit: WeightUnit = "lbs"
 ): DailyStats | null {
   if (!sets || sets.length === 0) return null;
 
@@ -81,7 +69,7 @@ export function calculateDailyStats(
     totalVolume: todaySets.reduce((sum, set) => {
       if (!set.weight) return sum;
       // Convert weight to target unit before calculating volume
-      const setUnit = set.unit || "lbs"; // fallback for legacy sets
+      const setUnit: WeightUnit = (set.unit as WeightUnit) || "lbs"; // fallback for legacy sets
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
       return sum + (set.reps * convertedWeight);
     }, 0),
@@ -169,7 +157,7 @@ export function formatDateGroup(dateString: string): string {
 export function calculateDailyStatsByExercise(
   sets: Set[] | undefined,
   exercises: Exercise[] | undefined,
-  targetUnit: string = "lbs"
+  targetUnit: WeightUnit = "lbs"
 ): ExerciseStats[] {
   if (!sets || !exercises) return [];
 
@@ -203,7 +191,7 @@ export function calculateDailyStatsByExercise(
 
     // Convert weight to target unit before calculating volume
     if (set.weight) {
-      const setUnit = set.unit || "lbs"; // fallback for legacy sets
+      const setUnit: WeightUnit = (set.unit as WeightUnit) || "lbs"; // fallback for legacy sets
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
       stats.volume += set.reps * convertedWeight;
     }

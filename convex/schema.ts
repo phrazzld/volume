@@ -6,9 +6,11 @@ export default defineSchema({
     userId: v.string(),
     name: v.string(),
     createdAt: v.number(),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
-    .index("by_user_name", ["userId", "name"]),
+    .index("by_user_name", ["userId", "name"])
+    .index("by_user_deleted", ["userId", "deletedAt"]),
 
   sets: defineTable({
     userId: v.string(),
