@@ -28,6 +28,25 @@ export const createExercise = mutation({
     if (existing) {
       // If soft-deleted, restore it instead of creating new
       if (existing.deletedAt !== undefined) {
+        // Defensive check: Verify no active duplicate exists before restoring
+        // (protects against DB corruption or manual state manipulation)
+        const activeDuplicate = await ctx.db
+          .query("exercises")
+          .withIndex("by_user_name", (q) =>
+            q.eq("userId", identity.subject).eq("name", normalizedName)
+          )
+          .filter((q) =>
+            q.and(
+              q.neq(q.field("_id"), existing._id),
+              q.eq(q.field("deletedAt"), undefined)
+            )
+          )
+          .first();
+
+        if (activeDuplicate) {
+          throw new Error("Exercise with this name already exists");
+        }
+
         await ctx.db.patch(existing._id, { deletedAt: undefined });
         return existing._id; // Return restored exercise ID
       }
@@ -65,8 +84,9 @@ export const listExercises = query({
       exercises = await ctx.db
         .query("exercises")
         .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-        .order("desc")
         .collect();
+      // Sort by createdAt descending (consistent with active-only branch)
+      exercises.sort((a, b) => b.createdAt - a.createdAt);
     } else {
       // Active exercises only (default)
       exercises = await ctx.db

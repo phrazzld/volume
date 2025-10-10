@@ -12,6 +12,7 @@ export interface Exercise {
 
 export interface Set {
   _id: Id<"sets">;
+  userId?: string; // Optional - present in schema but not always accessed in frontend
   exerciseId: Id<"exercises">;
   reps: number;
   weight?: number;

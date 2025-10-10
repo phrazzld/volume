@@ -140,6 +140,35 @@ describe("Exercises - Soft Delete Tests", () => {
       expect(sets.every((s) => s.exerciseId === exerciseId)).toBe(true);
     });
 
+    test("createExercise defensive check: prevents restoring when active duplicate exists", async () => {
+      // Create and soft-delete exercise
+      const deletedId = await t
+        .withIdentity({ subject: user1Subject, name: "User 1" })
+        .mutation(api.exercises.createExercise, { name: "ROWS" });
+
+      await t
+        .withIdentity({ subject: user1Subject, name: "User 1" })
+        .mutation(api.exercises.deleteExercise, { id: deletedId });
+
+      // Manually create active exercise with same name (simulates DB corruption)
+      // This bypasses normal mutation logic to create the edge case
+      await t.run(async (ctx) => {
+        await ctx.db.insert("exercises", {
+          userId: user1Subject,
+          name: "ROWS",
+          createdAt: Date.now(),
+        });
+      });
+
+      // Try to restore the deleted exercise by recreating
+      // Defensive check should detect active duplicate and fail
+      await expect(
+        t
+          .withIdentity({ subject: user1Subject, name: "User 1" })
+          .mutation(api.exercises.createExercise, { name: "ROWS" })
+      ).rejects.toThrow("Exercise with this name already exists");
+    });
+
     test("createExercise should throw error for active duplicate (not soft-deleted)", async () => {
       // Create exercise
       await t
