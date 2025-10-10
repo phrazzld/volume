@@ -126,7 +126,16 @@ export const updateExercise = mutation({
   },
 });
 
-// Delete an exercise (soft delete)
+/**
+ * Delete an exercise (soft delete)
+ *
+ * IMPORTANT: Always use this mutation instead of ctx.db.delete() to maintain
+ * referential integrity. Hard deleting exercises orphans all associated sets,
+ * causing "Unknown exercise" to appear in history. Soft delete preserves
+ * exercise records for historical context while hiding them from active use.
+ *
+ * See also: createExercise (auto-restore logic), restoreExercise (explicit restore)
+ */
 export const deleteExercise = mutation({
   args: {
     id: v.id("exercises"),

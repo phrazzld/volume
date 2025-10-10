@@ -4,6 +4,7 @@ export type WeightUnit = "lbs" | "kg";
 
 export interface Exercise {
   _id: Id<"exercises">;
+  userId: string;
   name: string;
   createdAt: number;
   deletedAt?: number;
