@@ -9,20 +9,7 @@ import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
-
-interface Exercise {
-  _id: Id<"exercises">;
-  name: string;
-}
-
-interface Set {
-  _id: Id<"sets">;
-  exerciseId: Id<"exercises">;
-  reps: number;
-  weight?: number;
-  unit?: string; // "lbs" or "kg" - stored with set for data integrity
-  performedAt: number;
-}
+import { Exercise, Set } from "@/types/domain";
 
 interface QuickLogFormProps {
   exercises: Exercise[];

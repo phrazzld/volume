@@ -80,8 +80,8 @@ describe("listSets - Security Tests", () => {
       ).rejects.toThrow("Not authorized to access this exercise");
     });
 
-    test("should throw error when exercise does not exist", async () => {
-      // Create and immediately delete an exercise to get a valid but nonexistent ID
+    test("should return empty array for soft-deleted exercises with no sets", async () => {
+      // Create and immediately soft-delete an exercise (no sets logged)
       const deletedExerciseId = await t
         .withIdentity({ subject: user1Subject, name: "User 1" })
         .mutation(api.exercises.createExercise, { name: "TEMPORARY" });
@@ -90,11 +90,12 @@ describe("listSets - Security Tests", () => {
         .withIdentity({ subject: user1Subject, name: "User 1" })
         .mutation(api.exercises.deleteExercise, { id: deletedExerciseId });
 
-      await expect(
-        t
-          .withIdentity({ subject: user1Subject, name: "User 1" })
-          .query(api.sets.listSets, { exerciseId: deletedExerciseId })
-      ).rejects.toThrow("exercise not found");
+      // Soft-deleted exercise with no sets returns empty array (defensive behavior)
+      const result = await t
+        .withIdentity({ subject: user1Subject, name: "User 1" })
+        .query(api.sets.listSets, { exerciseId: deletedExerciseId });
+
+      expect(result).toEqual([]);
     });
   });
 
@@ -193,5 +194,39 @@ describe("listSets - Security Tests", () => {
         );
       }
     });
+  });
+});
+
+describe("logSet - Soft Delete Protection", () => {
+  let t: TestConvex<typeof schema>;
+  const user1Subject = "user_1_test_subject";
+
+  beforeEach(async () => {
+    // @ts-expect-error - import.meta.glob is a Vite feature, types not available in test env
+    t = convexTest(schema, import.meta.glob("./**/*.ts"));
+  });
+
+  test("should prevent logging sets to soft-deleted exercises", async () => {
+    // Create exercise
+    const exerciseId = await t
+      .withIdentity({ subject: user1Subject, name: "User 1" })
+      .mutation(api.exercises.createExercise, { name: "BENCH PRESS" });
+
+    // Soft delete exercise
+    await t
+      .withIdentity({ subject: user1Subject, name: "User 1" })
+      .mutation(api.exercises.deleteExercise, { id: exerciseId });
+
+    // Try to log set to deleted exercise → should throw error
+    await expect(
+      t
+        .withIdentity({ subject: user1Subject, name: "User 1" })
+        .mutation(api.sets.logSet, {
+          exerciseId,
+          reps: 10,
+          weight: 135,
+          unit: "lbs",
+        })
+    ).rejects.toThrow("Cannot log sets for a deleted exercise");
   });
 });

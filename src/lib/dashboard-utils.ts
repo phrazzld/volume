@@ -1,13 +1,6 @@
 import { Id } from "../../convex/_generated/dataModel";
-
-interface Set {
-  _id: Id<"sets">;
-  exerciseId: Id<"exercises">;
-  reps: number;
-  weight?: number;
-  unit?: string; // "lbs" or "kg" - stored with set for data integrity
-  performedAt: number;
-}
+import { Exercise, WeightUnit } from "@/types/domain";
+import type { Set } from "@/types/domain";
 
 /**
  * Convert weight from one unit to another.
@@ -16,7 +9,7 @@ interface Set {
  * @param toUnit - Target unit ("lbs" or "kg")
  * @returns Converted weight value
  */
-export function convertWeight(weight: number, fromUnit: string, toUnit: string): number {
+export function convertWeight(weight: number, fromUnit: WeightUnit, toUnit: WeightUnit): number {
   if (fromUnit === toUnit) return weight;
 
   // Convert lbs to kg: divide by 2.20462
@@ -33,9 +26,14 @@ export function convertWeight(weight: number, fromUnit: string, toUnit: string):
   return weight;
 }
 
-interface Exercise {
-  _id: Id<"exercises">;
-  name: string;
+/**
+ * Normalize weight unit to a valid WeightUnit type.
+ * Validates and returns "lbs" or "kg", with "lbs" as fallback for invalid units.
+ * @param unit - Unit string to normalize
+ * @returns Valid WeightUnit ("lbs" or "kg")
+ */
+function normalizeWeightUnit(unit?: string): WeightUnit {
+  return unit === "lbs" || unit === "kg" ? unit : "lbs";
 }
 
 interface DailyStats {
@@ -64,7 +62,7 @@ export interface ExerciseStats {
  */
 export function calculateDailyStats(
   sets: Set[] | undefined,
-  targetUnit: string = "lbs"
+  targetUnit: WeightUnit = "lbs"
 ): DailyStats | null {
   if (!sets || sets.length === 0) return null;
 
@@ -81,7 +79,7 @@ export function calculateDailyStats(
     totalVolume: todaySets.reduce((sum, set) => {
       if (!set.weight) return sum;
       // Convert weight to target unit before calculating volume
-      const setUnit = set.unit || "lbs"; // fallback for legacy sets
+      const setUnit = normalizeWeightUnit(set.unit);
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
       return sum + (set.reps * convertedWeight);
     }, 0),
@@ -169,9 +167,12 @@ export function formatDateGroup(dateString: string): string {
 export function calculateDailyStatsByExercise(
   sets: Set[] | undefined,
   exercises: Exercise[] | undefined,
-  targetUnit: string = "lbs"
+  targetUnit: WeightUnit = "lbs"
 ): ExerciseStats[] {
   if (!sets || !exercises) return [];
+
+  // Build exercise lookup Map for O(1) access
+  const exerciseLookup = new Map(exercises.map((ex) => [ex._id, ex]));
 
   const today = new Date().toDateString();
   const todaySets = sets.filter(
@@ -181,14 +182,14 @@ export function calculateDailyStatsByExercise(
   if (todaySets.length === 0) return [];
 
   // Group by exercise
-  const exerciseMap = new Map<Id<"exercises">, ExerciseStats>();
+  const statsMap = new Map<Id<"exercises">, ExerciseStats>();
 
   todaySets.forEach((set) => {
-    const exercise = exercises.find((ex) => ex._id === set.exerciseId);
+    const exercise = exerciseLookup.get(set.exerciseId);
     if (!exercise) return;
 
-    if (!exerciseMap.has(set.exerciseId)) {
-      exerciseMap.set(set.exerciseId, {
+    if (!statsMap.has(set.exerciseId)) {
+      statsMap.set(set.exerciseId, {
         exerciseId: set.exerciseId,
         name: exercise.name,
         sets: 0,
@@ -197,20 +198,20 @@ export function calculateDailyStatsByExercise(
       });
     }
 
-    const stats = exerciseMap.get(set.exerciseId)!;
+    const stats = statsMap.get(set.exerciseId)!;
     stats.sets += 1;
     stats.reps += set.reps;
 
     // Convert weight to target unit before calculating volume
     if (set.weight) {
-      const setUnit = set.unit || "lbs"; // fallback for legacy sets
+      const setUnit = normalizeWeightUnit(set.unit);
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
       stats.volume += set.reps * convertedWeight;
     }
   });
 
   // Sort by most sets first, then alphabetical
-  return Array.from(exerciseMap.values()).sort((a, b) => {
+  return Array.from(statsMap.values()).sort((a, b) => {
     if (a.sets !== b.sets) return b.sets - a.sets;
     return a.name.localeCompare(b.name);
   });

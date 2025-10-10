@@ -19,8 +19,14 @@ export default function HistoryPage() {
     { initialNumItems: PAGINATION_PAGE_SIZE }
   );
 
-  // Fetch exercises for names
-  const exercises = useQuery(api.exercises.listExercises);
+  // Fetch exercises for names (include deleted to show accurate history)
+  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: true });
+
+  // Build exercise Map for O(1) lookups
+  const exerciseMap = useMemo(
+    () => new Map((exercises ?? []).map(ex => [ex._id, ex])),
+    [exercises]
+  );
 
   // Delete mutation
   const deleteSetMutation = useMutation(api.sets.deleteSet);
@@ -84,7 +90,7 @@ export default function HistoryPage() {
     <PageLayout title="WORKOUT HISTORY">
       <GroupedSetHistory
         groupedSets={groupedSets}
-        exercises={exercises || []}
+        exerciseMap={exerciseMap}
         onRepeat={handleRepeat}
         onDelete={handleDelete}
       />

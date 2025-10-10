@@ -144,6 +144,31 @@ CLERK_JWT_ISSUER_DOMAIN=your-clerk-domain.clerk.accounts.dev
 - **Dark Mode**: Implemented via `next-themes` (see `ThemeProvider.tsx`)
 - **Mobile-First**: UI is mobile-responsive (Tailwind CSS)
 
+## Soft Delete Pattern
+
+Exercises use soft delete (`deletedAt` timestamp) to preserve workout history when users delete exercises.
+
+### Architecture
+
+- **Soft Delete**: Sets `deletedAt` timestamp instead of removing record from database
+- **Auto-Restore**: Creating exercise with same name automatically restores soft-deleted version
+- **Filtering**: Use `includeDeleted` parameter to control visibility in queries
+
+### Usage Guidelines
+
+- ✅ **Always** use `deleteExercise` mutation (never `ctx.db.delete()` directly)
+- ✅ **Always** use `includeDeleted` parameter in `listExercises` queries
+- ✅ **History views**: Fetch with `includeDeleted: true` to show deleted exercise names
+- ✅ **Active UI**: Fetch with `includeDeleted: false` for dropdowns/selectors
+
+### Implementation Details
+
+- **Schema**: `convex/schema.ts` - `deletedAt` field + `by_user_deleted` index
+- **Backend**: `convex/exercises.ts` - soft delete mutations with auto-restore
+- **Frontend**: Filter deleted exercises in components (`activeExercises` pattern)
+
+See JSDoc in `convex/exercises.ts` for detailed auto-restore logic and data integrity rules.
+
 ## Future Enhancements
 
 See `BACKLOG.md` for planned post-MVP features including:

@@ -20,15 +20,7 @@ import {
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
 import { getTodayRange } from "@/lib/date-utils";
-
-interface Set {
-  _id: Id<"sets">;
-  exerciseId: Id<"exercises">;
-  reps: number;
-  weight?: number;
-  unit?: string;
-  performedAt: number;
-}
+import type { Exercise, Set } from "@/types/domain";
 
 export function Dashboard() {
   const [undoToastVisible, setUndoToastVisible] = useState(false);
@@ -38,7 +30,7 @@ export function Dashboard() {
 
   // Fetch data from Convex
   const allSets = useQuery(api.sets.listSets, {});
-  const exercises = useQuery(api.exercises.listExercises);
+  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: true });
 
   // Delete set mutation
   const deleteSet = useMutation(api.sets.deleteSet);
@@ -62,10 +54,22 @@ export function Dashboard() {
   // Group today's sets by time
   const groupedSets = useMemo(() => groupSetsByDay(todaysSets), [todaysSets]);
 
+  // Build exercise Map for O(1) lookups (fixes BACKLOG #11)
+  const exerciseMap = useMemo(
+    () => new Map((exercises ?? []).map(ex => [ex._id, ex])),
+    [exercises]
+  );
+
   // Sort exercises by recency (most recently used first)
   const exercisesByRecency = useMemo(
     () => sortExercisesByRecency(exercises, allSets),
     [exercises, allSets]
+  );
+
+  // Filter to active exercises only for QuickLogForm
+  const activeExercisesByRecency = useMemo(
+    () => exercisesByRecency?.filter(ex => ex.deletedAt === undefined),
+    [exercisesByRecency]
   );
 
   // Handle delete set
@@ -172,14 +176,14 @@ export function Dashboard() {
           {/* Quick Log Form - MOVED TO PRIME POSITION */}
           <QuickLogForm
             ref={formRef}
-            exercises={exercisesByRecency}
+            exercises={activeExercisesByRecency}
             onSetLogged={handleSetLogged}
           />
 
           {/* Today's Set History */}
           <GroupedSetHistory
             groupedSets={groupedSets}
-            exercises={exercisesByRecency}
+            exerciseMap={exerciseMap}
             onRepeat={handleRepeatSet}
             onDelete={handleDeleteSet}
           />

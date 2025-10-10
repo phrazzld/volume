@@ -16,8 +16,8 @@ const getUnitButtonClasses = (isActive: boolean) =>
   }`;
 
 export default function SettingsPage() {
-  // Fetch exercises and sets for ExerciseManager
-  const exercises = useQuery(api.exercises.listExercises);
+  // Fetch exercises and sets for ExerciseManager (active only)
+  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: false });
   const sets = useQuery(api.sets.listSets, {});
 
   // Weight unit preference

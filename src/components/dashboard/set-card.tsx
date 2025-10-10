@@ -6,20 +6,7 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
-
-interface Set {
-  _id: Id<"sets">;
-  exerciseId: Id<"exercises">;
-  reps: number;
-  weight?: number;
-  unit?: string; // "lbs" or "kg" - stored with set for data integrity
-  performedAt: number;
-}
-
-interface Exercise {
-  _id: Id<"exercises">;
-  name: string;
-}
+import { Exercise, Set } from "@/types/domain";
 
 interface SetCardProps {
   set: Set;

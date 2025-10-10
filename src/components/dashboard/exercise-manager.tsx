@@ -9,20 +9,7 @@ import { TerminalPanel } from "@/components/ui/terminal-panel";
 import { TerminalTable } from "@/components/ui/terminal-table";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
-
-interface Exercise {
-  _id: Id<"exercises">;
-  name: string;
-  createdAt: number;
-}
-
-interface Set {
-  _id: Id<"sets">;
-  exerciseId: Id<"exercises">;
-  reps: number;
-  weight?: number;
-  performedAt: number;
-}
+import { Exercise, Set } from "@/types/domain";
 
 interface ExerciseManagerProps {
   exercises: Exercise[];
