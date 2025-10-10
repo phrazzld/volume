@@ -171,6 +171,9 @@ export function calculateDailyStatsByExercise(
 ): ExerciseStats[] {
   if (!sets || !exercises) return [];
 
+  // Build exercise lookup Map for O(1) access
+  const exerciseLookup = new Map(exercises.map((ex) => [ex._id, ex]));
+
   const today = new Date().toDateString();
   const todaySets = sets.filter(
     (set) => new Date(set.performedAt).toDateString() === today
@@ -179,14 +182,14 @@ export function calculateDailyStatsByExercise(
   if (todaySets.length === 0) return [];
 
   // Group by exercise
-  const exerciseMap = new Map<Id<"exercises">, ExerciseStats>();
+  const statsMap = new Map<Id<"exercises">, ExerciseStats>();
 
   todaySets.forEach((set) => {
-    const exercise = exercises.find((ex) => ex._id === set.exerciseId);
+    const exercise = exerciseLookup.get(set.exerciseId);
     if (!exercise) return;
 
-    if (!exerciseMap.has(set.exerciseId)) {
-      exerciseMap.set(set.exerciseId, {
+    if (!statsMap.has(set.exerciseId)) {
+      statsMap.set(set.exerciseId, {
         exerciseId: set.exerciseId,
         name: exercise.name,
         sets: 0,
@@ -195,7 +198,7 @@ export function calculateDailyStatsByExercise(
       });
     }
 
-    const stats = exerciseMap.get(set.exerciseId)!;
+    const stats = statsMap.get(set.exerciseId)!;
     stats.sets += 1;
     stats.reps += set.reps;
 
@@ -208,7 +211,7 @@ export function calculateDailyStatsByExercise(
   });
 
   // Sort by most sets first, then alphabetical
-  return Array.from(exerciseMap.values()).sort((a, b) => {
+  return Array.from(statsMap.values()).sort((a, b) => {
     if (a.sets !== b.sets) return b.sets - a.sets;
     return a.name.localeCompare(b.name);
   });
