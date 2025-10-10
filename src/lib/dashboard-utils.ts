@@ -26,6 +26,16 @@ export function convertWeight(weight: number, fromUnit: WeightUnit, toUnit: Weig
   return weight;
 }
 
+/**
+ * Normalize weight unit to a valid WeightUnit type.
+ * Validates and returns "lbs" or "kg", with "lbs" as fallback for invalid units.
+ * @param unit - Unit string to normalize
+ * @returns Valid WeightUnit ("lbs" or "kg")
+ */
+function normalizeWeightUnit(unit?: string): WeightUnit {
+  return unit === "lbs" || unit === "kg" ? unit : "lbs";
+}
+
 interface DailyStats {
   totalSets: number;
   totalReps: number;
@@ -69,7 +79,7 @@ export function calculateDailyStats(
     totalVolume: todaySets.reduce((sum, set) => {
       if (!set.weight) return sum;
       // Convert weight to target unit before calculating volume
-      const setUnit: WeightUnit = (set.unit as WeightUnit) || "lbs"; // fallback for legacy sets
+      const setUnit = normalizeWeightUnit(set.unit);
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
       return sum + (set.reps * convertedWeight);
     }, 0),
@@ -191,7 +201,7 @@ export function calculateDailyStatsByExercise(
 
     // Convert weight to target unit before calculating volume
     if (set.weight) {
-      const setUnit: WeightUnit = (set.unit as WeightUnit) || "lbs"; // fallback for legacy sets
+      const setUnit = normalizeWeightUnit(set.unit);
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
       stats.volume += set.reps * convertedWeight;
     }
