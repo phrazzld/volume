@@ -930,17 +930,416 @@
 
 ## Validation Checklist
 
-Before marking complete:
-- [ ] TypeScript compilation passes (`pnpm typecheck`)
-- [ ] ESLint passes (`pnpm lint`)
-- [ ] All imports resolve (`pnpm dev` starts clean)
-- [ ] Schema update applied (Convex dev server restarts clean)
-- [ ] Exercise deletion preserves history (manual test)
-- [ ] Restore on duplicate works (manual test)
-- [ ] Performance improved (100+ sets render fast)
-- [ ] No regressions (quick log, stats, undo still work)
-- [ ] Type duplication eliminated (ast-grep verification)
-- [ ] TASK.md updated with summary
+✅ All validation criteria met:
+- [x] TypeScript compilation passes (`pnpm typecheck`)
+- [x] ESLint passes (`pnpm lint`)
+- [x] All imports resolve (`pnpm dev` starts clean)
+- [x] Schema update applied (Convex dev server restarts clean)
+- [x] Exercise deletion preserves history (manual test)
+- [x] Restore on duplicate works (manual test)
+- [x] Performance improved (100+ sets render fast)
+- [x] No regressions (quick log, stats, undo still work)
+- [x] Type duplication eliminated (ast-grep verification)
+- [x] TASK.md updated with summary
+
+---
+
+## PR Review Feedback - Critical Fixes Required
+
+**Source:** PR #8 review by claude bot (2025-10-09)
+**Status:** 6 critical/high-priority issues identified for immediate fix before merge
+
+### Critical Issues (Merge-Blocking)
+
+- [x] **1. Fix Logic Error in updateExercise - Dead Code ⚠️**
+```
+File: convex/exercises.ts:101-108
+Issue: Null check after requireOwnership() is unreachable dead code
+Impact: requireOwnership() throws on null, making subsequent if (!exercise) check useless
+Priority: CRITICAL - Logic error that masks intent and could hide future bugs
+
+Current code:
+```typescript
+const exercise = await ctx.db.get(args.id);
+requireOwnership(exercise, identity.subject, "exercise"); // Throws if null!
+
+if (!exercise) { // ← DEAD CODE - never reached
+  throw new Error("Exercise not found");
+}
+```
+
+Fix: Move null check BEFORE requireOwnership:
+```typescript
+const exercise = await ctx.db.get(args.id);
+if (!exercise) {
+  throw new Error("Exercise not found");
+}
+requireOwnership(exercise, identity.subject, "exercise");
+
+// Rest of validation...
+if (exercise.deletedAt !== undefined) {
+  throw new Error("Cannot update a deleted exercise");
+}
+```
+
+Effort: 5 minutes
+```
+
+- [x] **2. Fix Exercise List Ordering on Compound Index ⚠️**
+```
+File: convex/exercises.ts:72-78
+Issue: .order("desc") on compound index (by_user_deleted) may not sort by createdAt
+Impact: Exercise list might be ordered by index fields (userId, deletedAt) instead of creation time
+Priority: CRITICAL - User-facing ordering incorrect
+
+Current code:
+```typescript
+exercises = await ctx.db
+  .query("exercises")
+  .withIndex("by_user_deleted", (q) =>
+    q.eq("userId", identity.subject).eq("deletedAt", undefined)
+  )
+  .order("desc") // ← Sorts by INDEX FIELDS, not createdAt!
+  .collect();
+```
+
+Fix Options:
+Option A (Recommended): Sort in-memory after collect
+```typescript
+const exercises = await ctx.db
+  .query("exercises")
+  .withIndex("by_user_deleted", (q) =>
+    q.eq("userId", identity.subject).eq("deletedAt", undefined)
+  )
+  .collect();
+
+// Sort by createdAt descending (newest first)
+return exercises.sort((a, b) => b.createdAt - a.createdAt);
+```
+
+Option B: Use by_user index and filter in-memory
+```typescript
+const exercises = await ctx.db
+  .query("exercises")
+  .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+  .order("desc") // This sorts by createdAt
+  .collect();
+
+// Filter to active only
+return exercises.filter(ex => ex.deletedAt === undefined);
+```
+
+Option C: Document current behavior if ordering by index is intentional
+
+Effort: 15 minutes (test both options)
+Recommendation: Option A (explicit, clear intent)
+```
+
+- [x] **3. Add Type Validation for WeightUnit Casting ⚠️**
+```
+File: src/lib/dashboard-utils.ts:72, 194
+Issue: Unsafe type cast (set.unit as WeightUnit) doesn't validate before casting
+Impact: Invalid units (e.g., "pounds") silently accepted, bypassing TypeScript safety
+Priority: CRITICAL - Type safety violation
+
+Current code:
+```typescript
+const setUnit: WeightUnit = (set.unit as WeightUnit) || "lbs";
+```
+
+Problem: If set.unit is "pounds" or any invalid string, cast claims it's WeightUnit,
+then || operator falls back to "lbs" - but type system thinks "pounds" is valid!
+
+Fix: Validate before assigning type:
+```typescript
+const setUnit: WeightUnit =
+  (set.unit === "lbs" || set.unit === "kg") ? set.unit : "lbs";
+```
+
+Or extract to helper:
+```typescript
+function normalizeWeightUnit(unit?: string): WeightUnit {
+  return unit === "lbs" || unit === "kg" ? unit : "lbs";
+}
+
+// Usage:
+const setUnit = normalizeWeightUnit(set.unit);
+```
+
+Locations to fix:
+- src/lib/dashboard-utils.ts:72 (in convertWeight function)
+- src/lib/dashboard-utils.ts:194 (in calculateDailyStats function)
+
+Effort: 10 minutes (fix both locations + verify with typecheck)
+```
+
+### High-Priority In-Scope Improvements
+
+- [x] **4. Add userId Field to Exercise Interface**
+```
+File: src/types/domain.ts:9
+Issue: Exercise interface missing userId field that exists in schema
+Impact: Type definition doesn't fully match schema, potential confusion
+Priority: HIGH - Completeness and schema alignment
+
+Current:
+```typescript
+export interface Exercise {
+  _id: Id<"exercises">;
+  name: string;
+  createdAt: number;
+  deletedAt?: number;
+}
+```
+
+Fix: Add userId field:
+```typescript
+export interface Exercise {
+  _id: Id<"exercises">;
+  userId: string;  // ← ADD: Matches schema
+  name: string;
+  createdAt: number;
+  deletedAt?: number;
+}
+```
+
+Effort: 2 minutes
+Note: Run typecheck after - ensure no breaking changes in components
+```
+
+- [x] **5. Document Soft Delete Pattern in Schema**
+```
+File: convex/schema.ts:13
+Issue: No comments explaining deletedAt field purpose or soft delete pattern
+Impact: Future developers might not understand pattern or accidentally hard delete
+Priority: HIGH - Maintainability and developer guidance
+
+Current:
+```typescript
+deletedAt: v.optional(v.number()),
+```
+
+Fix: Add JSDoc comment:
+```typescript
+/**
+ * Soft delete timestamp (Unix ms). When set, exercise is "deleted" but preserved
+ * for history display. Use deleteExercise mutation (not ctx.db.delete) to maintain
+ * data integrity. See convex/exercises.ts for auto-restore logic.
+ */
+deletedAt: v.optional(v.number()),
+```
+
+Also add comment above by_user_deleted index:
+```typescript
+// Index for efficient active-only queries (deletedAt === undefined)
+.index("by_user_deleted", ["userId", "deletedAt"])
+```
+
+Effort: 5 minutes
+```
+
+- [x] **6. Add Warning Comment Against Hard Deletes**
+```
+File: convex/exercises.ts (top of file or near deleteExercise mutation)
+Issue: No warning against using ctx.db.delete() directly on exercises
+Impact: Future developer could accidentally hard delete, breaking history
+Priority: HIGH - Defensive documentation
+
+Fix: Add comment near deleteExercise mutation:
+```typescript
+/**
+ * Delete an exercise (soft delete)
+ *
+ * IMPORTANT: Always use this mutation instead of ctx.db.delete() to maintain
+ * referential integrity. Hard deleting exercises orphans all associated sets,
+ * causing "Unknown exercise" to appear in history. Soft delete preserves
+ * exercise records for historical context while hiding them from active use.
+ *
+ * See also: createExercise (auto-restore logic), restoreExercise (explicit restore)
+ */
+export const deleteExercise = mutation({
+  // ...
+});
+```
+
+Effort: 2 minutes
+```
+
+---
+
+## PR Feedback Summary
+
+**Total Issues:** 6 critical/high-priority requiring immediate attention
+**Estimated Fix Time:** ~40 minutes total
+- Critical issues (3): ~30 minutes
+- High-priority improvements (3): ~10 minutes
+
+**Status:** ✅ **ALL FIXES COMPLETE**
+**Commits:**
+1. `7f6280a` - fix: move null check before requireOwnership in updateExercise
+2. `1de65ec` - fix: sort active exercises by createdAt in listExercises
+3. `d605d38` - fix: add type validation for WeightUnit casting
+4. `2502b57` - docs: add comprehensive soft delete documentation
+
+**Next Steps:**
+1. ~~Address all 6 issues above~~ ✅ DONE
+2. Run full validation checklist
+3. Update PR with fixes commit
+4. Request re-review
+
+**Deferred to BACKLOG:** 5 valid suggestions for follow-up work (see BACKLOG.md update)
+
+---
+
+## PR Re-Review Feedback (2025-10-10) - Final Items Before Merge
+
+**Source:** PR #8 re-review by claude bot after fixes
+**Status:** ✅ APPROVED with 2 high-priority items to address before merge
+
+### High-Priority Items (Before Merge)
+
+- [x] **1. Add Test Coverage for Soft Delete Functionality**
+```
+Issue: No automated tests for significant new functionality (soft delete, auto-restore, includeDeleted)
+Impact: Risk of regressions when refactoring
+Priority: HIGH - Reviewer explicitly requested "before merge"
+
+Implementation Plan:
+File: convex/exercises.test.ts (NEW - create following convex/sets.test.ts pattern)
+
+Test Cases to Add:
+1. deleteExercise sets deletedAt timestamp (not null)
+2. createExercise restores soft-deleted duplicate (auto-restore logic)
+3. createExercise throws error for active duplicate
+4. listExercises with includeDeleted=false filters deleted exercises
+5. listExercises with includeDeleted=true includes deleted exercises
+6. updateExercise blocks editing deleted exercises
+7. restoreExercise clears deletedAt field
+
+Pattern to Follow:
+- Use existing convex/sets.test.ts as template
+- Test security (ownership verification)
+- Test business logic (soft delete, restore)
+- Test filtering behavior
+
+Commands:
+- Run tests: pnpm test
+- Verify coverage: pnpm test:coverage (optional)
+
+Effort: 45-60 minutes
+```
+
+- [x] **2. Fix O(n) Lookup in calculateDailyStatsByExercise**
+```
+File: src/lib/dashboard-utils.ts:185
+Issue: Still using Array.find() in forEach loop - missed in original optimization
+Impact: O(n×m) complexity same as issue we fixed elsewhere (inconsistent)
+Priority: HIGH - Performance regression, easy fix
+
+Current Code (line 185):
+```typescript
+todaySets.forEach((set) => {
+  const exercise = exercises.find((ex) => ex._id === set.exerciseId); // ❌ O(n) lookup
+  if (!exercise) return;
+  // ...
+});
+```
+
+Fix: Build exercise Map (same pattern as Dashboard.tsx):
+```typescript
+export function calculateDailyStatsByExercise(
+  sets: Set[] | undefined,
+  exercises: Exercise[] | undefined,
+  targetUnit: WeightUnit = "lbs"
+): ExerciseStats[] {
+  if (!sets || !exercises) return [];
+
+  // Build Map for O(1) lookups
+  const exerciseMap = new Map(exercises.map(ex => [ex._id, ex]));
+
+  const today = new Date().toDateString();
+  const todaySets = sets.filter(/* ... */);
+
+  const statsMap = new Map<Id<"exercises">, ExerciseStats>();
+  todaySets.forEach((set) => {
+    const exercise = exerciseMap.get(set.exerciseId); // ✅ O(1) lookup
+    if (!exercise) return;
+    // ... rest of logic unchanged
+  });
+
+  return Array.from(statsMap.values()).sort(/* ... */);
+}
+```
+
+Effort: 15-30 minutes
+```
+
+### Documentation Improvement (Quick Win)
+
+- [x] **3. Add Soft Delete Pattern Guide to CLAUDE.md**
+```
+File: CLAUDE.md
+Issue: No documentation of soft delete pattern for future developers
+Impact: New developers may not understand architecture or accidentally hard delete
+Priority: MEDIUM - Quick documentation win
+
+Content to Add (after "Development Commands" section):
+
+## Soft Delete Pattern
+
+Exercises use soft delete (deletedAt timestamp) to preserve history:
+
+### Architecture
+- **Soft Delete**: Sets `deletedAt` timestamp instead of removing record
+- **Auto-Restore**: Creating exercise with same name restores soft-deleted version
+- **Filtering**: Use `includeDeleted` parameter to control visibility
+
+### Usage Guidelines
+- ✅ **Always** use `deleteExercise` mutation (never `ctx.db.delete()`)
+- ✅ **Always** use `includeDeleted` parameter in `listExercises` queries
+- ✅ **History**: Fetch with `includeDeleted: true` to show deleted exercise names
+- ✅ **Active UI**: Fetch with `includeDeleted: false` for dropdowns/selectors
+
+### Implementation Details
+- Schema: `convex/schema.ts` - deletedAt field + by_user_deleted index
+- Backend: `convex/exercises.ts` - soft delete mutations
+- Frontend: Filter deleted exercises in components (activeExercises)
+
+See `convex/exercises.ts` JSDoc for detailed auto-restore logic.
+
+Effort: 5 minutes
+```
+
+---
+
+## Re-Review Summary
+
+**Status:** ✅ **ALL RE-REVIEW ITEMS COMPLETE**
+
+**Commits Addressing Re-Review:**
+1. `8cdf410` - fix: use Map for O(1) lookups in calculateDailyStatsByExercise
+2. `d6a3e97` - docs: add soft delete pattern guide to CLAUDE.md
+3. `d4ed0d5` - test: add comprehensive soft delete test coverage (17 tests)
+
+**Original Reviewer Comments on Our First Fixes:**
+- ✅ Logic error fix: "Improved error flow clarity"
+- ✅ Query ordering fix: "Documented correctly" (Convex limitation)
+- ✅ Type validation: "Excellent implementation with helper function"
+- ✅ Documentation: "Well-commented schema and clear JSDoc"
+
+**New Items from Re-Review - ALL FIXED:**
+- ✅ Test coverage: 17 comprehensive tests added (soft delete, auto-restore, filtering, security)
+- ✅ Performance bug: O(n) lookup fixed with Map-based approach
+- ✅ Documentation: Soft delete pattern guide added to CLAUDE.md
+
+**Actual Time:** ~1.5 hours
+- Test coverage: 60 min (17 tests)
+- Performance fix: 20 min
+- Documentation: 10 min
+
+**Deferred to BACKLOG:**
+- Monitoring client-side filtering performance (when >100 exercises)
+- Extract auto-restore to helper function (low ROI refactor)
 
 ---
 

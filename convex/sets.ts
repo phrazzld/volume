@@ -27,7 +27,15 @@ export const logSet = mutation({
 
     // Verify exercise exists and belongs to user
     const exercise = await ctx.db.get(args.exerciseId);
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
     requireOwnership(exercise, identity.subject, "exercise");
+
+    // Block logging sets for soft-deleted exercises
+    if (exercise.deletedAt !== undefined) {
+      throw new Error("Cannot log sets for a deleted exercise");
+    }
 
     const setId = await ctx.db.insert("sets", {
       userId: identity.subject,
