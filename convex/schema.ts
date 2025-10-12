@@ -6,9 +6,17 @@ export default defineSchema({
     userId: v.string(),
     name: v.string(),
     createdAt: v.number(),
+    /**
+     * Soft delete timestamp (Unix ms). When set, exercise is "deleted" but preserved
+     * for history display. Use deleteExercise mutation (not ctx.db.delete) to maintain
+     * data integrity. See convex/exercises.ts for auto-restore logic.
+     */
+    deletedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
-    .index("by_user_name", ["userId", "name"]),
+    .index("by_user_name", ["userId", "name"])
+    // Index for efficient active-only queries (deletedAt === undefined)
+    .index("by_user_deleted", ["userId", "deletedAt"]),
 
   sets: defineTable({
     userId: v.string(),

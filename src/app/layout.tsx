@@ -18,7 +18,28 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Volume - Workout Tracker",
-  description: "Simple workout tracking app",
+  description: "Simple workout tracking app for tracking sets, reps, and weight",
+  applicationName: "Volume",
+  authors: [{ name: "Volume" }],
+  generator: "Next.js",
+  keywords: ["workout", "fitness", "tracker", "volume", "training"],
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf8f5" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  icons: {
+    icon: [
+      { url: "/icon", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
