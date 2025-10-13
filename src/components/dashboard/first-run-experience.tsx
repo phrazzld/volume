@@ -5,6 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { TerminalPanel } from "@/components/ui/terminal-panel";
+import { handleMutationError } from "@/lib/error-handler";
 
 interface FirstRunExperienceProps {
   onExerciseCreated: (exerciseId: Id<"exercises">) => void;
@@ -40,8 +41,7 @@ export function FirstRunExperience({
       const exerciseId = await createExercise({ name: exerciseName.trim() });
       onExerciseCreated(exerciseId);
     } catch (error) {
-      console.error("Failed to create exercise:", error);
-      alert("Failed to create exercise. Please try again.");
+      handleMutationError(error, "Create Exercise");
       setIsCreating(false);
     }
   };

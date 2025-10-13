@@ -43,7 +43,9 @@ export function TerminalPanel({
       return stored !== null ? stored === "true" : defaultCollapsed;
     } catch (error) {
       // localStorage might be blocked (private mode, etc.)
-      console.warn("Failed to read collapsed state from localStorage:", error);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Failed to read collapsed state from localStorage:", error);
+      }
       return defaultCollapsed;
     }
   });
@@ -55,7 +57,9 @@ export function TerminalPanel({
         localStorage.setItem(storageKey, String(isCollapsed));
       } catch (error) {
         // localStorage might be blocked (private mode, quota exceeded, etc.)
-        console.warn("Failed to save collapsed state to localStorage:", error);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Failed to save collapsed state to localStorage:", error);
+        }
       }
     }
   }, [isCollapsed, collapsible, storageKey]);
@@ -85,6 +89,16 @@ export function TerminalPanel({
             collapsible ? "cursor-pointer hover:bg-terminal-bgSecondary transition-colors" : ""
           }`}
           onClick={toggleCollapsed}
+          onKeyDown={(e) => {
+            if (collapsible && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              toggleCollapsed();
+            }
+          }}
+          role={collapsible ? "button" : undefined}
+          tabIndex={collapsible ? 0 : undefined}
+          aria-expanded={collapsible ? !isCollapsed : undefined}
+          aria-controls={collapsible && storageKey ? `panel-content-${storageKey}` : undefined}
         >
           <h2
             className={`text-xs font-bold uppercase tracking-wider flex items-center justify-between ${titleColorClasses[titleColor]}`}
@@ -99,7 +113,11 @@ export function TerminalPanel({
         </div>
       )}
 
-      {!isCollapsed && children}
+      {!isCollapsed && (
+        <div id={collapsible && storageKey ? `panel-content-${storageKey}` : undefined}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }

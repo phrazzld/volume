@@ -22,7 +22,12 @@ export function UndoToast({ visible, onUndo, onDismiss }: UndoToastProps) {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-slide-up">
-      <div className="relative bg-terminal-bgSecondary border border-terminal-success p-4 flex items-center justify-between">
+      <div
+        className="relative bg-terminal-bgSecondary border border-terminal-success p-4 flex items-center justify-between"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {/* Corner brackets */}
         <CornerBracket position="top-left" color="#00ff00" />
         <CornerBracket position="top-right" color="#00ff00" />
