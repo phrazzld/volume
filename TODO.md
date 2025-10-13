@@ -111,18 +111,18 @@ _Generated from quality infrastructure audit - 2025-10-12_
   Automation: None needed (one-time test suite)
 
   Success criteria (binary pass/fail):
-  - [ ] All form inputs render and accept correct input types
-  - [ ] Submit button disabled/enabled based on validation rules
-  - [ ] Last set indicator displays correct exercise data + relative time
-  - [ ] USE button correctly populates form with last set values
-  - [ ] logSet mutation called with exact params (exercise, reps, weight?, unit?)
-  - [ ] Loading state shows "LOGGING..." and disables button during submit
-  - [ ] Success clears reps + weight (keeps exercise), shows toast
-  - [ ] Error calls handleMutationError with context "Log Set"
-  - [ ] Enter key navigation: reps→weight→submit (3 separate tests)
-  - [ ] Unit toggle switches between lbs/kg correctly
-  - [ ] Edge cases: no exercises, no last set, optional weight
-  - [ ] All tests pass in <1s (async operations properly awaited)
+  - [x] All form inputs render and accept correct input types
+  - [x] Submit button disabled/enabled based on validation rules
+  - [x] Last set indicator displays correct exercise data + relative time
+  - [x] USE button correctly populates form with last set values
+  - [x] logSet mutation called with exact params (exercise, reps, weight?, unit?)
+  - [x] Loading state shows "LOGGING..." and disables button during submit
+  - [x] Success clears reps + weight (keeps exercise), shows toast
+  - [x] Error calls handleMutationError with context "Log Set"
+  - [x] Enter key navigation: reps→weight→submit (3 separate tests)
+  - [x] Unit toggle switches between lbs/kg correctly
+  - [x] Edge cases: no exercises, no last set, optional weight
+  - [x] All tests pass in <1s (async operations properly awaited - 707ms)
 
   Constraints:
   - Must mock WeightUnitContext (component depends on it)
