@@ -16,9 +16,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   // Build Content Security Policy with nonce
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://*.clerk.com;
-    style-src 'self' 'unsafe-inline' https://*.clerk.com;
-    img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com;
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://*.clerk.com https://*.clerk.accounts.dev;
+    style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev;
+    img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com https://*.clerk.accounts.dev;
     font-src 'self' data:;
     object-src 'none';
     base-uri 'self';
