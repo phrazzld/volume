@@ -85,6 +85,16 @@ export function TerminalPanel({
             collapsible ? "cursor-pointer hover:bg-terminal-bgSecondary transition-colors" : ""
           }`}
           onClick={toggleCollapsed}
+          onKeyDown={(e) => {
+            if (collapsible && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              toggleCollapsed();
+            }
+          }}
+          role={collapsible ? "button" : undefined}
+          tabIndex={collapsible ? 0 : undefined}
+          aria-expanded={collapsible ? !isCollapsed : undefined}
+          aria-controls={collapsible && storageKey ? `panel-content-${storageKey}` : undefined}
         >
           <h2
             className={`text-xs font-bold uppercase tracking-wider flex items-center justify-between ${titleColorClasses[titleColor]}`}
@@ -99,7 +109,11 @@ export function TerminalPanel({
         </div>
       )}
 
-      {!isCollapsed && children}
+      {!isCollapsed && (
+        <div id={collapsible && storageKey ? `panel-content-${storageKey}` : undefined}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }

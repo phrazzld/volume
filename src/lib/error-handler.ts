@@ -8,11 +8,15 @@ import { toast } from "sonner";
  * @param context - Context string describing the operation (e.g., "Log Set", "Create Exercise")
  */
 export function handleMutationError(error: unknown, context: string): void {
-  // Log for debugging (will be sent to error tracking service later)
-  console.error(`[${context}]:`, error);
-
   // Extract error message
   const message = error instanceof Error ? error.message : "Unknown error";
+
+  // Log for debugging (sanitize in production to prevent info disclosure)
+  if (process.env.NODE_ENV === "production") {
+    console.error(`[${context}]: ${message}`);
+  } else {
+    console.error(`[${context}]:`, error);
+  }
 
   // Map to user-friendly message and show toast
   const userMessage = getUserFriendlyMessage(message);
