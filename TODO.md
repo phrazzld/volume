@@ -28,7 +28,7 @@ _Generated from quality infrastructure audit - 2025-10-12_
 
 ## HIGH - Test Coverage (253 untested lines in dashboard-utils.ts)
 
-- [ ] Create `src/lib/dashboard-utils.test.ts` for weight conversion and stats
+- [x] Create `src/lib/dashboard-utils.test.ts` for weight conversion and stats
   - Test `convertWeight()`: lbs→kg, kg→lbs, edge cases (0, negative, very large)
   - Verify conversion factor accuracy: 2.20462 lbs per kg (test 100kg = 220.46lbs)
   - Test `normalizeWeightUnit()`: valid units ("lbs", "kg"), invalid inputs
