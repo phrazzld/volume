@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
             value: "max-age=31536000; includeSubDomains",
           },
           // Content Security Policy (pragmatic approach for Clerk + Convex)
+          // Note: unsafe-inline/unsafe-eval required - Clerk auth flows need inline scripts,
+          // Convex real-time sync requires eval for WebSocket message handling
           {
             key: "Content-Security-Policy",
             value: [

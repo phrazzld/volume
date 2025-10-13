@@ -18,59 +18,29 @@
 
 ---
 
-### 2. 🚨 [Security] Missing Security Headers
+### 1. ✅ [Security] Missing Security Headers - COMPLETED (PR #10)
 **File**: `next.config.ts:1-7`
 **Perspectives**: security-sentinel
 **Severity**: **HIGH**
-**Category**: OWASP A05:2021 - Security Misconfiguration
+**Status**: ✅ **FIXED in PR #10** (2025-10-13)
 
-**Missing Headers**:
-- `Content-Security-Policy`: No CSP to prevent XSS
-- `X-Frame-Options`: App can be embedded in iframe (clickjacking risk)
-- `X-Content-Type-Options`: Browser could MIME-sniff responses
-- `Referrer-Policy`: Referer header leaks URLs
-- `Permissions-Policy`: No control over browser features
-- `Strict-Transport-Security`: No HTTPS enforcement
+**Implementation**:
+- Added X-Frame-Options: DENY (clickjacking prevention)
+- Added X-Content-Type-Options: nosniff (MIME-sniffing prevention)
+- Added Referrer-Policy: strict-origin-when-cross-origin
+- Added Permissions-Policy (restrict camera/microphone/geolocation)
+- Added Strict-Transport-Security (HTTPS enforcement)
+- Added Content-Security-Policy with Clerk + Convex allowlist
 
-**Fix**: Add security headers to `next.config.ts`:
-```typescript
-const nextConfig: NextConfig = {
-  async headers() {
-    return [{
-      source: "/:path*",
-      headers: [
-        { key: "X-Frame-Options", value: "DENY" },
-        { key: "X-Content-Type-Options", value: "nosniff" },
-        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-        { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-        {
-          key: "Content-Security-Policy",
-          value: [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.convex.cloud",
-            "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: https: blob:",
-            "connect-src 'self' https://*.clerk.accounts.dev https://*.convex.cloud wss://*.convex.cloud",
-          ].join("; "),
-        },
-      ],
-    }];
-  },
-};
-```
-
-**Testing**: Verify CSP doesn't break Clerk/Convex, check browser console for violations
-
-**Effort**: 2h (implementation + CSP compatibility testing)
-**Risk**: **HIGH** - Defense in depth against XSS/clickjacking
+**Follow-up**: Investigate stricter CSP (nonce-based) tracked in #25 below
 
 ---
 
-### 3. 🚨 [Security] Console Logging in Production - Info Disclosure
-**Files**: `error-handler.ts:12`, `Dashboard.tsx:57,81`, `first-run-experience.tsx:43`, `terminal-panel.tsx:46,58`, `WeightUnitContext.tsx:28,42`
+### 2. ✅ [Security] Console Logging in Production - PARTIALLY COMPLETED (PR #10)
+**Files**: `error-handler.ts:12`, `terminal-panel.tsx:46,58` (FIXED), `Dashboard.tsx:57,81`, `WeightUnitContext.tsx:28,42` (remaining)
 **Perspectives**: security-sentinel, maintainability-maven
 **Severity**: **MEDIUM-HIGH**
+**Status**: ⚠️ **PARTIALLY FIXED in PR #10** - error-handler.ts and terminal-panel.tsx guarded
 
 **Vulnerability**: `console.error()` logs full error objects (including stack traces) in production browser console. Attackers can:
 - Learn internal file structure
@@ -108,29 +78,6 @@ compiler: {
 
 ---
 
-### 4. ⚠️ [UX] Alert() Dialogs Still Present - Unprofessional Error Handling
-**Files**: `src/components/dashboard/first-run-experience.tsx:44`
-**Perspectives**: user-experience-advocate, maintainability-maven
-**Severity**: **HIGH**
-
-**Current UX**: Browser `alert()` dialogs are scary, blocking, and jarring on mobile. Inconsistent with rest of app (modern toast notifications).
-
-**User Impact**: New user's first experience is a scary browser alert. May abandon immediately.
-
-**Fix**: Replace with handleMutationError():
-```typescript
-// first-run-experience.tsx:44
-} catch (error) {
-  handleMutationError(error, "Create Exercise");
-  setIsCreating(false); // Allow retry
-}
-```
-
-**Effort**: 15m
-**Value**: **HIGH** - Consistent, professional error handling
-
----
-
 ### 5. ♿ [Accessibility] Missing ARIA Live Regions - Screen Readers Silent
 **Files**: `src/components/dashboard/undo-toast.tsx`, all Sonner toast usage
 **Perspectives**: user-experience-advocate
@@ -159,36 +106,6 @@ compiler: {
 
 ---
 
-### 6. ♿ [Accessibility] Collapsible Panels Missing Keyboard Support
-**File**: `src/components/ui/terminal-panel.tsx:82-100`
-**Perspectives**: user-experience-advocate
-**Severity**: **HIGH**
-**Violations**: WCAG 2.1 keyboard navigation
-
-**Current UX**: Panels only collapse via mouse click. **Keyboard-only users cannot expand/collapse panels.**
-
-**Fix**: Add keyboard support:
-```tsx
-<div
-  className="..."
-  onClick={toggleCollapsed}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleCollapsed();
-    }
-  }}
-  role="button"
-  tabIndex={0}
-  aria-expanded={!isCollapsed}
-  aria-controls={`panel-content-${storageKey}`}
->
-```
-
-**Effort**: 1h
-**Value**: **HIGH** - Accessibility compliance
-
----
 
 ## High-Value Improvements
 
@@ -198,7 +115,63 @@ compiler: {
 
 ---
 
-### 7. [Maintainability] Time Formatting Duplication - 3 Implementations ⚠️ **CRITICAL DUPLICATION**
+### 7. [Security] Investigate Stricter CSP (Nonce-Based or Hash-Based)
+**File**: `next.config.ts:39-41`
+**Perspectives**: security-sentinel
+**Severity**: **MEDIUM-HIGH**
+**Source**: PR #10 review feedback
+
+**Current State**: CSP includes `unsafe-inline` and `unsafe-eval` which significantly weaken XSS protection. These directives allow inline scripts and eval(), which are primary XSS attack vectors.
+
+**Why Deferred**: Current implementation required for Clerk authentication and Convex real-time sync. Removing these would break core functionality.
+
+**Investigation Tasks**:
+1. Research Clerk CSP requirements and nonce-based auth flow compatibility
+2. Test Convex WebSocket handling without `unsafe-eval`
+3. Implement nonce generation in Next.js middleware
+4. Test hash-based CSP for static inline scripts
+5. Monitor browser console for CSP violations in staging
+6. A/B test stricter CSP with percentage of users
+
+**Expected Benefit**: Significantly improved XSS protection while maintaining Clerk/Convex functionality
+
+**Effort**: 4-6h (research + implementation + testing)
+**Priority**: **MEDIUM** - Meaningful security improvement but requires careful testing
+
+---
+
+### 8. [Testing] Add Unit Tests for Error Handler Production/Dev Branching
+**File**: `src/lib/error-handler.ts`
+**Perspectives**: maintainability-maven
+**Severity**: **MEDIUM**
+**Source**: PR #10 review feedback
+
+**Missing Coverage**: error-handler.ts production vs development logging behavior not tested. No validation that sanitization works correctly in production builds.
+
+**Test Cases Needed**:
+```typescript
+// NEW: src/lib/error-handler.test.ts
+describe('handleMutationError', () => {
+  describe('production logging', () => {
+    beforeEach(() => { process.env.NODE_ENV = 'production'; });
+    it('logs sanitized error message only');
+    it('does not log full error object or stack traces');
+  });
+
+  describe('development logging', () => {
+    beforeEach(() => { process.env.NODE_ENV = 'development'; });
+    it('logs full error object with stack traces');
+    it('logs context string for debugging');
+  });
+});
+```
+
+**Effort**: 1-2h (test infrastructure + assertions)
+**Priority**: **MEDIUM** - Validates critical security behavior
+
+---
+
+### 9. [Maintainability] Time Formatting Duplication - 3 Implementations ⚠️ **CRITICAL DUPLICATION**
 **Files**: `quick-log-form.tsx:88-96`, `grouped-set-history.tsx:46-63`, `set-card.tsx:37-51`
 **Perspectives**: maintainability-maven, complexity-archaeologist, architecture-guardian
 **Severity**: **HIGH** - **Cross-validated by 3 agents**
@@ -721,7 +694,101 @@ const handleRepeatSet = (set: Set) => { // ✓
 
 ---
 
-### 21. [UX] No Search/Filter for Exercises
+### 21. [Accessibility] Add Visual Focus Indicator for Keyboard Navigation
+**File**: `src/components/ui/terminal-panel.tsx:85`
+**Perspectives**: user-experience-advocate
+**Severity**: **LOW**
+**Violations**: WCAG 2.4.7 (Focus Visible)
+**Source**: PR #10 review feedback
+
+**Current State**: Keyboard users can tab to collapsible panels but there's no explicit focus styling. When focused via keyboard, panel header should have visible focus ring.
+
+**Fix**: Add focus-visible styles:
+```css
+/* Add to terminal-panel header div */
+focus-visible:ring-2 focus-visible:ring-terminal-info focus-visible:ring-offset-2
+```
+
+**Effort**: 15m + cross-browser testing
+**Priority**: **LOW** - Functional keyboard nav exists, this is visual polish
+
+---
+
+### 22. [Code Quality] ARIA Controls Mismatch When storageKey Undefined
+**File**: `src/components/ui/terminal-panel.tsx:97,113`
+**Perspectives**: user-experience-advocate
+**Severity**: **LOW**
+**Source**: PR #10 review feedback
+
+**Current State**: When `collapsible=true` but `storageKey` undefined, `aria-controls` and `id` are both undefined, breaking ARIA relationship.
+
+**Fix**: Generate fallback ID or require storageKey when collapsible:
+```typescript
+const panelId = storageKey || `panel-${useId()}`;
+```
+
+**Impact**: Edge case - all current usage provides storageKey
+
+**Effort**: 30m
+**Priority**: **LOW** - No real-world occurrence
+
+---
+
+### 23. [Security] Conditionally Apply HSTS Only in Production
+**File**: `next.config.ts:32`
+**Perspectives**: security-sentinel
+**Severity**: **VERY LOW**
+**Source**: PR #10 review feedback
+
+**Current State**: HSTS header returned for all paths including localhost. Could theoretically break local dev by forcing HTTPS.
+
+**Fix**:
+```typescript
+headers: [
+  process.env.NODE_ENV === "production" && {
+    key: "Strict-Transport-Security",
+    value: "max-age=31536000; includeSubDomains",
+  },
+].filter(Boolean),
+```
+
+**Impact**: Haven't experienced issues - browsers generally ignore HSTS on localhost
+
+**Effort**: 10m
+**Priority**: **VERY LOW** - Theoretical concern
+
+---
+
+### 24. [Performance] Extract CSP String to Constant (Micro-Optimization)
+**File**: `next.config.ts:37-45`
+**Perspectives**: performance-pathfinder
+**Severity**: **VERY LOW**
+**Source**: PR #10 review feedback
+
+**Current State**: CSP string concatenation happens on every request (~100 bytes overhead per response).
+
+**Fix**:
+```typescript
+const CSP_DIRECTIVES = [
+  "default-src 'self'",
+  // ...
+].join("; ");
+
+const nextConfig: NextConfig = {
+  async headers() {
+    return [{ headers: [{ key: "Content-Security-Policy", value: CSP_DIRECTIVES }] }];
+  },
+};
+```
+
+**Impact**: Negligible - no measured performance issue
+
+**Effort**: 5m
+**Priority**: **VERY LOW** - Premature optimization
+
+---
+
+### 25. [UX] No Search/Filter for Exercises
 **Perspectives**: user-experience-advocate, product-visionary
 **Severity**: **MEDIUM**
 

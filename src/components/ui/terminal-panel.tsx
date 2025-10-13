@@ -43,7 +43,9 @@ export function TerminalPanel({
       return stored !== null ? stored === "true" : defaultCollapsed;
     } catch (error) {
       // localStorage might be blocked (private mode, etc.)
-      console.warn("Failed to read collapsed state from localStorage:", error);
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Failed to read collapsed state from localStorage:", error);
+      }
       return defaultCollapsed;
     }
   });
@@ -55,7 +57,9 @@ export function TerminalPanel({
         localStorage.setItem(storageKey, String(isCollapsed));
       } catch (error) {
         // localStorage might be blocked (private mode, quota exceeded, etc.)
-        console.warn("Failed to save collapsed state to localStorage:", error);
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("Failed to save collapsed state to localStorage:", error);
+        }
       }
     }
   }, [isCollapsed, collapsible, storageKey]);
