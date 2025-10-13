@@ -1,6 +1,6 @@
 # TODO: Quality Infrastructure
 
-*Generated from quality infrastructure audit - 2025-10-12*
+_Generated from quality infrastructure audit - 2025-10-12_
 
 ## CRITICAL - Continuous Integration (blocks quality enforcement)
 
@@ -68,13 +68,13 @@
 
 ## MEDIUM - Developer Tooling
 
-- [ ] Create `.prettierrc.json` with code formatting rules
+- [x] Create `.prettierrc.json` with code formatting rules
   - Base config: semi: true, singleQuote: false, tabWidth: 2
   - Match ESLint settings from `.eslintrc.json` (avoid conflicts)
   - Add `.prettierignore`: ignore generated files, build output, node_modules
   - Success criteria: `pnpm prettier --check .` passes on existing code (or autofix)
 
-- [ ] Add Prettier to `package.json` scripts and lint-staged
+- [x] Add Prettier to `package.json` scripts and lint-staged
   - Add devDependency: `prettier` (latest stable)
   - Add script: `"format": "prettier --write ."`
   - Add script: `"format:check": "prettier --check ."`
@@ -97,6 +97,7 @@
 ## Future Enhancements → See BACKLOG.md
 
 The following were identified but deferred to BACKLOG.md as non-critical:
+
 - Bundle size regression tracking (Lighthouse CI integration)
 - Import sorting automation (trivial-import-sort plugin)
 - Git commit message linting (commitlint + husky)
@@ -108,6 +109,7 @@ The following were identified but deferred to BACKLOG.md as non-critical:
 **Completion Order**: CRITICAL tasks first (CI pipeline unblocks everything), then HIGH (test coverage), then MEDIUM (developer experience).
 
 **Estimated Total Effort**: ~12 hours
+
 - CRITICAL: 2h (CI setup + coverage config)
 - HIGH: 8h (test file creation)
 - MEDIUM: 2h (tooling setup)

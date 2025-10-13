@@ -1,0 +1,20 @@
+# Build outputs
+.next/
+dist/
+build/
+out/
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Generated code
+convex/_generated/
+
+# Coverage reports
+coverage/
+
+# Misc
+.env
+.env.local
+*.log
