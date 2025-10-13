@@ -39,7 +39,7 @@ _Generated from quality infrastructure audit - 2025-10-12_
   - Test `sortExercisesByRecency()`: orders by most recent set timestamp
   - Success criteria: 100% coverage of dashboard-utils.ts functions
 
-- [ ] Create `src/lib/error-handler.test.ts` for production vs dev logging
+- [x] Create `src/lib/error-handler.test.ts` for production vs dev logging
   - Mock `process.env.NODE_ENV` (use vitest `vi.stubEnv()`)
   - Test production mode: logs sanitized message only (no stack traces)
   - Test development mode: logs full error object with stack trace
