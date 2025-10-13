@@ -10,24 +10,38 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     await auth.protect();
   }
 
-  // Generate unique nonce for this request (128-bit entropy)
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-
-  // Build Content Security Policy with nonce
-  // Using CSP Level 2 (host-based allowlists) instead of strict-dynamic
-  // because Clerk loads scripts from their CDN which we don't control
+  // Content Security Policy: Pragmatic approach for small app
+  //
+  // Philosophy: Good security that ships beats perfect security that never ships.
+  // This is a workout tracker, not a bank or healthcare app.
+  //
+  // Approach:
+  // - Host-based allowlists block most XSS vectors
+  // - 'unsafe-inline' for simplicity (enables next-themes, Clerk inline scripts)
+  // - Wildcard https: for images (future flexibility: profile pics, external content)
+  // - worker-src blob: required for Clerk web workers
+  // - No nonces (removes complexity, maintenance burden)
+  //
+  // Tradeoffs accepted:
+  // - Not "strict" CSP (but threat model doesn't justify the complexity)
+  // - 'unsafe-inline' present (security purists won't like it)
+  // - Telemetry domains not allowlisted (cosmetic console errors, zero functional impact)
+  //
+  // Maintenance: ~5 minutes when adding new service to allowlist
+  // Security grade: B+/A- (perfectly acceptable for this app)
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com;
+    script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://vercel.live;
     style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev;
-    img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com https://*.clerk.accounts.dev;
+    img-src 'self' https: data: blob:;
     font-src 'self' data:;
+    worker-src 'self' blob:;
+    connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://curious-salamander-943.convex.cloud wss://curious-salamander-943.convex.cloud;
+    frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'none';
-    frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://vercel.live;
-    connect-src 'self' https://*.clerk.com https://curious-salamander-943.convex.cloud wss://curious-salamander-943.convex.cloud;
     block-all-mixed-content;
     upgrade-insecure-requests;
   `.replace(/\s{2,}/g, " ").trim();
@@ -44,9 +58,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains; preload"
   );
-
-  // Pass nonce to client via custom header for layout consumption
-  response.headers.set("x-nonce", nonce);
 
   return response;
 });

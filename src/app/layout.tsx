@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono } from "next/font/google";
-import { headers } from "next/headers";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -43,22 +42,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Read nonce from middleware for CSP
-  const nonce = (await headers()).get("x-nonce");
-
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        suppressHydrationWarning
-        className={ibmPlexMono.variable}
-        nonce={nonce || undefined}
-      >
+      <html lang="en" suppressHydrationWarning className={ibmPlexMono.variable}>
         <body className="antialiased bg-terminal-bg pb-20 md:pb-12">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WeightUnitProvider>
