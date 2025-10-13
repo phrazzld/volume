@@ -12,7 +12,7 @@
   - Success criteria: Workflow fails if any step exits non-zero
   - Cache node_modules for faster runs (GitHub Actions cache)
 
-- [ ] Add coverage reporting to Vitest config (`vitest.config.ts`)
+- [x] Add coverage reporting to Vitest config (`vitest.config.ts`)
   - Enable coverage collection with `@vitest/coverage-v8` provider
   - Set thresholds: 70% lines, 70% functions, 70% branches
   - Exclude test files, generated code (`convex/_generated/**`)
