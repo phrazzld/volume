@@ -81,7 +81,7 @@ _Generated from quality infrastructure audit - 2025-10-12_
   - Update `lint-staged` config: run prettier before ESLint
   - Success criteria: Pre-commit hook formats code automatically
 
-- [ ] Add bundle analyzer to Next.js config (`next.config.ts`)
+- [x] Add bundle analyzer to Next.js config (`next.config.ts`)
   - Install `@next/bundle-analyzer` as devDependency
   - Wrap Next.js config with analyzer: `withBundleAnalyzer(nextConfig)`
   - Enable only when `ANALYZE=true` env var set
