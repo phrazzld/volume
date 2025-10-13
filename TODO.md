@@ -58,6 +58,83 @@ _Generated from quality infrastructure audit - 2025-10-12_
   - Mock Convex hooks (`useQuery`, `useMutation`) with vitest
   - Success criteria: Core logging flow validated end-to-end
 
+  ```
+  Approach (based on exercise-manager.test.tsx patterns):
+  1. Mock Convex hooks: useQuery (returns sets), useMutation (logSet)
+  2. Mock WeightUnitContext provider (unit + toggleUnit)
+  3. Mock localStorage for TerminalPanel collapse state
+  4. Mock toast.success and handleMutationError
+  5. Use vi.useFakeTimers() for formatTimeAgo testing (follow date-utils.test.ts pattern)
+  6. Test form state with fireEvent.change on controlled inputs
+  7. Test async submission with waitFor (action BEFORE waitFor, assert AFTER)
+  8. Test keyboard navigation: Enter in reps → weight, Enter in weight → submit
+
+  Files referenced:
+  - Component: src/components/dashboard/quick-log-form.tsx:1-332
+  - Pattern: src/components/dashboard/exercise-manager.test.tsx:12-22 (Convex mock)
+  - Pattern: src/lib/date-utils.test.ts (fake timers for relative timestamps)
+  - Context: src/contexts/WeightUnitContext.tsx (need to mock provider)
+
+  Modularity:
+  - Components to test independently:
+    1. Form state management (controlled inputs: exercise, reps, weight)
+    2. Validation logic (submit button disabled states)
+    3. Last set indicator (query data display + formatTimeAgo)
+    4. USE button (populate form from last set)
+    5. Keyboard navigation (Enter key handlers)
+    6. Async submission (loading state, success/error handling)
+    7. Unit toggle interaction
+  - Parallelizable: Can test validation, time formatting, and input handling separately
+  - Dependencies: WeightUnitContext, Convex hooks, toast, error handler
+
+  Test Strategy:
+  - Unit tests for all form interactions (~20-25 tests)
+    1. Rendering: form elements present, exercise dropdown populated
+    2. Form state: controlled inputs update on change
+    3. Validation: submit disabled when exercise/reps missing
+    4. Last set display: shows/hides based on selection, correct format
+    5. USE button: populates reps + weight from last set
+    6. Submission: calls logSet with correct params (with/without weight)
+    7. Loading state: button disabled + text changes during submit
+    8. Error handling: calls handleMutationError on failure
+    9. Success flow: clears reps/weight, shows toast, keeps exercise selected
+    10. Keyboard nav: Enter key flows (reps→weight→submit)
+    11. Unit toggle: switches between lbs/kg
+  - Edge cases:
+    * No exercises available (empty state)
+    * No last set for selected exercise
+    * Submit without weight (optional field, weight + unit undefined)
+    * Time formatting edge cases (0 sec, 59 sec, 1 min, 59 min, 1 hr, 23 hr, 1 day, 7+ days)
+    * Decimal weight values (step="0.5")
+  - Coverage target: 100% of form logic (exclude focus management - mobile-specific)
+
+  Automation: None needed (one-time test suite)
+
+  Success criteria (binary pass/fail):
+  - [ ] All form inputs render and accept correct input types
+  - [ ] Submit button disabled/enabled based on validation rules
+  - [ ] Last set indicator displays correct exercise data + relative time
+  - [ ] USE button correctly populates form with last set values
+  - [ ] logSet mutation called with exact params (exercise, reps, weight?, unit?)
+  - [ ] Loading state shows "LOGGING..." and disables button during submit
+  - [ ] Success clears reps + weight (keeps exercise), shows toast
+  - [ ] Error calls handleMutationError with context "Log Set"
+  - [ ] Enter key navigation: reps→weight→submit (3 separate tests)
+  - [ ] Unit toggle switches between lbs/kg correctly
+  - [ ] Edge cases: no exercises, no last set, optional weight
+  - [ ] All tests pass in <1s (async operations properly awaited)
+
+  Constraints:
+  - Must mock WeightUnitContext (component depends on it)
+  - Must mock localStorage (TerminalPanel uses it for collapse state)
+  - Cannot test focus management (useRef + requestAnimationFrame not testable)
+  - Cannot test InlineExerciseCreator (would require additional complex mocking)
+  - Time tests require fake timers (vi.useFakeTimers + vi.setSystemTime)
+
+  Complexity: COMPLEX (most complex component test - multiple contexts, async, time-based UI)
+  Time: 2-3h (20-25 tests, multiple mocking layers, keyboard event testing)
+  ```
+
 - [x] Create `src/components/dashboard/exercise-manager.test.tsx` for CRUD operations
   - Test create exercise: form submission calls `createExercise` mutation
   - Test delete exercise: confirmation → calls `deleteExercise` (soft delete)
