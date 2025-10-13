@@ -88,7 +88,7 @@ _Generated from quality infrastructure audit - 2025-10-12_
   - Add package.json script: `"analyze": "ANALYZE=true pnpm build"`
   - Success criteria: `pnpm analyze` generates bundle size report
 
-- [ ] Add PR checklist template (`.github/pull_request_template.md`)
+- [x] Add PR checklist template (`.github/pull_request_template.md`)
   - Checklist items: tests added/updated, types updated if needed
   - Link to CI status badge (auto-populated by GitHub)
   - Prompt for testing notes (manual testing performed)
