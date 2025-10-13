@@ -14,9 +14,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
   // Build Content Security Policy with nonce
+  // Using CSP Level 2 (host-based allowlists) instead of strict-dynamic
+  // because Clerk loads scripts from their CDN which we don't control
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://*.clerk.com https://*.clerk.accounts.dev;
+    script-src 'self' 'nonce-${nonce}' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com;
     style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev;
     img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com https://*.clerk.accounts.dev;
     font-src 'self' data:;
@@ -24,7 +26,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'none';
-    frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev;
+    frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://vercel.live;
     connect-src 'self' https://*.clerk.com https://curious-salamander-943.convex.cloud wss://curious-salamander-943.convex.cloud;
     block-all-mixed-content;
     upgrade-insecure-requests;
