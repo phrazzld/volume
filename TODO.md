@@ -58,7 +58,7 @@ _Generated from quality infrastructure audit - 2025-10-12_
   - Mock Convex hooks (`useQuery`, `useMutation`) with vitest
   - Success criteria: Core logging flow validated end-to-end
 
-- [ ] Create `src/components/dashboard/exercise-manager.test.tsx` for CRUD operations
+- [x] Create `src/components/dashboard/exercise-manager.test.tsx` for CRUD operations
   - Test create exercise: form submission calls `createExercise` mutation
   - Test delete exercise: confirmation → calls `deleteExercise` (soft delete)
   - Test update exercise: inline edit mode saves new name
