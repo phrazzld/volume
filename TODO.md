@@ -19,7 +19,7 @@
   - Output formats: text summary (for CI logs), html (for local review)
   - Success criteria: `pnpm test:coverage` fails if below threshold
 
-- [ ] Create `.github/dependabot.yml` for automated dependency updates
+- [x] Create `.github/dependabot.yml` for automated dependency updates
   - Monitor npm dependencies weekly
   - Monitor GitHub Actions monthly
   - Auto-create PRs for security updates
