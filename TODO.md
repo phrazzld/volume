@@ -49,7 +49,7 @@ _Generated from quality infrastructure audit - 2025-10-12_
     - Generic errors → "Something went wrong"
   - Success criteria: Validates security behavior (no info disclosure in prod)
 
-- [ ] Create `src/components/dashboard/quick-log-form.test.tsx` for critical UI paths
+- [x] Create `src/components/dashboard/quick-log-form.test.tsx` for critical UI paths
   - Test form state: reps field accepts integers only, weight accepts decimals
   - Test validation: empty reps shows error, invalid exercise ID prevented
   - Test last set display: shows correct "X MIN AGO" formatting
