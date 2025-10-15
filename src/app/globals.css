@@ -2,171 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Light mode - Paper terminal aesthetic */
-  --background: #faf8f5;
-  --foreground: #1a1a1a;
-  --border: #cccccc;
-  --border-light: #dddddd;
-  --text-secondary: #666666;
-  --text-muted: #999999;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
 
-  /* Terminal colors - Light mode (darker for readability) */
-  --terminal-bg: #faf8f5;
-  --terminal-bg-secondary: #f0ede8;
-  --terminal-border: #cccccc;
-  --terminal-border-light: #dddddd;
-  --terminal-text: #1a1a1a;
-  --terminal-text-secondary: #666666;
-  --terminal-text-muted: #999999;
-  --terminal-success: #008000;
-  --terminal-danger: #cc0000;
-  --terminal-warning: #cc8800;
-  --terminal-info: #008b8b;
-  --terminal-accent: #b8860b;
-}
-
-.dark {
-  /* Dark mode - Bloomberg terminal aesthetic */
-  --background: #000000;
-  --foreground: #f0f0f0;
-  --border: #333333;
-  --border-light: #444444;
-  --text-secondary: #999999;
-  --text-muted: #666666;
-
-  /* Terminal colors - Dark mode (bright on black) */
-  --terminal-bg: #000000;
-  --terminal-bg-secondary: #0a0a0a;
-  --terminal-border: #333333;
-  --terminal-border-light: #444444;
-  --terminal-text: #f0f0f0;
-  --terminal-text-secondary: #999999;
-  --terminal-text-muted: #666666;
-  --terminal-success: #00ff00;
-  --terminal-danger: #ff0000;
-  --terminal-warning: #ffaa00;
-  --terminal-info: #00ffff;
-  --terminal-accent: #ffcc00;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-mono), "Courier New", monospace;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
-  font-size: 18px;
-  line-height: 1.6;
-}
-
-/* Terminal aesthetic: all text uppercase */
-main {
-  text-transform: uppercase;
-}
-
-/* Typography hierarchy with varied font weights */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
-}
-
-/* Body text with improved readability */
-p, span, div {
-  font-weight: 400;
-}
-
-/* Emphasized text */
-strong, b {
-  font-weight: 700;
-}
-
-/* Medium weight for labels and secondary text */
-label {
-  font-weight: 500;
-}
-
-/* Ensure metrics use tabular nums for consistent layout */
-.tabular-nums,
-[data-metric],
-[role="cell"] {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Button press states - scale down on tap for tactile feedback */
-button:active,
-.btn-press:active {
-  transform: scale(0.97);
-  transition: transform 0.1s ease-out;
-}
-
-/* Smooth return to normal state */
-button,
-.btn-press {
-  transition: transform 0.1s ease-in;
-}
-
-/* Uppercase inputs/selects as user types */
-input[type="text"],
-input[type="number"],
-textarea,
-select,
-option {
-  text-transform: uppercase;
-}
-
-/* Terminal aesthetic: force no rounded corners or shadows */
-* {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-/* Exception: minimal rounding for inputs for UX */
-input[type="text"],
-input[type="number"],
-select {
-  border-radius: 2px !important;
-}
-
-/* Focus styles for accessibility - terminal cyan */
-*:focus-visible {
-  outline: 2px solid #00ffff;
-  outline-offset: 2px;
-}
-
-input:focus,
-select:focus,
-button:focus {
-  border-color: #00ffff;
-  ring-color: #00ffff;
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Ensure touch targets are at least 48x48px on mobile */
-@media (max-width: 768px) {
-  button,
-  a,
-  input[type="checkbox"],
-  input[type="radio"] {
-    min-height: 44px;
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
-/* Hide number input spinners - hard to tap on mobile */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: textfield;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 /* iOS safe area insets - for notch and home indicator */
