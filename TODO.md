@@ -30,160 +30,45 @@
 
 ---
 
-## Phase 1: Foundation Setup (2-3 days)
+## Phase 1: Foundation Setup ✅ COMPLETE
 
 ### 1.1: Initialize shadcn/ui
 
-- [ ] Initialize shadcn with proper config
-
-  ```
-  Command: npx shadcn-ui@latest init
-  Config Choices:
-    - Style: New York (modern)
-    - Color: Slate (neutral)
-    - CSS Variables: Yes
-    - Path alias: @/components
-  Success: components.json created, lib/utils.ts created with cn() function
-  Files Created: components.json, src/lib/utils.ts
-  Time: 15min
-  ```
-
-- [ ] Install shadcn core components
-
-  ```
-  Commands:
-    npx shadcn-ui@latest add button
-    npx shadcn-ui@latest add input
-    npx shadcn-ui@latest add label
-    npx shadcn-ui@latest add select
-    npx shadcn-ui@latest add card
-    npx shadcn-ui@latest add separator
-    npx shadcn-ui@latest add form
-    npx shadcn-ui@latest add table
-    npx shadcn-ui@latest add dialog
-    npx shadcn-ui@latest add alert-dialog
-    npx shadcn-ui@latest add dropdown-menu
-    npx shadcn-ui@latest add skeleton
-  Success: All components in src/components/ui/, imports compile
-  Files Created: src/components/ui/{button,input,label,select,card,separator,form,table,dialog,alert-dialog,dropdown-menu,skeleton}.tsx
-  Time: 30min
-  ```
-
-- [ ] Install form dependencies
-  ```
-  Command: pnpm add react-hook-form zod @hookform/resolvers
-  Success: Dependencies installed, pnpm lockfile updated
-  Test: pnpm typecheck passes
-  Time: 10min
-  ```
+- [x] Initialize shadcn with proper config (New York style, Slate color, CSS variables)
+- [x] Install shadcn core components (button, input, label, select, card, separator, form, table, dialog, alert-dialog, dropdown-menu, skeleton)
+- [x] Install form dependencies (react-hook-form, zod, @hookform/resolvers)
 
 ### 1.2: Update Global Styles
 
-- [ ] Merge shadcn CSS variables into globals.css
-
-  ```
-  Files: src/app/globals.css:1-190
-  Approach:
-    1. Keep shadcn's :root and .dark CSS variables (added by init)
-    2. Remove all --terminal-* variables (lines 5-51)
-    3. Remove uppercase text-transform rules (lines 63-66, 110-117)
-    4. Remove border-radius overrides (lines 119-130)
-    5. Keep mobile safe-area utilities (lines 172-189)
-    6. Keep focus styles but update to use shadcn colors
-  Success: No terminal aesthetic remnants, dark mode CSS vars present
-  Test: pnpm dev runs without CSS errors, dark mode toggle works
-  Module: Global theming layer - hides CSS variable complexity from components
-  Time: 45min
-  ```
-
-- [ ] Update tailwind.config.ts for shadcn
-
-  ```
-  Files: tailwind.config.ts:1-62
-  Approach:
-    1. Merge shadcn's theme.extend.colors (from init output)
-    2. Remove terminal color extensions (lines 15-28)
-    3. Keep font config but consider switching from mono to sans
-    4. Add shadcn's borderRadius, keyframes, animations
-  Success: Tailwind compiles, shadcn colors available (bg-primary, text-muted-foreground, etc.)
-  Test: pnpm build succeeds, no Tailwind warnings
-  Module: Design token layer - single source of truth for colors/spacing
-  Time: 30min
-  ```
-
-- [ ] Update font to Inter (shadcn default)
-  ```
-  Files: src/app/layout.tsx:1-10
-  Approach:
-    1. Import Inter from next/font/google
-    2. Replace ibmPlexMono with inter
-    3. Update className={inter.variable}
-  Success: Font switches from monospace to sans-serif
-  Test: Visual check - text renders in Inter font
-  Module: Typography layer - decouples font choice from components
-  Time: 15min
-  ```
+- [x] Merge shadcn CSS variables into globals.css
+- [x] Update tailwind.config.ts for shadcn
+- [x] Update font to Inter (shadcn default)
 
 ---
 
-## Phase 2: Core Components Migration (5-7 days)
+## Phase 2: Core Components Migration (IN PROGRESS)
 
-### 2.1: Layout Components
+### 2.1: Layout Components ✅ COMPLETE
 
-- [ ] Replace TerminalPanel with Card in Dashboard components
+- [x] Replace TerminalPanel with Card in Dashboard components
+  - [x] quick-log-form.tsx → Card with CardHeader/CardTitle/CardContent
+  - [x] daily-stats-card.tsx → Card + Table (replaced TerminalTable)
+  - [x] first-run-experience.tsx → Card with modern onboarding
+  - [x] settings/page.tsx → Card for Preferences section
+  - [x] exercise-manager.tsx → Card + Table with inline editing
+  - [x] grouped-set-history.tsx → Card + Table for daily history
+  - [x] landing/LandingHero.tsx → Card for hero section
+  - [x] undo-toast.tsx → Remove CornerBrackets, use shadcn Button
 
-  ```
-  Files:
-    - src/components/dashboard/quick-log-form.tsx:174-326
-    - src/components/dashboard/daily-stats-card.tsx
-    - src/components/dashboard/first-run-experience.tsx
-    - src/app/settings/page.tsx:54-88
-  Approach:
-    Before:
-      <TerminalPanel title="LOG SET" titleColor="success">
-        {children}
-      </TerminalPanel>
-    After:
-      import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-      <Card>
-        <CardHeader>
-          <CardTitle>Log Set</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {children}
-        </CardContent>
-      </Card>
-  Success: All TerminalPanel usage replaced, UI renders correctly
-  Test: Visual QA - cards render with proper spacing, dark mode works
-  Module: Container abstraction - Card hides internal flex/padding from parent
-  Time: 1.5hr
-  ```
+- [x] Delete deprecated terminal UI components
+  - [x] terminal-panel.tsx (DELETED - 126 lines)
+  - [x] terminal-table.tsx (DELETED - 94 lines)
+  - [x] corner-bracket.tsx (DELETED - 61 lines)
 
 - [ ] Update PageLayout to remove terminal styling
-
-  ```
-  Files: src/components/layout/page-layout.tsx:1-63
-  Approach:
-    1. Remove uppercase from title className (line 56)
-    2. Remove terminal-text color, use default foreground
-    3. Update to use shadcn typography classes
-  Success: Page titles render in normal case, use shadcn colors
-  Test: Check Dashboard, History, Settings pages render correctly
-  Module: Page structure layer - hides responsive padding from pages
-  Time: 20min
-  ```
-
-- [ ] Remove CornerBracket component
-  ```
-  Files: src/components/ui/corner-bracket.tsx (DELETE entire file)
-  Approach:
-    1. Search for all CornerBracket imports
-    2. Remove showCornerBrackets props from TerminalPanel usage
-    3. Delete corner-bracket.tsx
-  Success: No imports of CornerBracket, file deleted
-  Test: pnpm typecheck passes (no import errors)
-  Time: 15min
-  ```
+  - Files: src/components/layout/page-layout.tsx
+  - Remove uppercase from title
+  - Replace terminal-text with default foreground colors
 
 ### 2.2: Button & Input Migration
 
