@@ -4,6 +4,7 @@ import { useAuth, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
+import { Button } from "@/components/ui/button";
 
 const navLinks = [
   { href: "/", label: "Dashboard" },
@@ -24,15 +25,12 @@ export function Nav() {
   };
 
   return (
-    <nav className="bg-terminal-bg border-b border-terminal-border">
+    <nav className="bg-background border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link
-              href="/"
-              className="text-xl font-bold uppercase font-mono text-terminal-text tracking-wider"
-            >
-              VOLUME
+            <Link href="/" className="text-xl font-bold tracking-tight">
+              Volume
             </Link>
             {/* Desktop navigation links - hidden on mobile */}
             {userId && (
@@ -41,10 +39,10 @@ export function Nav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`text-sm font-mono uppercase transition-colors ${
+                    className={`text-sm transition-colors ${
                       isActive(link.href)
-                        ? "text-terminal-success underline decoration-2"
-                        : "text-terminal-textSecondary hover:text-terminal-text"
+                        ? "text-foreground font-medium underline decoration-2 underline-offset-4"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {link.label}
@@ -68,18 +66,12 @@ export function Nav() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link
-                  href="/sign-in"
-                  className="px-4 py-2 border border-terminal-border text-terminal-text hover:border-terminal-info hover:text-terminal-info transition-colors uppercase text-sm font-mono"
-                >
-                  LOG IN
-                </Link>
-                <Link
-                  href="/sign-up"
-                  className="px-4 py-2 bg-terminal-success text-terminal-bg font-bold hover:opacity-90 active:scale-97 transition-all uppercase text-sm font-mono"
-                >
-                  SIGN UP
-                </Link>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/sign-in">Log In</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/sign-up">Sign Up</Link>
+                </Button>
               </div>
             )}
           </div>
