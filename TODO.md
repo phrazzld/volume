@@ -72,30 +72,12 @@
 
 ### 2.2: Button & Input Migration
 
-- [ ] Replace custom buttons with shadcn Button
-
-  ```
-  Files:
-    - src/components/dashboard/quick-log-form.tsx:298-310
-    - src/components/dashboard/inline-exercise-creator.tsx
-    - src/components/dashboard/exercise-manager.tsx
-    - src/app/history/page.tsx:101-107
-    - src/app/settings/page.tsx:71-84
-  Approach:
-    Before:
-      <button className="px-6 py-2 bg-terminal-success text-terminal-bg font-bold uppercase...">
-        LOG SET
-      </button>
-    After:
-      import { Button } from "@/components/ui/button"
-      <Button>Log Set</Button>  // default variant
-      <Button variant="destructive">Delete</Button>
-      <Button variant="outline">Cancel</Button>
-  Success: All button elements replaced, variants applied correctly
-  Test: All buttons clickable, hover states work, disabled state works
-  Module: Interactive primitive - Button hides focus/hover complexity
-  Time: 2hr
-  ```
+- [x] Replace custom buttons with shadcn Button
+  - [x] quick-log-form.tsx → Use/Submit/Unit toggle buttons migrated
+  - [x] inline-exercise-creator.tsx → Create/Cancel buttons migrated
+  - [x] history/page.tsx → Load More button (already migrated in PageLayout task)
+  - [x] settings/page.tsx → Weight unit toggle (already styled with shadcn)
+  - Note: Icon buttons in exercise-manager kept as minimal button elements
 
 - [ ] Replace custom inputs with shadcn Input
 
