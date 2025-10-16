@@ -28,17 +28,14 @@ export default function SettingsPage() {
   // Loading state
   if (exercises === undefined || sets === undefined) {
     return (
-      <PageLayout title="SETTINGS">
+      <PageLayout title="Settings">
         <div className="animate-pulse space-y-3">
           {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="border border-terminal-border bg-terminal-bg p-4 rounded"
-            >
-              <div className="h-6 bg-terminal-bgSecondary w-1/3 mb-3 rounded" />
+            <div key={i} className="border rounded-md p-4">
+              <div className="h-6 bg-muted w-1/3 mb-3 rounded" />
               <div className="space-y-2">
-                <div className="h-4 bg-terminal-bgSecondary w-full rounded" />
-                <div className="h-4 bg-terminal-bgSecondary w-5/6 rounded" />
+                <div className="h-4 bg-muted w-full rounded" />
+                <div className="h-4 bg-muted w-5/6 rounded" />
               </div>
             </div>
           ))}
@@ -48,7 +45,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <PageLayout title="SETTINGS">
+    <PageLayout title="Settings">
       {/* Exercise Management Section */}
       <ExerciseManager exercises={exercises} sets={sets} />
 
