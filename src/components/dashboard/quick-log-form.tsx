@@ -14,6 +14,7 @@ import {
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
@@ -201,17 +202,19 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                     ` @ ${lastSet.weight} ${(lastSet.unit || unit).toUpperCase()}`}{" "}
                   • {formatTimeAgo(lastSet.performedAt)}
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setReps(lastSet.reps.toString());
                     setWeight(lastSet.weight?.toString() || "");
                     focusElement(repsInputRef);
                   }}
-                  className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors"
+                  className="ml-2"
                 >
-                  USE
-                </button>
+                  Use
+                </Button>
               </div>
             )}
 
@@ -299,33 +302,34 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                     className="w-full md:w-32 h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
                     disabled={isSubmitting}
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={toggleUnit}
-                    className="w-20 h-[46px] px-2 text-xs uppercase font-mono text-terminal-info transition-colors border border-terminal-info hover:bg-terminal-info hover:text-terminal-bg"
+                    className="w-20 h-[46px]"
                     aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
                     title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
                   >
                     ⟷ {unit === "lbs" ? "KG" : "LBS"}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Submit Button */}
               <div>
                 <label
-                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono opacity-0 pointer-events-none"
+                  className="block text-xs mb-1 opacity-0 pointer-events-none"
                   aria-hidden="true"
                 >
-                  SUBMIT
+                  Submit
                 </label>
-                <button
+                <Button
                   type="submit"
-                  className="w-full h-[46px] px-6 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity whitespace-nowrap"
+                  className="w-full h-[46px]"
                   disabled={!selectedExerciseId || !reps || isSubmitting}
                 >
-                  {isSubmitting ? "LOGGING..." : "LOG SET"}
-                </button>
+                  {isSubmitting ? "Logging..." : "Log Set"}
+                </Button>
               </div>
             </div>
 
