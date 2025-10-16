@@ -253,87 +253,190 @@ Available MCP Tools:
   Commit: 831ac65
   ```
 
-- [ ] Convert QuickLogForm to react-hook-form
+- [ ] Convert QuickLogForm to react-hook-form (ALL-IN-ONE MIGRATION)
 
   ```
-  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
-    1. mcp__shadcn__search_items_in_registries(query="form") - Find Form components
-    2. mcp__shadcn__get_item_examples_from_registries(query="form-demo") - See react-hook-form + zod patterns
-    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/form"]) - Review FormField API
+  **CRITICAL: This task includes autofocus + last set preservation. Do NOT split.**
 
-  Files: src/components/dashboard/quick-log-form.tsx:23-153
+  Files: src/components/dashboard/quick-log-form.tsx
+  Pattern: Form component in src/components/ui/form.tsx (FormField, FormItem, FormControl)
+  Schema: quickLogSchema already exists (lines 34-39)
 
-  **STEP 2: Implement migration:**
-    Replace:
-      - useState for reps/weight → useForm
-      - Manual onChange handlers → FormField render props
-      - Manual form submission → form.handleSubmit(onSubmit)
+  **🔍 STEP 1: Research (REQUIRED):**
+    1. mcp__shadcn__get_item_examples_from_registries(query="form-rhf-demo")
+    2. mcp__shadcn__get_item_examples_from_registries(query="form-rhf-input")
+    3. Review how to use refs with FormField render props
 
-    Pattern:
+  **STEP 2: State Migration (lines 55-63):**
+    REMOVE:
+      - const [selectedExerciseId, setSelectedExerciseId] = useState...
+      - const [reps, setReps] = useState("")
+      - const [weight, setWeight] = useState("")
+      - const [isSubmitting, setIsSubmitting] = useState(false)
+
+    ADD:
+      import { useForm } from "react-hook-form"
+      import { zodResolver } from "@hookform/resolvers/zod"
+      import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+
       const form = useForm<QuickLogFormValues>({
         resolver: zodResolver(quickLogSchema),
-        defaultValues: { exerciseId: "", reps: 0, weight: undefined, unit: "lbs" },
-      });
+        defaultValues: {
+          exerciseId: "",
+          reps: undefined,  // Use undefined for number inputs
+          weight: undefined,
+          unit: unit  // Use current weight unit from context
+        },
+      })
 
+    KEEP:
+      - const [showInlineCreator, setShowInlineCreator] = useState(false)
+      - const repsInputRef = useRef<HTMLInputElement>(null)
+      - const weightInputRef = useRef<HTMLInputElement>(null)
+
+  **STEP 3: Form Submission (lines 150-181):**
+    REPLACE submitForm with:
       const onSubmit = async (values: QuickLogFormValues) => {
-        await logSet(values);
-        form.reset();
-        focusElement(repsInputRef);
-      };
+        try {
+          const setId = await logSet({
+            exerciseId: values.exerciseId as Id<"exercises">,
+            reps: values.reps!,
+            weight: values.weight,
+            unit: values.weight ? values.unit : undefined,
+          })
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <FormField control={form.control} name="reps" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Reps</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-        </form>
-      </Form>
+          // Keep exercise selected, clear reps/weight
+          form.reset({
+            exerciseId: values.exerciseId,  // CRITICAL: Preserve selection
+            reps: undefined,
+            weight: undefined,
+            unit: values.unit
+          })
 
-  **STEP 3: Verify with MCP audit (REQUIRED):**
-    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+          // Focus reps for next set
+          focusElement(repsInputRef)
+          toast.success("Set logged!")
+          onSetLogged?.(setId)
+        } catch (error) {
+          handleMutationError(error, "Log Set")
+        }
+      }
 
-  Success: Form works identically, validation errors show automatically
-  Test:
-    - Submit with empty reps → validation error shows
-    - Submit with valid data → set logged, form resets
-    - Focus flow still works (exercise → reps → weight → submit)
-  Module: Form state layer - react-hook-form hides field registration complexity
-  Time: 3hr
-  ```
+    UPDATE handleSubmit:
+      <form onSubmit={form.handleSubmit(onSubmit)}>
 
-- [ ] Preserve autofocus behavior in new form
+  **STEP 4: Exercise Select Field (lines 240-272):**
+    WRAP Select in FormField:
+      <FormField
+        control={form.control}
+        name="exerciseId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Exercise *</FormLabel>
+            <Select
+              value={field.value}
+              onValueChange={(value) => {
+                if (value === "CREATE_NEW") {
+                  setShowInlineCreator(true)
+                  field.onChange("")  // Clear field
+                } else {
+                  field.onChange(value)  // Update form state
+                }
+              }}
+              disabled={form.formState.isSubmitting}
+            >
+              {/* Keep existing SelectTrigger/SelectContent */}
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-  ```
-  Files: src/components/dashboard/quick-log-form.tsx:44-74, 110-115
-  Approach:
-    1. Keep focusElement() helper (lines 60-74)
-    2. Keep useEffect for exercise selection → focus reps (lines 111-115)
-    3. Update refs to work with FormField render props
-    4. Keep Enter key handlers for reps → weight → submit flow
-  Success: Tab/Enter flow works: exercise → reps → weight → submit → focus reps
-  Test: Manual QA on mobile Safari (most critical for focus issues)
-  Module: UX enhancement layer - focus management orthogonal to form state
-  Time: 1hr
-  ```
+  **STEP 5: Reps Input Field (lines 270-287):**
+    WRAP Input in FormField:
+      <FormField
+        control={form.control}
+        name="reps"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Reps *</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                ref={repsInputRef}  // CRITICAL: Preserve ref
+                type="number"
+                inputMode="numeric"
+                min="1"
+                onKeyDown={handleRepsKeyDown}  // CRITICAL: Keep keyboard nav
+                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                value={field.value ?? ""}  // Convert undefined to empty string
+                disabled={form.formState.isSubmitting}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-- [ ] Keep "last set" indicator with new form
-  ```
-  Files: src/components/dashboard/quick-log-form.tsx:76-98, 182-199
-  Approach:
-    1. Keep lastSet useMemo logic (lines 80-85)
-    2. Keep formatTimeAgo helper (lines 88-97)
-    3. Update "USE" button to call form.setValue() instead of setState
-    4. Position above form using Card component
-  Success: Last set shows with "USE" button, clicking prefills form
-  Test: Log set, verify last set appears, click USE, verify form prefilled
-  Module: Context-aware UI - lastSet logic decoupled from form state
-  Time: 45min
+  **STEP 6: Weight Input Field (lines 289-315):**
+    Similar pattern to reps, preserve weightInputRef + handleWeightKeyDown
+
+  **STEP 7: Last Set Indicator (lines 213-238):**
+    UPDATE "Use" button:
+      onClick={() => {
+        form.setValue("reps", lastSet.reps)
+        form.setValue("weight", lastSet.weight ?? undefined)
+        focusElement(repsInputRef)
+      }}
+
+  **STEP 8: Autofocus Effect (lines 143-148):**
+    UPDATE to watch form.watch("exerciseId"):
+      const selectedExerciseId = form.watch("exerciseId")
+      useEffect(() => {
+        if (selectedExerciseId) {
+          focusElement(repsInputRef)
+        }
+      }, [selectedExerciseId])
+
+  **STEP 9: repeatSet imperative handle (lines 131-141):**
+    UPDATE to use form.setValue:
+      useImperativeHandle(ref, () => ({
+        repeatSet: (set: Set) => {
+          form.setValue("exerciseId", set.exerciseId)
+          form.setValue("reps", set.reps)
+          form.setValue("weight", set.weight ?? undefined)
+          focusElement(repsInputRef)
+        },
+      }))
+
+  **STEP 10: Verify & Test:**
+    - mcp__shadcn__get_audit_checklist()
+    - pnpm typecheck
+    - pnpm lint
+    - Manual test: Focus flow (exercise → reps → weight → submit → reps)
+    - Manual test: Last set "Use" button prefills form
+    - Manual test: Enter key navigation works
+    - Manual test: Form resets after submit but keeps exercise selected
+
+  Success Criteria:
+    ✅ Form validates with zod schema
+    ✅ Validation errors show inline
+    ✅ Autofocus works: select exercise → focus reps
+    ✅ Enter key: reps → weight → submit
+    ✅ After submit: exercise stays selected, reps/weight clear, focus on reps
+    ✅ "Use" button prefills reps/weight from last set
+    ✅ repeatSet() imperative API still works
+    ✅ No TypeScript errors
+    ✅ Mobile Safari focus still works (double RAF preserved)
+
+  Edge Cases:
+    - Empty weight (optional field) - use undefined, not empty string
+    - Number input controlled value - convert undefined to ""
+    - Exercise selection with CREATE_NEW - clear field when opening creator
+    - Form reset - must preserve exerciseId for quick multi-set logging
+
+  Time: 3-4hr (complex, many moving parts)
+  Risk: HIGH - Critical UX feature, test thoroughly before committing
   ```
 
 ### 3.2: Other Forms Migration
