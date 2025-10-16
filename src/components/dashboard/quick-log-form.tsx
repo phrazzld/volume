@@ -1,10 +1,19 @@
 "use client";
 
 import { useMutation, useQuery } from "convex/react";
-import { FormEvent, useState, useRef, useImperativeHandle, forwardRef, useEffect, KeyboardEvent, useMemo } from "react";
+import {
+  FormEvent,
+  useState,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+  useEffect,
+  KeyboardEvent,
+  useMemo,
+} from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { TerminalPanel } from "@/components/ui/terminal-panel";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
@@ -22,7 +31,9 @@ export interface QuickLogFormHandle {
 
 const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   function QuickLogForm({ exercises, onSetLogged }, ref) {
-    const [selectedExerciseId, setSelectedExerciseId] = useState<Id<"exercises"> | "">("");
+    const [selectedExerciseId, setSelectedExerciseId] = useState<
+      Id<"exercises"> | ""
+    >("");
     const [reps, setReps] = useState("");
     const [weight, setWeight] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +90,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     // Find last set for selected exercise
     const lastSet = useMemo(() => {
       if (!selectedExerciseId || !allSets) return null;
-      const exerciseSets = allSets.filter(s => s.exerciseId === selectedExerciseId);
+      const exerciseSets = allSets.filter(
+        (s) => s.exerciseId === selectedExerciseId
+      );
       if (exerciseSets.length === 0) return null;
       return exerciseSets[0]; // Already sorted by performedAt desc
     }, [selectedExerciseId, allSets]);
@@ -93,7 +106,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       const hours = Math.floor(minutes / 60);
       if (hours < 24) return `${hours} HR AGO`;
       const days = Math.floor(hours / 24);
-      return `${days} DAY${days === 1 ? '' : 'S'} AGO`;
+      return `${days} DAY${days === 1 ? "" : "S"} AGO`;
     };
 
     // Expose repeatSet method to parent via ref
@@ -114,217 +127,224 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       }
     }, [selectedExerciseId]);
 
-  // Extract submit logic to avoid type casting
-  const submitForm = async () => {
-    if (!selectedExerciseId || !reps || isSubmitting) return;
+    // Extract submit logic to avoid type casting
+    const submitForm = async () => {
+      if (!selectedExerciseId || !reps || isSubmitting) return;
 
-    setIsSubmitting(true);
+      setIsSubmitting(true);
 
-    try {
-      const setId = await logSet({
-        exerciseId: selectedExerciseId as Id<"exercises">,
-        reps: parseFloat(reps),
-        weight: weight ? parseFloat(weight) : undefined,
-        unit: weight ? unit : undefined, // Store unit with set for data integrity
-      });
+      try {
+        const setId = await logSet({
+          exerciseId: selectedExerciseId as Id<"exercises">,
+          reps: parseFloat(reps),
+          weight: weight ? parseFloat(weight) : undefined,
+          unit: weight ? unit : undefined, // Store unit with set for data integrity
+        });
 
-      // Clear form inputs (keep exercise selected for quick re-logging)
-      setReps("");
-      setWeight("");
+        // Clear form inputs (keep exercise selected for quick re-logging)
+        setReps("");
+        setWeight("");
 
-      // Focus reps input for quick re-logging of same exercise
-      focusElement(repsInputRef);
+        // Focus reps input for quick re-logging of same exercise
+        focusElement(repsInputRef);
 
-      // Show success toast
-      toast.success("Set logged!");
+        // Show success toast
+        toast.success("Set logged!");
 
-      // Notify parent
-      onSetLogged?.(setId);
-    } catch (error) {
-      handleMutationError(error, "Log Set");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    await submitForm();
-  };
-
-  // Handle Enter key in reps input - focus weight or submit
-  const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (weightInputRef.current) {
-        weightInputRef.current.focus();
+        // Notify parent
+        onSetLogged?.(setId);
+      } catch (error) {
+        handleMutationError(error, "Log Set");
+      } finally {
+        setIsSubmitting(false);
       }
-    }
-  };
+    };
 
-  // Handle Enter key in weight input - submit form
-  const handleWeightKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    const handleSubmit = async (e: FormEvent) => {
       e.preventDefault();
-      submitForm();
-    }
-  };
+      await submitForm();
+    };
 
-  return (
-    <TerminalPanel
-      title="LOG SET"
-      titleColor="success"
-      showCornerBrackets={true}
-      className="mb-3"
-    >
-      <form onSubmit={handleSubmit} className="p-4">
-        {/* Last Set Indicator */}
-        {lastSet && (
-          <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border flex items-center justify-between">
-            <p className="text-xs uppercase text-terminal-info font-mono">
-              LAST: {exercises.find(e => e._id === selectedExerciseId)?.name} • {lastSet.reps} REPS
-              {lastSet.weight && ` @ ${lastSet.weight} ${(lastSet.unit || unit).toUpperCase()}`} • {formatTimeAgo(lastSet.performedAt)}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setReps(lastSet.reps.toString());
-                setWeight(lastSet.weight?.toString() || "");
-                focusElement(repsInputRef);
-              }}
-              className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors"
-            >
-              USE
-            </button>
-          </div>
-        )}
+    // Handle Enter key in reps input - focus weight or submit
+    const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (weightInputRef.current) {
+          weightInputRef.current.focus();
+        }
+      }
+    };
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
-          {/* Exercise Selector */}
-          <div>
-            <label
-              htmlFor="exercise"
-              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-            >
-              EXERCISE *
-            </label>
-            <select
-              ref={exerciseSelectRef}
-              id="exercise"
-              value={selectedExerciseId}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === "CREATE_NEW") {
-                  setShowInlineCreator(true);
-                  setSelectedExerciseId("");
-                } else {
-                  setSelectedExerciseId(value as Id<"exercises">);
-                }
-              }}
-              className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
-              required
-              disabled={isSubmitting}
-            >
-              <option value="">SELECT...</option>
-              {exercises.map((exercise) => (
-                <option key={exercise._id} value={exercise._id}>
-                  {exercise.name}
-                </option>
-              ))}
-              <option value="CREATE_NEW">+ CREATE NEW</option>
-            </select>
-          </div>
+    // Handle Enter key in weight input - submit form
+    const handleWeightKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitForm();
+      }
+    };
 
-          {/* Reps Input */}
-          <div className="md:w-32">
-            <label
-              htmlFor="reps"
-              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-            >
-              REPS *
-            </label>
-            <input
-              ref={repsInputRef}
-              id="reps"
-              type="number"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              min="1"
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-              onKeyDown={handleRepsKeyDown}
-              placeholder="HOW MANY?"
-              className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
-              disabled={isSubmitting}
-              required
-            />
-          </div>
+    return (
+      <Card className="mb-3">
+        <CardHeader>
+          <CardTitle>Log Set</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            {/* Last Set Indicator */}
+            {lastSet && (
+              <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border flex items-center justify-between">
+                <p className="text-xs uppercase text-terminal-info font-mono">
+                  LAST:{" "}
+                  {exercises.find((e) => e._id === selectedExerciseId)?.name} •{" "}
+                  {lastSet.reps} REPS
+                  {lastSet.weight &&
+                    ` @ ${lastSet.weight} ${(lastSet.unit || unit).toUpperCase()}`}{" "}
+                  • {formatTimeAgo(lastSet.performedAt)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReps(lastSet.reps.toString());
+                    setWeight(lastSet.weight?.toString() || "");
+                    focusElement(repsInputRef);
+                  }}
+                  className="ml-2 px-2 py-1 text-xs uppercase font-mono border border-terminal-info text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors"
+                >
+                  USE
+                </button>
+              </div>
+            )}
 
-          {/* Weight Input (with inline unit toggle) */}
-          <div>
-            <label
-              htmlFor="weight"
-              className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-            >
-              WEIGHT ({unit.toUpperCase()})
-            </label>
-            <div className="flex gap-1">
-              <input
-                ref={weightInputRef}
-                id="weight"
-                type="number"
-                inputMode="decimal"
-                step="0.5"
-                min="0"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                onKeyDown={handleWeightKeyDown}
-                placeholder="OPTIONAL"
-                className="w-full md:w-32 h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={toggleUnit}
-                className="w-20 h-[46px] px-2 text-xs uppercase font-mono text-terminal-info transition-colors border border-terminal-info hover:bg-terminal-info hover:text-terminal-bg"
-                aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
-                title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
-              >
-                ⟷ {unit === "lbs" ? "KG" : "LBS"}
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
+              {/* Exercise Selector */}
+              <div>
+                <label
+                  htmlFor="exercise"
+                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+                >
+                  EXERCISE *
+                </label>
+                <select
+                  ref={exerciseSelectRef}
+                  id="exercise"
+                  value={selectedExerciseId}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "CREATE_NEW") {
+                      setShowInlineCreator(true);
+                      setSelectedExerciseId("");
+                    } else {
+                      setSelectedExerciseId(value as Id<"exercises">);
+                    }
+                  }}
+                  className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+                  required
+                  disabled={isSubmitting}
+                >
+                  <option value="">SELECT...</option>
+                  {exercises.map((exercise) => (
+                    <option key={exercise._id} value={exercise._id}>
+                      {exercise.name}
+                    </option>
+                  ))}
+                  <option value="CREATE_NEW">+ CREATE NEW</option>
+                </select>
+              </div>
+
+              {/* Reps Input */}
+              <div className="md:w-32">
+                <label
+                  htmlFor="reps"
+                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+                >
+                  REPS *
+                </label>
+                <input
+                  ref={repsInputRef}
+                  id="reps"
+                  type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  min="1"
+                  value={reps}
+                  onChange={(e) => setReps(e.target.value)}
+                  onKeyDown={handleRepsKeyDown}
+                  placeholder="HOW MANY?"
+                  className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+
+              {/* Weight Input (with inline unit toggle) */}
+              <div>
+                <label
+                  htmlFor="weight"
+                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
+                >
+                  WEIGHT ({unit.toUpperCase()})
+                </label>
+                <div className="flex gap-1">
+                  <input
+                    ref={weightInputRef}
+                    id="weight"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.5"
+                    min="0"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    onKeyDown={handleWeightKeyDown}
+                    placeholder="OPTIONAL"
+                    className="w-full md:w-32 h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+                    disabled={isSubmitting}
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleUnit}
+                    className="w-20 h-[46px] px-2 text-xs uppercase font-mono text-terminal-info transition-colors border border-terminal-info hover:bg-terminal-info hover:text-terminal-bg"
+                    aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
+                    title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
+                  >
+                    ⟷ {unit === "lbs" ? "KG" : "LBS"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div>
+                <label
+                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono opacity-0 pointer-events-none"
+                  aria-hidden="true"
+                >
+                  SUBMIT
+                </label>
+                <button
+                  type="submit"
+                  className="w-full h-[46px] px-6 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity whitespace-nowrap"
+                  disabled={!selectedExerciseId || !reps || isSubmitting}
+                >
+                  {isSubmitting ? "LOGGING..." : "LOG SET"}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Submit Button */}
-          <div>
-            <label className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono opacity-0 pointer-events-none" aria-hidden="true">
-              SUBMIT
-            </label>
-            <button
-              type="submit"
-              className="w-full h-[46px] px-6 bg-terminal-success text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity whitespace-nowrap"
-              disabled={!selectedExerciseId || !reps || isSubmitting}
-            >
-              {isSubmitting ? "LOGGING..." : "LOG SET"}
-            </button>
-          </div>
-        </div>
-
-        {/* Inline Exercise Creator (conditional) */}
-        {showInlineCreator && (
-          <div className="mt-4">
-            <InlineExerciseCreator
-              onCreated={(exerciseId) => {
-                setSelectedExerciseId(exerciseId);
-                setShowInlineCreator(false);
-              }}
-              onCancel={() => setShowInlineCreator(false)}
-            />
-          </div>
-        )}
-      </form>
-    </TerminalPanel>
-  );
+            {/* Inline Exercise Creator (conditional) */}
+            {showInlineCreator && (
+              <div className="mt-4">
+                <InlineExerciseCreator
+                  onCreated={(exerciseId) => {
+                    setSelectedExerciseId(exerciseId);
+                    setShowInlineCreator(false);
+                  }}
+                  onCancel={() => setShowInlineCreator(false)}
+                />
+              </div>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+    );
   }
 );
 
