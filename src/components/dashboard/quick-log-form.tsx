@@ -16,6 +16,7 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -211,13 +212,13 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           <form onSubmit={handleSubmit}>
             {/* Last Set Indicator */}
             {lastSet && (
-              <div className="mb-4 p-2 bg-terminal-bgSecondary border border-terminal-border flex items-center justify-between">
-                <p className="text-xs uppercase text-terminal-info font-mono">
-                  LAST:{" "}
+              <div className="mb-4 p-3 bg-muted border rounded-md flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">Last:</span>{" "}
                   {exercises.find((e) => e._id === selectedExerciseId)?.name} •{" "}
-                  {lastSet.reps} REPS
+                  {lastSet.reps} reps
                   {lastSet.weight &&
-                    ` @ ${lastSet.weight} ${(lastSet.unit || unit).toUpperCase()}`}{" "}
+                    ` @ ${lastSet.weight} ${lastSet.unit || unit}`}{" "}
                   • {formatTimeAgo(lastSet.performedAt)}
                 </p>
                 <Button
@@ -239,12 +240,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
               {/* Exercise Selector */}
               <div>
-                <label
-                  htmlFor="exercise"
-                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-                >
-                  EXERCISE *
-                </label>
+                <Label htmlFor="exercise">Exercise *</Label>
                 <Select
                   value={selectedExerciseId}
                   onValueChange={(value) => {
@@ -273,12 +269,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
 
               {/* Reps Input */}
               <div className="md:w-32">
-                <label
-                  htmlFor="reps"
-                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-                >
-                  REPS *
-                </label>
+                <Label htmlFor="reps">Reps *</Label>
                 <Input
                   ref={repsInputRef}
                   id="reps"
@@ -297,12 +288,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
 
               {/* Weight Input (with inline unit toggle) */}
               <div>
-                <label
-                  htmlFor="weight"
-                  className="block text-xs uppercase text-terminal-textSecondary mb-1 font-mono"
-                >
-                  WEIGHT ({unit.toUpperCase()})
-                </label>
+                <Label htmlFor="weight">Weight ({unit.toUpperCase()})</Label>
                 <div className="flex gap-1">
                   <Input
                     ref={weightInputRef}

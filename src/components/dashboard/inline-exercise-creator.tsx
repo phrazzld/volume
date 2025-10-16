@@ -56,10 +56,8 @@ export function InlineExerciseCreator({
   };
 
   return (
-    <div className="p-3 bg-terminal-bgSecondary border border-terminal-border">
-      <p className="text-xs uppercase text-terminal-textSecondary mb-2 font-mono">
-        CREATE NEW EXERCISE
-      </p>
+    <div className="p-3 bg-muted border rounded-md">
+      <p className="text-sm font-medium mb-2">Create New Exercise</p>
       <div className="flex gap-2">
         <Input
           ref={inputRef}
