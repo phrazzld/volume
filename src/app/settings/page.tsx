@@ -3,21 +3,23 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ExerciseManager } from "@/components/dashboard/exercise-manager";
-import { TerminalPanel } from "@/components/ui/terminal-panel";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useWeightUnit, WeightUnit } from "@/contexts/WeightUnitContext";
 import { PageLayout } from "@/components/layout/page-layout";
 
 // Helper to generate unit button classes
 const getUnitButtonClasses = (isActive: boolean) =>
-  `px-4 py-2 font-mono text-sm uppercase transition-colors border ${
+  `px-4 py-2 text-sm transition-colors border rounded ${
     isActive
-      ? "bg-terminal-success text-terminal-bg border-terminal-success"
-      : "bg-terminal-bg text-terminal-text border-terminal-border hover:bg-terminal-bgSecondary"
+      ? "bg-primary text-primary-foreground border-primary"
+      : "bg-background border-border hover:bg-muted"
   }`;
 
 export default function SettingsPage() {
   // Fetch exercises and sets for ExerciseManager (active only)
-  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: false });
+  const exercises = useQuery(api.exercises.listExercises, {
+    includeDeleted: false,
+  });
   const sets = useQuery(api.sets.listSets, {});
 
   // Weight unit preference
@@ -51,19 +53,16 @@ export default function SettingsPage() {
       <ExerciseManager exercises={exercises} sets={sets} />
 
       {/* Preferences Section */}
-      <TerminalPanel
-        title="PREFERENCES"
-        titleColor="info"
-        showCornerBrackets={true}
-      >
-        <div className="p-4 space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Preferences</CardTitle>
+        </CardHeader>
+        <CardContent>
           {/* Weight Unit Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-mono text-sm text-terminal-text uppercase mb-1">
-                WEIGHT UNIT
-              </h3>
-              <p className="font-mono text-xs text-terminal-textSecondary">
+              <h3 className="text-sm font-medium mb-1">Weight Unit</h3>
+              <p className="text-xs text-muted-foreground">
                 Default unit for logging weights
               </p>
             </div>
@@ -84,8 +83,8 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        </div>
-      </TerminalPanel>
+        </CardContent>
+      </Card>
     </PageLayout>
   );
 }

@@ -3,8 +3,15 @@
 import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
-import { TerminalPanel } from "@/components/ui/terminal-panel";
-import { TerminalTable } from "@/components/ui/terminal-table";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
@@ -64,24 +71,22 @@ export function GroupedSetHistory({
 
   if (groupedSets.length === 0) {
     return (
-      <TerminalPanel
-        title="SET HISTORY"
-        titleColor="warning"
-        showCornerBrackets={true}
-        className="mb-3"
-      >
-        <div className="p-8 text-center">
-          <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
-            NO SETS LOGGED YET
-          </p>
-          <p className="text-terminal-info font-mono text-xs mb-1">
-            START YOUR JOURNEY! 🚀
-          </p>
-          <p className="text-terminal-textMuted font-mono text-xs mt-2">
-            Log your first set above
-          </p>
-        </div>
-      </TerminalPanel>
+      <Card className="mb-3">
+        <CardHeader>
+          <CardTitle>Set History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground text-sm mb-2">
+              No sets logged yet
+            </p>
+            <p className="text-sm mb-1">Start your journey! 🚀</p>
+            <p className="text-muted-foreground text-xs mt-2">
+              Log your first set above
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -91,84 +96,83 @@ export function GroupedSetHistory({
   return (
     <div className="space-y-3">
       {groupedSets.map((group) => {
-        // Build table rows for this day
-        const rows = group.sets.map((set) => {
-          const exercise = exerciseMap.get(set.exerciseId); // O(1) lookup instead of O(n)
-          const isDeleting = deletingId === set._id;
-
-          return [
-            // TIME
-            <span key="time" className="text-terminal-textSecondary">
-              {formatTime(set.performedAt)}
-            </span>,
-
-            // EXERCISE
-            <span key="exercise" className="text-terminal-text">
-              {exercise?.name || "Unknown"}
-            </span>,
-
-            // REPS
-            <span key="reps" className="text-terminal-success font-bold">
-              {set.reps}
-            </span>,
-
-            // WEIGHT (with unit stored in set, fallback to user preference for legacy)
-            set.weight ? (
-              <span key="weight" className="text-terminal-warning font-bold">
-                {set.weight} {(set.unit || preferredUnit).toUpperCase()}
-              </span>
-            ) : (
-              <span key="weight" className="text-terminal-textMuted">-</span>
-            ),
-
-            // ACTIONS
-            <div key="actions" className="flex items-center gap-1">
-              <button
-                onClick={() => onRepeat(set)}
-                className="flex items-center gap-1 px-2 py-1 text-terminal-info hover:bg-terminal-info hover:text-terminal-bg transition-colors rounded"
-                aria-label="Repeat this set"
-                title="Repeat this set"
-                type="button"
-                disabled={isDeleting}
-              >
-                <RotateCcw className="h-4 w-4" />
-                <span className="text-xs font-mono uppercase">REPEAT</span>
-              </button>
-              <button
-                onClick={() => handleDelete(set)}
-                className="p-2 text-terminal-danger hover:opacity-80 transition-opacity"
-                aria-label="Delete this set"
-                title="Delete this set"
-                type="button"
-                disabled={isDeleting}
-              >
-                <Trash2 className="h-5 w-5" />
-              </button>
-            </div>,
-          ];
-        });
-
-        const isToday = group.date === todayDate;
-
         return (
-          <TerminalPanel
-            key={group.date}
-            title={`${group.displayDate.toUpperCase()} (${group.sets.length} SET${group.sets.length === 1 ? '' : 'S'})`}
-            titleColor="warning"
-            showCornerBrackets={false}
-            collapsible={true}
-            defaultCollapsed={!isToday}
-            storageKey={`history-day-${group.date}`}
-            className=""
-          >
-            <div className="p-4">
-              <TerminalTable
-                headers={["TIME", "EXERCISE", "REPS", "WEIGHT", "ACTIONS"]}
-                rows={rows}
-                columnWidths={["w-20", "", "w-16", "w-20", "w-32"]}
-              />
-            </div>
-          </TerminalPanel>
+          <Card key={group.date}>
+            <CardHeader>
+              <CardTitle>
+                {group.displayDate} ({group.sets.length} set
+                {group.sets.length === 1 ? "" : "s"})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-20">Time</TableHead>
+                    <TableHead>Exercise</TableHead>
+                    <TableHead className="w-16">Reps</TableHead>
+                    <TableHead className="w-20">Weight</TableHead>
+                    <TableHead className="w-32">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {group.sets.map((set) => {
+                    const exercise = exerciseMap.get(set.exerciseId); // O(1) lookup
+                    const isDeleting = deletingId === set._id;
+
+                    return (
+                      <TableRow key={set._id}>
+                        {/* TIME */}
+                        <TableCell className="text-muted-foreground">
+                          {formatTime(set.performedAt)}
+                        </TableCell>
+
+                        {/* EXERCISE */}
+                        <TableCell>{exercise?.name || "Unknown"}</TableCell>
+
+                        {/* REPS */}
+                        <TableCell className="font-bold">{set.reps}</TableCell>
+
+                        {/* WEIGHT */}
+                        <TableCell className="font-bold">
+                          {set.weight
+                            ? `${set.weight} ${(set.unit || preferredUnit).toUpperCase()}`
+                            : "-"}
+                        </TableCell>
+
+                        {/* ACTIONS */}
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => onRepeat(set)}
+                              className="flex items-center gap-1 px-2 py-1 hover:bg-muted transition-colors rounded"
+                              aria-label="Repeat this set"
+                              title="Repeat this set"
+                              type="button"
+                              disabled={isDeleting}
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              <span className="text-xs">Repeat</span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(set)}
+                              className="p-2 text-destructive hover:opacity-80 transition-opacity"
+                              aria-label="Delete this set"
+                              title="Delete this set"
+                              type="button"
+                              disabled={isDeleting}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         );
       })}
     </div>

@@ -5,8 +5,15 @@ import { useMutation } from "convex/react";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { TerminalPanel } from "@/components/ui/terminal-panel";
-import { TerminalTable } from "@/components/ui/terminal-table";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
@@ -23,10 +30,13 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
   const deleteExercise = useMutation(api.exercises.deleteExercise);
 
   // Calculate set count per exercise
-  const setCountByExercise = sets.reduce((acc, set) => {
-    acc[set.exerciseId] = (acc[set.exerciseId] || 0) + 1;
-    return acc;
-  }, {} as Record<Id<"exercises">, number>);
+  const setCountByExercise = sets.reduce(
+    (acc, set) => {
+      acc[set.exerciseId] = (acc[set.exerciseId] || 0) + 1;
+      return acc;
+    },
+    {} as Record<Id<"exercises">, number>
+  );
 
   const handleStartEdit = (exercise: Exercise) => {
     setEditingId(exercise._id);
@@ -70,106 +80,120 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
     }
   };
 
-  // Build table rows
-  const rows = exercises.map((exercise) => {
-    const isEditing = editingId === exercise._id;
-    const setCount = setCountByExercise[exercise._id] || 0;
-    const shortId = exercise._id.slice(0, 6);
-    const createdDate = new Date(exercise.createdAt).toLocaleDateString(
-      "en-US",
-      { month: "2-digit", day: "2-digit", year: "2-digit" }
-    );
-
-    return [
-      // ID
-      <span key="id" className="text-terminal-textMuted">{shortId}</span>,
-
-      // NAME (editable inline)
-      isEditing ? (
-        <div key="name" className="flex items-center gap-2">
-          <input
-            type="text"
-            value={editingName}
-            onChange={(e) => setEditingName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handleSaveEdit(exercise._id);
-              }
-              if (e.key === "Escape") {
-                e.preventDefault();
-                handleCancelEdit();
-              }
-            }}
-            className="flex-1 px-2 py-2 bg-terminal-bgSecondary border border-terminal-info text-terminal-text font-mono focus:ring-1 focus:ring-terminal-info"
-            autoFocus
-          />
-          <button
-            onClick={() => handleSaveEdit(exercise._id)}
-            className="p-2 text-terminal-success hover:opacity-80"
-            title="Save"
-          >
-            <Check className="h-5 w-5" />
-          </button>
-          <button
-            onClick={handleCancelEdit}
-            className="p-2 text-terminal-textSecondary hover:opacity-80"
-            title="Cancel"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      ) : (
-        <span key="name" className="text-terminal-text font-medium">{exercise.name}</span>
-      ),
-
-      // CREATED
-      <span key="created" className="text-terminal-textSecondary">{createdDate}</span>,
-
-      // SETS
-      <span key="sets" className="text-terminal-info">{setCount}</span>,
-
-      // ACTIONS
-      !isEditing ? (
-        <div key="actions" className="flex items-center gap-1">
-          <button
-            onClick={() => handleStartEdit(exercise)}
-            className="p-2 text-terminal-info hover:opacity-80 transition-opacity"
-            title="Edit exercise name"
-          >
-            <Pencil className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => handleDelete(exercise)}
-            className="p-2 text-terminal-danger hover:opacity-80 transition-opacity"
-            title="Delete exercise"
-          >
-            <Trash2 className="h-5 w-5" />
-          </button>
-        </div>
-      ) : (
-        <div key="actions" className="h-6"></div> // Spacer during edit
-      ),
-    ];
-  });
-
   return (
-    <TerminalPanel
-      title={`EXERCISE REGISTRY (${exercises.length})`}
-      titleColor="accent"
-      showCornerBrackets={true}
-      className="mb-3"
-      collapsible={true}
-      defaultCollapsed={true}
-      storageKey="exercise-registry-collapsed"
-    >
-      <div className="p-4">
-        <TerminalTable
-          headers={["ID", "NAME", "CREATED", "SETS", "ACTIONS"]}
-          rows={rows}
-          columnWidths={["w-20", "", "w-28", "w-16", "w-24"]}
-        />
-      </div>
-    </TerminalPanel>
+    <Card className="mb-3">
+      <CardHeader>
+        <CardTitle>Exercise Registry ({exercises.length})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead className="w-28">Created</TableHead>
+              <TableHead className="w-16">Sets</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {exercises.map((exercise) => {
+              const isEditing = editingId === exercise._id;
+              const setCount = setCountByExercise[exercise._id] || 0;
+              const shortId = exercise._id.slice(0, 6);
+              const createdDate = new Date(
+                exercise.createdAt
+              ).toLocaleDateString("en-US", {
+                month: "2-digit",
+                day: "2-digit",
+                year: "2-digit",
+              });
+
+              return (
+                <TableRow key={exercise._id}>
+                  {/* ID */}
+                  <TableCell className="text-muted-foreground">
+                    {shortId}
+                  </TableCell>
+
+                  {/* NAME (editable inline) */}
+                  <TableCell>
+                    {isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSaveEdit(exercise._id);
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              handleCancelEdit();
+                            }
+                          }}
+                          className="flex-1 px-2 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleSaveEdit(exercise._id)}
+                          className="p-2 hover:opacity-80"
+                          title="Save"
+                        >
+                          <Check className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-2 text-muted-foreground hover:opacity-80"
+                          title="Cancel"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="font-medium">{exercise.name}</span>
+                    )}
+                  </TableCell>
+
+                  {/* CREATED */}
+                  <TableCell className="text-muted-foreground">
+                    {createdDate}
+                  </TableCell>
+
+                  {/* SETS */}
+                  <TableCell>{setCount}</TableCell>
+
+                  {/* ACTIONS */}
+                  <TableCell>
+                    {!isEditing ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleStartEdit(exercise)}
+                          className="p-2 hover:opacity-80 transition-opacity"
+                          title="Edit exercise name"
+                        >
+                          <Pencil className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(exercise)}
+                          className="p-2 text-destructive hover:opacity-80 transition-opacity"
+                          title="Delete exercise"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="h-6"></div> // Spacer during edit
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
