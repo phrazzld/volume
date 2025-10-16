@@ -65,10 +65,10 @@
   - [x] terminal-table.tsx (DELETED - 94 lines)
   - [x] corner-bracket.tsx (DELETED - 61 lines)
 
-- [ ] Update PageLayout to remove terminal styling
-  - Files: src/components/layout/page-layout.tsx
-  - Remove uppercase from title
-  - Replace terminal-text with default foreground colors
+- [x] Update PageLayout to remove terminal styling
+  - [x] page-layout.tsx → Remove font-mono, uppercase, terminal-text from h1
+  - [x] settings/page.tsx → Update title to "Settings", modernize loading skeleton
+  - [x] history/page.tsx → Update title to "Workout History", modernize empty state and Load More button
 
 ### 2.2: Button & Input Migration
 
