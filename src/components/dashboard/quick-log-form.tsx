@@ -15,6 +15,7 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
@@ -262,18 +263,17 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                 >
                   REPS *
                 </label>
-                <input
+                <Input
                   ref={repsInputRef}
                   id="reps"
                   type="number"
                   inputMode="numeric"
-                  pattern="[0-9]*"
                   min="1"
                   value={reps}
                   onChange={(e) => setReps(e.target.value)}
                   onKeyDown={handleRepsKeyDown}
-                  placeholder="HOW MANY?"
-                  className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+                  placeholder="How many?"
+                  className="w-full h-[46px] tabular-nums"
                   disabled={isSubmitting}
                   required
                 />
@@ -288,7 +288,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   WEIGHT ({unit.toUpperCase()})
                 </label>
                 <div className="flex gap-1">
-                  <input
+                  <Input
                     ref={weightInputRef}
                     id="weight"
                     type="number"
@@ -298,8 +298,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
                     onKeyDown={handleWeightKeyDown}
-                    placeholder="OPTIONAL"
-                    className="w-full md:w-32 h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+                    placeholder="Optional"
+                    className="w-full md:w-32 h-[46px] tabular-nums"
                     disabled={isSubmitting}
                   />
                   <Button

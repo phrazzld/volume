@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, KeyboardEvent } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 
@@ -60,14 +61,13 @@ export function InlineExerciseCreator({
         CREATE NEW EXERCISE
       </p>
       <div className="flex gap-2">
-        <input
+        <Input
           ref={inputRef}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="EXERCISE NAME..."
-          className="flex-1 px-3 py-3 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
+          placeholder="Exercise name..."
           disabled={isCreating}
         />
         <Button

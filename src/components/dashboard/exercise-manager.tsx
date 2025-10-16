@@ -14,6 +14,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
@@ -120,7 +121,7 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
                   <TableCell>
                     {isEditing ? (
                       <div className="flex items-center gap-2">
-                        <input
+                        <Input
                           type="text"
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
@@ -134,7 +135,7 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
                               handleCancelEdit();
                             }
                           }}
-                          className="flex-1 px-2 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="flex-1"
                           autoFocus
                         />
                         <button
