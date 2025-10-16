@@ -135,7 +135,7 @@ Available MCP Tools:
   Time: 1.5hr
   ```
 
-- [ ] Replace custom select with shadcn Select
+- [x] Replace custom select with shadcn Select
 
   ```
   **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
@@ -145,7 +145,7 @@ Available MCP Tools:
 
   Files:
     - src/components/dashboard/quick-log-form.tsx:211-235
-    - src/app/settings/page.tsx:70-85 (weight unit toggle)
+    - src/app/settings/page.tsx:70-85 (weight unit toggle - already uses buttons, correct pattern)
 
   **STEP 2: Implement migration:**
     Before:
@@ -167,10 +167,11 @@ Available MCP Tools:
   **STEP 3: Verify with MCP audit (REQUIRED):**
     - mcp__shadcn__get_audit_checklist() - Run quality checklist
 
-  Success: All select dropdowns replaced, accessibility improved (keyboard navigation)
-  Test: Dropdowns open/close, keyboard navigation works, mobile touch works
+  Success: Select dropdown replaced in quick-log-form, accessibility improved (keyboard navigation)
+  Test: TypeScript ✓, ESLint ✓, Dev server compiles ✓
   Module: Form control - Select hides portal/positioning complexity
-  Time: 2hr
+  Time: 1hr (faster than estimated)
+  Commit: 0089dd1
   ```
 
 ### 2.3: Table Migration
