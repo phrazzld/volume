@@ -20,6 +20,30 @@
 - Layout: `LAYOUT` constants from `src/lib/layout-constants.ts`
 - Error handling: `handleMutationError()` from `src/lib/error-handler.ts`
 
+**shadcn MCP Tools - ALWAYS USE WHEN APPLICABLE:**
+
+**⚠️ CRITICAL: Use these tools BEFORE and AFTER every component migration. This is NOT optional.**
+
+Available MCP Tools:
+
+- `mcp__shadcn__search_items_in_registries` - Search for components by name (e.g., "input", "select", "dialog")
+- `mcp__shadcn__view_items_in_registries` - View detailed API documentation for components
+- `mcp__shadcn__get_item_examples_from_registries` - Get official usage examples (e.g., "input-demo", "form-demo")
+- `mcp__shadcn__get_audit_checklist` - Post-implementation quality checklist
+
+**When to use:**
+
+1. **BEFORE starting any component migration:** Search for component + view examples
+2. **DURING implementation:** Reference examples for correct API usage
+3. **AFTER completing migration:** Run audit checklist to verify quality
+
+**Why this matters:**
+
+- **Prevents mistakes:** Official examples show correct patterns (we missed Button size variants!)
+- **Discovers features:** Find better component variants you didn't know existed
+- **Quality assurance:** Audit checklist catches common implementation issues
+- **Strategic over tactical:** Learn best practices vs. just making it work
+
 **Key Files Affected:**
 
 - Global styles: `src/app/globals.css`, `tailwind.config.ts`
@@ -82,11 +106,17 @@
 - [ ] Replace custom inputs with shadcn Input
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="input") - Find Input component
+    2. mcp__shadcn__get_item_examples_from_registries(query="input-demo") - See usage examples
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/input"]) - Review API docs
+
   Files:
     - src/components/dashboard/quick-log-form.tsx:238-295
     - src/components/dashboard/inline-exercise-creator.tsx
     - src/components/dashboard/exercise-manager.tsx:90-110
-  Approach:
+
+  **STEP 2: Implement migration:**
     Before:
       <input
         className="w-full px-3 py-3 bg-terminal-bgSecondary border border-terminal-border..."
@@ -95,6 +125,10 @@
     After:
       import { Input } from "@/components/ui/input"
       <Input type="number" />  // inherits shadcn styling
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: All input elements replaced, styling consistent
   Test: Focus states work, mobile keyboard shows correct type (numeric for number inputs)
   Module: Form primitive - Input hides border/focus complexity
@@ -102,11 +136,18 @@
   ```
 
 - [ ] Replace custom select with shadcn Select
+
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="select") - Find Select component
+    2. mcp__shadcn__get_item_examples_from_registries(query="select-demo") - See usage patterns
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/select"]) - Review full Select API
+
   Files:
     - src/components/dashboard/quick-log-form.tsx:211-235
     - src/app/settings/page.tsx:70-85 (weight unit toggle)
-  Approach:
+
+  **STEP 2: Implement migration:**
     Before:
       <select className="w-full h-[46px] px-3...">
         <option value="">SELECT...</option>
@@ -122,6 +163,10 @@
           {exercises.map(ex => <SelectItem value={ex._id}>{ex.name}</SelectItem>)}
         </SelectContent>
       </Select>
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: All select dropdowns replaced, accessibility improved (keyboard navigation)
   Test: Dropdowns open/close, keyboard navigation works, mobile touch works
   Module: Form control - Select hides portal/positioning complexity
@@ -209,8 +254,14 @@
 - [ ] Convert QuickLogForm to react-hook-form
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="form") - Find Form components
+    2. mcp__shadcn__get_item_examples_from_registries(query="form-demo") - See react-hook-form + zod patterns
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/form"]) - Review FormField API
+
   Files: src/components/dashboard/quick-log-form.tsx:23-153
-  Approach:
+
+  **STEP 2: Implement migration:**
     Replace:
       - useState for reps/weight → useForm
       - Manual onChange handlers → FormField render props
@@ -241,6 +292,10 @@
           )} />
         </form>
       </Form>
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Form works identically, validation errors show automatically
   Test:
     - Submit with empty reps → validation error shows
@@ -284,10 +339,20 @@
 - [ ] Convert InlineExerciseCreator to react-hook-form
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="form") - Find Form components
+    2. mcp__shadcn__get_item_examples_from_registries(query="form-demo") - See form patterns with single input
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/form"]) - Review FormField API
+
   Files: src/components/dashboard/inline-exercise-creator.tsx:1-90
-  Approach:
+
+  **STEP 2: Implement migration:**
     Schema: z.object({ name: z.string().min(1, "Name is required") })
     Follow same pattern as QuickLogForm
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Inline creator works, validation shows errors
   Test: Create exercise with empty name → error shows
   Module: Single-purpose form - hides exercise creation logic
@@ -295,14 +360,25 @@
   ```
 
 - [ ] Convert ExerciseManager edit mode to react-hook-form
+
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="form") - Find Form components
+    2. mcp__shadcn__get_item_examples_from_registries(query="form-demo") - See inline form patterns
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/form", "@shadcn/input"]) - Review APIs
+
   Files: src/components/dashboard/exercise-manager.tsx:31-52
-  Approach:
+
+  **STEP 2: Implement migration:**
     Replace:
       - editingName state → form.watch("name")
       - Input onChange → FormField with Input
       - handleSaveEdit → form.handleSubmit(onSubmit)
     Note: This is inline editing, so form is per-row (more complex)
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Inline edit works, validation prevents empty names
   Test: Click edit, clear name, try to save → validation error
   Module: Inline editing pattern - form state per table row
@@ -318,8 +394,14 @@
 - [ ] Replace window.confirm with AlertDialog in ExerciseManager
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="alert-dialog") - Find AlertDialog component
+    2. mcp__shadcn__get_item_examples_from_registries(query="alert-dialog-demo") - See confirmation patterns
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/alert-dialog"]) - Review full API
+
   Files: src/components/dashboard/exercise-manager.tsx:54-71
-  Approach:
+
+  **STEP 2: Implement migration:**
     Before:
       const handleDelete = async (exercise) => {
         if (!confirm(`Delete "${exercise.name}"?`)) return;
@@ -348,6 +430,10 @@
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Delete confirmation shows in modal, better UX than browser confirm
   Test: Click delete, modal opens, click cancel → nothing happens, click delete → exercise deleted
   Module: Confirmation pattern - AlertDialog hides focus trap complexity
@@ -357,8 +443,18 @@
 - [ ] Replace window.confirm in SetCard component
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. Reference alert-dialog examples from ExerciseManager task above
+    2. mcp__shadcn__get_item_examples_from_registries(query="alert-dialog-demo") - Review destructive action patterns
+
   Files: src/components/dashboard/set-card.tsx:24-35
-  Approach: Follow same AlertDialog pattern as ExerciseManager
+
+  **STEP 2: Implement migration:**
+    Follow same AlertDialog pattern as ExerciseManager
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Set deletion uses modal confirmation
   Test: Delete set flow works identically
   Module: Reusable confirmation - same pattern across app
@@ -366,15 +462,26 @@
   ```
 
 - [ ] Convert InlineExerciseCreator to Dialog
+
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="dialog") - Find Dialog component
+    2. mcp__shadcn__get_item_examples_from_registries(query="dialog-demo") - See modal form patterns
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/dialog"]) - Review Dialog API
+
   Files: src/components/dashboard/inline-exercise-creator.tsx:1-90
-  Approach:
+
+  **STEP 2: Implement migration:**
     Replace inline form with Dialog trigger
     Before: Form shows inline below QuickLogForm
     After:
       - "+ CREATE NEW" option in select opens Dialog
       - Dialog contains exercise creation form
       - On success, Dialog closes and exercise selected
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Exercise creation in modal, cleaner UX
   Test: Select "+ CREATE NEW", dialog opens, create exercise, dialog closes, exercise selected
   Module: Modal creation pattern - Dialog hides overlay/focus trap
@@ -386,12 +493,22 @@
 - [ ] Update Nav component with shadcn primitives
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="button") - Review Button variants (ghost)
+    2. mcp__shadcn__search_items_in_registries(query="dropdown-menu") - Find DropdownMenu component
+    3. mcp__shadcn__get_item_examples_from_registries(query="dropdown-menu-demo") - See navigation menu patterns
+
   Files: src/components/layout/nav.tsx:1-90
-  Approach:
+
+  **STEP 2: Implement migration:**
     1. Replace custom button styling with Button variant="ghost"
     2. Use DropdownMenu for user profile menu (Clerk UserButton)
     3. Use Separator for visual dividers
     4. Keep Clerk auth components (UserButton, SignInButton, SignUpButton)
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Nav renders with shadcn buttons, consistent styling
   Test: Nav links work, user menu works, auth buttons work
   Module: App shell - Nav hides responsive breakpoint complexity
@@ -401,10 +518,19 @@
 - [ ] Update BottomNav component with shadcn Button
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__get_item_examples_from_registries(query="button-demo") - Review Button variants for nav
+    2. mcp__shadcn__view_items_in_registries(items=["@shadcn/button"]) - Check ghost variant API
+
   Files: src/components/layout/bottom-nav.tsx:1-49
-  Approach:
+
+  **STEP 2: Implement migration:**
     Replace custom button styling with Button variant="ghost"
     Keep mobile-only visibility (className="md:hidden")
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Bottom nav uses shadcn Button, mobile behavior unchanged
   Test: Bottom nav shows on mobile, hides on desktop, buttons work
   Module: Mobile navigation - BottomNav hides fixed positioning complexity
@@ -412,11 +538,22 @@
   ```
 
 - [ ] Update ThemeToggle with shadcn pattern
+
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="theme") - Search for theme toggle patterns
+    2. mcp__shadcn__get_item_examples_from_registries(query="theme-toggle") - See official theme toggle examples
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/dropdown-menu"]) - Review DropdownMenu for theme options
+    4. Reference: https://ui.shadcn.com/docs/dark-mode/next
+
   Files: src/components/layout/theme-toggle.tsx:1-44
-  Approach:
+
+  **STEP 2: Implement migration:**
     Use shadcn's theme toggle pattern (Button + DropdownMenu + next-themes)
-    Reference: https://ui.shadcn.com/docs/dark-mode/next
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Theme toggle works, system/light/dark options, icons update
   Test: Toggle theme, verify persistence, check system default works
   Module: Theme control - ThemeToggle hides next-themes complexity
@@ -428,12 +565,22 @@
 - [ ] Update SetCard component styling
 
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__search_items_in_registries(query="card") - Find Card component patterns
+    2. mcp__shadcn__get_item_examples_from_registries(query="card-demo") - See Card layout examples
+    3. mcp__shadcn__view_items_in_registries(items=["@shadcn/card"]) - Review CardHeader/CardContent API
+
   Files: src/components/dashboard/set-card.tsx:53-103
-  Approach:
+
+  **STEP 2: Implement migration:**
     1. Wrap content in Card component
     2. Use CardHeader for metadata (time, exercise name)
     3. Use CardContent for reps/weight
     4. Use Button for actions (Repeat, Delete)
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: SetCard uses shadcn Card, consistent styling
   Test: SetCard renders in history, actions work
   Module: Data card - SetCard hides layout complexity
@@ -441,12 +588,22 @@
   ```
 
 - [ ] Update DailyStatsCard component
+
   ```
+  **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
+    1. mcp__shadcn__get_item_examples_from_registries(query="card-demo") - Review Card patterns for stats/metrics
+    2. mcp__shadcn__view_items_in_registries(items=["@shadcn/card"]) - Verify Card API usage
+
   Files: src/components/dashboard/daily-stats-card.tsx:1-153
-  Approach:
-    1. Replace TerminalPanel with Card
+
+  **STEP 2: Implement migration:**
+    1. Replace TerminalPanel with Card (if not already done)
     2. Update metric display to use shadcn typography
     3. Remove uppercase text transform
+
+  **STEP 3: Verify with MCP audit (REQUIRED):**
+    - mcp__shadcn__get_audit_checklist() - Run quality checklist
+
   Success: Stats card uses shadcn styling
   Test: Stats display correctly, responsive on mobile
   Module: Metrics display - hides stat calculation complexity
