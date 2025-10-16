@@ -28,6 +28,17 @@ import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
+import { z } from "zod";
+
+// Validation schema for quick log form
+const quickLogSchema = z.object({
+  exerciseId: z.string().min(1, "Exercise is required"),
+  reps: z.coerce.number().min(1, "Reps must be at least 1"),
+  weight: z.coerce.number().optional(),
+  unit: z.enum(["lbs", "kg"]).optional(),
+});
+
+type QuickLogFormValues = z.infer<typeof quickLogSchema>;
 
 interface QuickLogFormProps {
   exercises: Exercise[];
