@@ -2,6 +2,7 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -14,9 +15,9 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button className="h-10 px-4 border border-terminal-border bg-terminal-bgSecondary text-terminal-textSecondary font-mono text-sm uppercase flex items-center justify-center">
-        ———
-      </button>
+      <Button variant="outline" size="sm" disabled>
+        ---
+      </Button>
     );
   }
 
@@ -30,15 +31,21 @@ export function ThemeToggle() {
     }
   };
 
-  const displayTheme = theme === "system" ? "AUTO" : theme?.toUpperCase();
+  const displayTheme =
+    theme === "system"
+      ? "Auto"
+      : theme
+        ? theme.charAt(0).toUpperCase() + theme.slice(1)
+        : "---";
 
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={cycleTheme}
-      className="h-10 px-4 border border-terminal-border bg-terminal-bgSecondary text-terminal-text hover:border-terminal-info hover:text-terminal-info transition-colors font-mono text-sm uppercase flex items-center justify-center"
       title={`Theme: ${displayTheme} (click to cycle)`}
     >
       {displayTheme}
-    </button>
+    </Button>
   );
 }
