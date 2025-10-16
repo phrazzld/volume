@@ -16,6 +16,13 @@ import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
@@ -40,7 +47,6 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const [weight, setWeight] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showInlineCreator, setShowInlineCreator] = useState(false);
-    const exerciseSelectRef = useRef<HTMLSelectElement>(null);
     const repsInputRef = useRef<HTMLInputElement>(null);
     const weightInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,12 +234,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                 >
                   EXERCISE *
                 </label>
-                <select
-                  ref={exerciseSelectRef}
-                  id="exercise"
+                <Select
                   value={selectedExerciseId}
-                  onChange={(e) => {
-                    const value = e.target.value;
+                  onValueChange={(value) => {
                     if (value === "CREATE_NEW") {
                       setShowInlineCreator(true);
                       setSelectedExerciseId("");
@@ -241,18 +244,20 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                       setSelectedExerciseId(value as Id<"exercises">);
                     }
                   }}
-                  className="w-full h-[46px] px-3 py-3 bg-terminal-bgSecondary border border-terminal-border text-terminal-text font-mono tabular-nums focus:border-terminal-info focus:ring-1 focus:ring-terminal-info"
-                  required
                   disabled={isSubmitting}
                 >
-                  <option value="">SELECT...</option>
-                  {exercises.map((exercise) => (
-                    <option key={exercise._id} value={exercise._id}>
-                      {exercise.name}
-                    </option>
-                  ))}
-                  <option value="CREATE_NEW">+ CREATE NEW</option>
-                </select>
+                  <SelectTrigger id="exercise" className="h-[46px]">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exercises.map((exercise) => (
+                      <SelectItem key={exercise._id} value={exercise._id}>
+                        {exercise.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="CREATE_NEW">+ CREATE NEW</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Reps Input */}
