@@ -103,7 +103,7 @@ Available MCP Tools:
   - [x] settings/page.tsx → Weight unit toggle (already styled with shadcn)
   - Note: Icon buttons in exercise-manager kept as minimal button elements
 
-- [ ] Replace custom inputs with shadcn Input
+- [x] Replace custom inputs with shadcn Input
 
   ```
   **🔍 STEP 1: Use shadcn MCP tools (REQUIRED):**
