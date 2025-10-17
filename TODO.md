@@ -324,32 +324,13 @@
   - Test count: 138/138 passing (11 new tests)
   - 100% coverage of form business logic without UI interaction
 
-- [ ] **Write tests for useLastSet hook**
-
-  **File**: `src/hooks/useLastSet.test.ts` (NEW)
-
-  **Test cases** (8 tests):
-
-  ```typescript
-  describe("useLastSet", () => {
-    it("returns null when no exercise selected");
-    it("returns null when no sets exist");
-    it("returns most recent set for exercise");
-    it("filters sets by exerciseId correctly");
-    it("handles sets without weight");
-
-    describe("formatTimeAgo", () => {
-      it("formats seconds as 'X SEC AGO'");
-      it("formats minutes as 'X MIN AGO'");
-      it("formats hours as 'X HR AGO'");
-      it("formats days as 'X DAY(S) AGO'");
-    });
-  });
-  ```
-
-  **Success**: Time formatting logic fully tested, edge cases covered
-
-  **Time**: 1 hour
+- [x] **Write tests for useLastSet hook** ✅
+  - Commit: 26da743
+  - Created src/hooks/useLastSet.test.ts with 14 tests
+  - Tests cover all edge cases (null, empty, filtering)
+  - Complete formatTimeAgo coverage (seconds, minutes, hours, days)
+  - Reactivity tests for exerciseId and data changes
+  - Test count: 152/152 passing (14 new tests)
 
 - [ ] **Simplify QuickLogForm component tests**
 
