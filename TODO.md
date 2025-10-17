@@ -44,7 +44,12 @@
   - Commit: 831ac65
   - Schema: `quickLogSchema` with exerciseId, reps, weight, unit
 
-- [ ] Convert QuickLogForm to react-hook-form (ALL-IN-ONE MIGRATION)
+- [x] Convert QuickLogForm to react-hook-form (ALL-IN-ONE MIGRATION)
+  - Commit: df788db
+  - Migrated all form state to useForm hook
+  - Wrapped all inputs in FormField components
+  - Preserved autofocus flow and keyboard navigation
+  - TypeScript passes, core functionality intact
 
   ```
   **CRITICAL: This task includes autofocus + last set preservation. Do NOT split.**
