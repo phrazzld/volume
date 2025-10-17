@@ -317,31 +317,12 @@
   - All tests pass (127/127), TypeScript clean
   - Time formatting logic now independently testable
 
-- [ ] **Write tests for useQuickLogForm hook**
-
-  **File**: `src/hooks/useQuickLogForm.test.ts` (NEW)
-
-  **Test cases** (9 tests):
-
-  ```typescript
-  describe("useQuickLogForm", () => {
-    it("initializes with correct default values");
-    it("validates exerciseId is required");
-    it("validates reps minimum value");
-    it("submits with correct data structure (with weight)");
-    it("submits with correct data structure (without weight)");
-    it("includes unit when weight provided");
-    it("clears reps and weight after submit");
-    it("preserves exerciseId after submit");
-    it("calls error handler on submission failure");
-  });
-  ```
-
-  **Pattern**: Use `@testing-library/react-hooks` or render hook with wrapper
-
-  **Success**: 100% coverage of form business logic, no UI interaction needed
-
-  **Time**: 1-2 hours
+- [x] **Write tests for useQuickLogForm hook** ✅
+  - Commit: 3319918
+  - Created src/hooks/useQuickLogForm.test.ts with 11 tests
+  - Tests cover all business logic (initialization, validation, submission, error handling)
+  - Test count: 138/138 passing (11 new tests)
+  - 100% coverage of form business logic without UI interaction
 
 - [ ] **Write tests for useLastSet hook**
 
