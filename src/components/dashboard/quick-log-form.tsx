@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import {
   useState,
   useRef,
@@ -10,8 +10,6 @@ import {
   KeyboardEvent,
   useMemo,
 } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -34,20 +32,8 @@ import {
 } from "@/components/ui/form";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
-import { toast } from "sonner";
-import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
-import { z } from "zod";
-
-// Validation schema for quick log form
-const quickLogSchema = z.object({
-  exerciseId: z.string().min(1, "Exercise is required"),
-  reps: z.number().min(1, "Reps must be at least 1"),
-  weight: z.number().optional(),
-  unit: z.enum(["lbs", "kg"]).optional(),
-});
-
-type QuickLogFormValues = z.infer<typeof quickLogSchema>;
+import { useQuickLogForm, QuickLogFormValues } from "@/hooks/useQuickLogForm";
 
 interface QuickLogFormProps {
   exercises: Exercise[];
@@ -64,16 +50,13 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const repsInputRef = useRef<HTMLInputElement>(null);
     const weightInputRef = useRef<HTMLInputElement>(null);
 
-    const logSet = useMutation(api.sets.logSet);
     const { unit, toggleUnit } = useWeightUnit();
 
-    const form = useForm<QuickLogFormValues>({
-      resolver: zodResolver(quickLogSchema),
-      defaultValues: {
-        exerciseId: "",
-        reps: undefined,
-        weight: undefined,
-        unit: unit,
+    const { form, onSubmit } = useQuickLogForm({
+      unit,
+      onSetLogged,
+      onSuccess: () => {
+        focusElement(repsInputRef);
       },
     });
 
@@ -161,33 +144,6 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         focusElement(repsInputRef);
       }
     }, [selectedExerciseId]);
-
-    // Form submission handler
-    const onSubmit = async (values: QuickLogFormValues) => {
-      try {
-        const setId = await logSet({
-          exerciseId: values.exerciseId as Id<"exercises">,
-          reps: values.reps!,
-          weight: values.weight,
-          unit: values.weight ? values.unit : undefined,
-        });
-
-        // Keep exercise selected, clear reps/weight
-        form.reset({
-          exerciseId: values.exerciseId, // CRITICAL: Preserve selection
-          reps: undefined,
-          weight: undefined,
-          unit: values.unit,
-        });
-
-        // Focus reps for next set
-        focusElement(repsInputRef);
-        toast.success("Set logged!");
-        onSetLogged?.(setId);
-      } catch (error) {
-        handleMutationError(error, "Log Set");
-      }
-    };
 
     // Handle Enter key in reps input - focus weight or submit
     const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
