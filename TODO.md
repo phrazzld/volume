@@ -262,14 +262,12 @@
   - Contextual messaging based on set count
   - Professional UI with keyboard navigation
 
-- [ ] Replace window.confirm in SetCard component
-
-  ```
-  Files: src/components/dashboard/set-card.tsx:25
-  Pattern: Same as ExerciseManager
-
-  Time: 30min
-  ```
+- [x] Replace window.confirm in SetCard component
+  - Commit: 55a332e
+  - Replaced browser confirm with AlertDialog
+  - Added showDeleteDialog state
+  - Simple confirmation message
+  - Consistent with ExerciseManager pattern
 
 - [ ] Replace window.confirm in GroupedSetHistory
 

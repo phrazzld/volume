@@ -12,6 +12,16 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
@@ -35,15 +45,21 @@ export function GroupedSetHistory({
   onDelete,
 }: GroupedSetHistoryProps) {
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
+  const [setToDelete, setSetToDelete] = useState<Set | null>(null);
   const { unit: preferredUnit } = useWeightUnit();
 
-  const handleDelete = async (set: Set) => {
-    if (!confirm("Delete this set? This cannot be undone.")) return;
+  const handleDeleteClick = (set: Set) => {
+    setSetToDelete(set);
+  };
 
-    setDeletingId(set._id);
+  const confirmDelete = async () => {
+    if (!setToDelete) return;
+
+    setDeletingId(setToDelete._id);
     try {
-      await onDelete(set._id);
+      await onDelete(setToDelete._id);
       toast.success("Set deleted");
+      setSetToDelete(null);
     } catch (error) {
       handleMutationError(error, "Delete Set");
       setDeletingId(null);
@@ -155,7 +171,7 @@ export function GroupedSetHistory({
                               <span className="text-xs">Repeat</span>
                             </button>
                             <button
-                              onClick={() => handleDelete(set)}
+                              onClick={() => handleDeleteClick(set)}
                               className="p-2 text-destructive hover:opacity-80 transition-opacity"
                               aria-label="Delete this set"
                               title="Delete this set"
@@ -175,6 +191,27 @@ export function GroupedSetHistory({
           </Card>
         );
       })}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!setToDelete}
+        onOpenChange={(open) => !open && setSetToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Set</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete this set? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
