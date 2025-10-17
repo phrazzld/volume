@@ -27,7 +27,9 @@ describe("useQuickLogForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(convexReact.useMutation).mockReturnValue(mockLogSet);
+    vi.mocked(convexReact.useMutation).mockReturnValue(
+      Object.assign(mockLogSet, { withOptimisticUpdate: vi.fn() })
+    );
   });
 
   it("initializes with correct default values", () => {
