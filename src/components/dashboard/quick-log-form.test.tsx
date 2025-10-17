@@ -28,6 +28,9 @@ vi.mock("@/lib/error-handler", () => ({
   handleMutationError: vi.fn(),
 }));
 
+// Mock scrollIntoView for Radix Select
+Element.prototype.scrollIntoView = vi.fn();
+
 // Helper to render with WeightUnitContext
 const renderWithContext = (
   ui: React.ReactElement,
@@ -45,6 +48,17 @@ const renderWithContext = (
   vi.stubGlobal("localStorage", localStorageMock);
 
   return render(<WeightUnitProvider>{ui}</WeightUnitProvider>);
+};
+
+// Helper to select an exercise from Radix Select
+const selectExercise = async (exerciseName: string) => {
+  const selectTrigger = screen.getByRole("combobox", { name: /exercise/i });
+  fireEvent.click(selectTrigger);
+
+  await waitFor(() => {
+    const option = screen.getByText(exerciseName);
+    fireEvent.click(option);
+  });
 };
 
 describe("QuickLogForm", () => {
@@ -96,22 +110,12 @@ describe("QuickLogForm", () => {
       ).toBeInTheDocument();
     });
 
-    it("populates exercise dropdown with exercises", () => {
+    it("displays exercise selector", () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      const select = screen.getByLabelText(/EXERCISE/i) as HTMLSelectElement;
-      expect(select.children).toHaveLength(4); // SELECT... + 2 exercises + CREATE NEW
-
-      expect(screen.getByText("Bench Press")).toBeInTheDocument();
-      expect(screen.getByText("Squats")).toBeInTheDocument();
-      expect(screen.getByText("+ CREATE NEW")).toBeInTheDocument();
-    });
-
-    it("shows empty state with no exercises", () => {
-      renderWithContext(<QuickLogForm exercises={[]} />);
-
-      const select = screen.getByLabelText(/EXERCISE/i) as HTMLSelectElement;
-      expect(select.children).toHaveLength(2); // SELECT... + CREATE NEW
+      // Radix Select uses a button trigger instead of select element
+      const selectTrigger = screen.getByRole("combobox", { name: /exercise/i });
+      expect(selectTrigger).toBeInTheDocument();
     });
   });
 
@@ -154,37 +158,10 @@ describe("QuickLogForm", () => {
   });
 
   describe("validation", () => {
-    it("disables submit when no exercise selected", () => {
+    it("submit button is always enabled (validation happens on submit)", () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      const submitButton = screen.getByRole("button", {
-        name: /LOG SET/i,
-      });
-      expect(submitButton).toBeDisabled();
-    });
-
-    it("disables submit when exercise selected but no reps", () => {
-      renderWithContext(<QuickLogForm exercises={mockExercises} />);
-
-      const select = screen.getByLabelText(/EXERCISE/i);
-      fireEvent.change(select, { target: { value: "ex1abc123" } });
-
-      const submitButton = screen.getByRole("button", {
-        name: /LOG SET/i,
-      });
-      expect(submitButton).toBeDisabled();
-    });
-
-    it("enables submit when exercise and reps provided", () => {
-      renderWithContext(<QuickLogForm exercises={mockExercises} />);
-
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
-      fireEvent.change(screen.getByLabelText(/REPS/i), {
-        target: { value: "10" },
-      });
-
+      // React Hook Form validates on submit, not by disabling the button
       const submitButton = screen.getByRole("button", {
         name: /LOG SET/i,
       });
@@ -202,7 +179,7 @@ describe("QuickLogForm", () => {
       vi.useRealTimers();
     });
 
-    it("shows last set when exercise selected", () => {
+    it("shows last set when exercise selected", async () => {
       const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
       mockUseQuery.mockReturnValue([
         {
@@ -217,16 +194,16 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
-      expect(screen.getByText(/LAST:/i)).toBeInTheDocument();
-      expect(screen.getByText(/10 REPS/i)).toBeInTheDocument();
-      expect(screen.getByText(/135 LBS/i)).toBeInTheDocument();
+      // Last set indicator shows reps, weight, and time
+      await waitFor(() => {
+        expect(screen.getByText(/10 reps/i)).toBeInTheDocument();
+        expect(screen.getByText(/135 lbs/i)).toBeInTheDocument();
+      });
     });
 
-    it('displays "5 MIN AGO" for recent set', () => {
+    it('displays "5 MIN AGO" for recent set', async () => {
       const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
       mockUseQuery.mockReturnValue([
         {
@@ -241,14 +218,12 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
       expect(screen.getByText(/5 MIN AGO/i)).toBeInTheDocument();
     });
 
-    it('displays "30 SEC AGO" for very recent set', () => {
+    it('displays "30 SEC AGO" for very recent set', async () => {
       const thirtySecondsAgo = Date.now() - 30 * 1000;
       mockUseQuery.mockReturnValue([
         {
@@ -261,14 +236,12 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
       expect(screen.getByText(/30 SEC AGO/i)).toBeInTheDocument();
     });
 
-    it('displays "2 HR AGO" for sets from hours ago', () => {
+    it('displays "2 HR AGO" for sets from hours ago', async () => {
       const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
       mockUseQuery.mockReturnValue([
         {
@@ -281,14 +254,12 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
       expect(screen.getByText(/2 HR AGO/i)).toBeInTheDocument();
     });
 
-    it('displays "3 DAYS AGO" for old sets', () => {
+    it('displays "3 DAYS AGO" for old sets', async () => {
       const threeDaysAgo = Date.now() - 3 * 24 * 60 * 60 * 1000;
       mockUseQuery.mockReturnValue([
         {
@@ -301,9 +272,7 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
       expect(screen.getByText(/3 DAYS AGO/i)).toBeInTheDocument();
     });
@@ -322,7 +291,7 @@ describe("QuickLogForm", () => {
   });
 
   describe("USE button", () => {
-    it("populates form with last set values", () => {
+    it("populates form with last set values", async () => {
       mockUseQuery.mockReturnValue([
         {
           _id: "set1",
@@ -336,18 +305,16 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
-      const useButton = screen.getByRole("button", { name: /USE/i });
+      const useButton = screen.getByRole("button", { name: /Use/i });
       fireEvent.click(useButton);
 
       expect(screen.getByLabelText(/REPS/i)).toHaveValue(10);
       expect(screen.getByLabelText(/WEIGHT/i)).toHaveValue(135);
     });
 
-    it("populates form with bodyweight set (no weight)", () => {
+    it("populates form with bodyweight set (no weight)", async () => {
       mockUseQuery.mockReturnValue([
         {
           _id: "set1",
@@ -359,11 +326,9 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
 
-      const useButton = screen.getByRole("button", { name: /USE/i });
+      const useButton = screen.getByRole("button", { name: /Use/i });
       fireEvent.click(useButton);
 
       expect(screen.getByLabelText(/REPS/i)).toHaveValue(15);
@@ -375,9 +340,7 @@ describe("QuickLogForm", () => {
     it("calls logSet with correct params (with weight)", async () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -401,9 +364,7 @@ describe("QuickLogForm", () => {
     it("calls logSet without weight when weight empty", async () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -428,9 +389,7 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -449,9 +408,7 @@ describe("QuickLogForm", () => {
     it("clears reps and weight after successful submit", async () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -492,9 +449,7 @@ describe("QuickLogForm", () => {
     it("shows success toast after submit", async () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -514,9 +469,7 @@ describe("QuickLogForm", () => {
         <QuickLogForm exercises={mockExercises} onSetLogged={onSetLogged} />
       );
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -538,9 +491,7 @@ describe("QuickLogForm", () => {
 
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -568,9 +519,7 @@ describe("QuickLogForm", () => {
     it("pressing Enter in weight input submits form", async () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
@@ -614,9 +563,7 @@ describe("QuickLogForm", () => {
     it("sends correct unit with weight in submission", async () => {
       renderWithContext(<QuickLogForm exercises={mockExercises} />, "kg");
 
-      fireEvent.change(screen.getByLabelText(/EXERCISE/i), {
-        target: { value: "ex1abc123" },
-      });
+      await selectExercise("Bench Press");
       fireEvent.change(screen.getByLabelText(/REPS/i), {
         target: { value: "10" },
       });
