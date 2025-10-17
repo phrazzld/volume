@@ -25,6 +25,17 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
@@ -43,6 +54,9 @@ interface ExerciseManagerProps {
 
 export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
   const [editingId, setEditingId] = useState<Id<"exercises"> | null>(null);
+  const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(
+    null
+  );
   const updateExercise = useMutation(api.exercises.updateExercise);
   const deleteExercise = useMutation(api.exercises.deleteExercise);
 
@@ -86,20 +100,17 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
     }
   };
 
-  const handleDelete = async (exercise: Exercise) => {
-    const setCount = setCountByExercise[exercise._id] || 0;
-    const message =
-      setCount > 0
-        ? `Delete "${exercise.name}"? This exercise has ${setCount} set${
-            setCount === 1 ? "" : "s"
-          }. Deleting will remove it from your exercise list.`
-        : `Delete "${exercise.name}"? This cannot be undone.`;
+  const handleDeleteClick = (exercise: Exercise) => {
+    setExerciseToDelete(exercise);
+  };
 
-    if (!confirm(message)) return;
+  const confirmDelete = async () => {
+    if (!exerciseToDelete) return;
 
     try {
-      await deleteExercise({ id: exercise._id });
+      await deleteExercise({ id: exerciseToDelete._id });
       toast.success("Exercise deleted");
+      setExerciseToDelete(null);
     } catch (error) {
       handleMutationError(error, "Delete Exercise");
     }
@@ -223,7 +234,7 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
                           <Pencil className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(exercise)}
+                          onClick={() => handleDeleteClick(exercise)}
                           className="p-2 text-destructive hover:opacity-80 transition-opacity"
                           title="Delete exercise"
                         >
@@ -239,6 +250,46 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
             })}
           </TableBody>
         </Table>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          open={!!exerciseToDelete}
+          onOpenChange={(open) => !open && setExerciseToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
+              <AlertDialogDescription>
+                {exerciseToDelete && (
+                  <>
+                    {setCountByExercise[exerciseToDelete._id] > 0 ? (
+                      <>
+                        Delete &quot;{exerciseToDelete.name}&quot;? This
+                        exercise has {setCountByExercise[exerciseToDelete._id]}{" "}
+                        set
+                        {setCountByExercise[exerciseToDelete._id] === 1
+                          ? ""
+                          : "s"}
+                        . Deleting will remove it from your exercise list.
+                      </>
+                    ) : (
+                      <>
+                        Delete &quot;{exerciseToDelete.name}&quot;? This cannot
+                        be undone.
+                      </>
+                    )}
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
