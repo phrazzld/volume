@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery } from "convex/react";
 import {
-  FormEvent,
   useState,
   useRef,
   useImperativeHandle,
@@ -11,12 +10,13 @@ import {
   KeyboardEvent,
   useMemo,
 } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { toast } from "sonner";
@@ -34,8 +42,8 @@ import { z } from "zod";
 // Validation schema for quick log form
 const quickLogSchema = z.object({
   exerciseId: z.string().min(1, "Exercise is required"),
-  reps: z.coerce.number().min(1, "Reps must be at least 1"),
-  weight: z.coerce.number().optional(),
+  reps: z.number().min(1, "Reps must be at least 1"),
+  weight: z.number().optional(),
   unit: z.enum(["lbs", "kg"]).optional(),
 });
 
@@ -52,18 +60,22 @@ export interface QuickLogFormHandle {
 
 const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   function QuickLogForm({ exercises, onSetLogged }, ref) {
-    const [selectedExerciseId, setSelectedExerciseId] = useState<
-      Id<"exercises"> | ""
-    >("");
-    const [reps, setReps] = useState("");
-    const [weight, setWeight] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [showInlineCreator, setShowInlineCreator] = useState(false);
     const repsInputRef = useRef<HTMLInputElement>(null);
     const weightInputRef = useRef<HTMLInputElement>(null);
 
     const logSet = useMutation(api.sets.logSet);
     const { unit, toggleUnit } = useWeightUnit();
+
+    const form = useForm<QuickLogFormValues>({
+      resolver: zodResolver(quickLogSchema),
+      defaultValues: {
+        exerciseId: "",
+        reps: undefined,
+        weight: undefined,
+        unit: unit,
+      },
+    });
 
     /*
      * Autofocus Flow:
@@ -104,6 +116,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       });
     };
 
+    // Watch selected exercise for last set query
+    const selectedExerciseId = form.watch("exerciseId");
+
     // Query last set for selected exercise
     const allSets = useQuery(api.sets.listSets, {});
 
@@ -132,9 +147,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     // Expose repeatSet method to parent via ref
     useImperativeHandle(ref, () => ({
       repeatSet: (set: Set) => {
-        setSelectedExerciseId(set.exerciseId);
-        setReps(set.reps.toString());
-        setWeight(set.weight?.toString() || "");
+        form.setValue("exerciseId", set.exerciseId);
+        form.setValue("reps", set.reps);
+        form.setValue("weight", set.weight ?? undefined);
         // Auto-focus reps input for quick edit
         focusElement(repsInputRef);
       },
@@ -147,42 +162,31 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
       }
     }, [selectedExerciseId]);
 
-    // Extract submit logic to avoid type casting
-    const submitForm = async () => {
-      if (!selectedExerciseId || !reps || isSubmitting) return;
-
-      setIsSubmitting(true);
-
+    // Form submission handler
+    const onSubmit = async (values: QuickLogFormValues) => {
       try {
         const setId = await logSet({
-          exerciseId: selectedExerciseId as Id<"exercises">,
-          reps: parseFloat(reps),
-          weight: weight ? parseFloat(weight) : undefined,
-          unit: weight ? unit : undefined, // Store unit with set for data integrity
+          exerciseId: values.exerciseId as Id<"exercises">,
+          reps: values.reps!,
+          weight: values.weight,
+          unit: values.weight ? values.unit : undefined,
         });
 
-        // Clear form inputs (keep exercise selected for quick re-logging)
-        setReps("");
-        setWeight("");
+        // Keep exercise selected, clear reps/weight
+        form.reset({
+          exerciseId: values.exerciseId, // CRITICAL: Preserve selection
+          reps: undefined,
+          weight: undefined,
+          unit: values.unit,
+        });
 
-        // Focus reps input for quick re-logging of same exercise
+        // Focus reps for next set
         focusElement(repsInputRef);
-
-        // Show success toast
         toast.success("Set logged!");
-
-        // Notify parent
         onSetLogged?.(setId);
       } catch (error) {
         handleMutationError(error, "Log Set");
-      } finally {
-        setIsSubmitting(false);
       }
-    };
-
-    const handleSubmit = async (e: FormEvent) => {
-      e.preventDefault();
-      await submitForm();
     };
 
     // Handle Enter key in reps input - focus weight or submit
@@ -199,7 +203,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const handleWeightKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        submitForm();
+        form.handleSubmit(onSubmit)();
       }
     };
 
@@ -209,145 +213,187 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
           <CardTitle>Log Set</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            {/* Last Set Indicator */}
-            {lastSet && (
-              <div className="mb-4 p-3 bg-muted border rounded-md flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Last:</span>{" "}
-                  {exercises.find((e) => e._id === selectedExerciseId)?.name} •{" "}
-                  {lastSet.reps} reps
-                  {lastSet.weight &&
-                    ` @ ${lastSet.weight} ${lastSet.unit || unit}`}{" "}
-                  • {formatTimeAgo(lastSet.performedAt)}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setReps(lastSet.reps.toString());
-                    setWeight(lastSet.weight?.toString() || "");
-                    focusElement(repsInputRef);
-                  }}
-                  className="ml-2"
-                >
-                  Use
-                </Button>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
-              {/* Exercise Selector */}
-              <div>
-                <Label htmlFor="exercise">Exercise *</Label>
-                <Select
-                  value={selectedExerciseId}
-                  onValueChange={(value) => {
-                    if (value === "CREATE_NEW") {
-                      setShowInlineCreator(true);
-                      setSelectedExerciseId("");
-                    } else {
-                      setSelectedExerciseId(value as Id<"exercises">);
-                    }
-                  }}
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger id="exercise" className="h-[46px]">
-                    <SelectValue placeholder="Select..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {exercises.map((exercise) => (
-                      <SelectItem key={exercise._id} value={exercise._id}>
-                        {exercise.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="CREATE_NEW">+ CREATE NEW</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Reps Input */}
-              <div className="md:w-32">
-                <Label htmlFor="reps">Reps *</Label>
-                <Input
-                  ref={repsInputRef}
-                  id="reps"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  value={reps}
-                  onChange={(e) => setReps(e.target.value)}
-                  onKeyDown={handleRepsKeyDown}
-                  placeholder="How many?"
-                  className="w-full h-[46px] tabular-nums"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              {/* Weight Input (with inline unit toggle) */}
-              <div>
-                <Label htmlFor="weight">Weight ({unit.toUpperCase()})</Label>
-                <div className="flex gap-1">
-                  <Input
-                    ref={weightInputRef}
-                    id="weight"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.5"
-                    min="0"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    onKeyDown={handleWeightKeyDown}
-                    placeholder="Optional"
-                    className="w-full md:w-32 h-[46px] tabular-nums"
-                    disabled={isSubmitting}
-                  />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              {/* Last Set Indicator */}
+              {lastSet && (
+                <div className="mb-4 p-3 bg-muted border rounded-md flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Last:</span>{" "}
+                    {exercises.find((e) => e._id === selectedExerciseId)?.name}{" "}
+                    • {lastSet.reps} reps
+                    {lastSet.weight &&
+                      ` @ ${lastSet.weight} ${lastSet.unit || unit}`}{" "}
+                    • {formatTimeAgo(lastSet.performedAt)}
+                  </p>
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={toggleUnit}
-                    className="w-20 h-[46px]"
-                    aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
-                    title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
+                    size="sm"
+                    onClick={() => {
+                      form.setValue("reps", lastSet.reps);
+                      form.setValue("weight", lastSet.weight ?? undefined);
+                      focusElement(repsInputRef);
+                    }}
+                    className="ml-2"
                   >
-                    ⟷ {unit === "lbs" ? "KG" : "LBS"}
+                    Use
+                  </Button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
+                {/* Exercise Selector */}
+                <FormField
+                  control={form.control}
+                  name="exerciseId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Exercise *</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) => {
+                          if (value === "CREATE_NEW") {
+                            setShowInlineCreator(true);
+                            field.onChange("");
+                          } else {
+                            field.onChange(value);
+                          }
+                        }}
+                        disabled={form.formState.isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="h-[46px]">
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {exercises.map((exercise) => (
+                            <SelectItem key={exercise._id} value={exercise._id}>
+                              {exercise.name}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="CREATE_NEW">
+                            + CREATE NEW
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Reps Input */}
+                <FormField
+                  control={form.control}
+                  name="reps"
+                  render={({ field }) => (
+                    <FormItem className="md:w-32">
+                      <FormLabel>Reps *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          ref={repsInputRef}
+                          type="number"
+                          inputMode="numeric"
+                          min="1"
+                          onKeyDown={handleRepsKeyDown}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined
+                            )
+                          }
+                          value={field.value ?? ""}
+                          placeholder="How many?"
+                          className="w-full h-[46px] tabular-nums"
+                          disabled={form.formState.isSubmitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Weight Input (with inline unit toggle) */}
+                <FormField
+                  control={form.control}
+                  name="weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Weight ({unit.toUpperCase()})</FormLabel>
+                      <div className="flex gap-1">
+                        <FormControl>
+                          <Input
+                            {...field}
+                            ref={weightInputRef}
+                            type="number"
+                            inputMode="decimal"
+                            step="0.5"
+                            min="0"
+                            onKeyDown={handleWeightKeyDown}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value
+                                  ? parseFloat(e.target.value)
+                                  : undefined
+                              )
+                            }
+                            value={field.value ?? ""}
+                            placeholder="Optional"
+                            className="w-full md:w-32 h-[46px] tabular-nums"
+                            disabled={form.formState.isSubmitting}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={toggleUnit}
+                          className="w-20 h-[46px]"
+                          aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
+                          title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
+                        >
+                          ⟷ {unit === "lbs" ? "KG" : "LBS"}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Submit Button */}
+                <div>
+                  <label
+                    className="block text-xs mb-1 opacity-0 pointer-events-none"
+                    aria-hidden="true"
+                  >
+                    Submit
+                  </label>
+                  <Button
+                    type="submit"
+                    className="w-full h-[46px]"
+                    disabled={form.formState.isSubmitting}
+                  >
+                    {form.formState.isSubmitting ? "Logging..." : "Log Set"}
                   </Button>
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div>
-                <label
-                  className="block text-xs mb-1 opacity-0 pointer-events-none"
-                  aria-hidden="true"
-                >
-                  Submit
-                </label>
-                <Button
-                  type="submit"
-                  className="w-full h-[46px]"
-                  disabled={!selectedExerciseId || !reps || isSubmitting}
-                >
-                  {isSubmitting ? "Logging..." : "Log Set"}
-                </Button>
-              </div>
-            </div>
-
-            {/* Inline Exercise Creator (conditional) */}
-            {showInlineCreator && (
-              <div className="mt-4">
-                <InlineExerciseCreator
-                  onCreated={(exerciseId) => {
-                    setSelectedExerciseId(exerciseId);
-                    setShowInlineCreator(false);
-                  }}
-                  onCancel={() => setShowInlineCreator(false)}
-                />
-              </div>
-            )}
-          </form>
+              {/* Inline Exercise Creator (conditional) */}
+              {showInlineCreator && (
+                <div className="mt-4">
+                  <InlineExerciseCreator
+                    onCreated={(exerciseId) => {
+                      form.setValue("exerciseId", exerciseId);
+                      setShowInlineCreator(false);
+                    }}
+                    onCancel={() => setShowInlineCreator(false)}
+                  />
+                </div>
+              )}
+            </form>
+          </Form>
         </CardContent>
       </Card>
     );
