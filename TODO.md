@@ -280,8 +280,27 @@
 
 ## Phase 5: Final Cleanup & Testing
 
-- [ ] Remove unused terminal theme colors from tailwind.config.ts
-- [ ] Run full test suite (pnpm test:coverage)
+- [x] Remove unused terminal theme colors from tailwind.config.ts
+  - Already cleaned during Phase 2 migration
+
+- [ ] **Update tests for shadcn components** ⚠️ **REQUIRED BEFORE MERGE**
+  - **Status**: 22 failing tests (QuickLogForm: 17, ExerciseManager: 5)
+  - **Root Cause**: Tests written for old components don't work with Radix/RHF
+  - **Changes Needed**:
+    1. Update ExerciseManager delete tests (5 tests)
+       - Replace `window.confirm` expectations with AlertDialog interactions
+       - Click confirm/cancel buttons in dialog instead of mocking window.confirm
+       - Update text assertions ("2 sets" still in dialog content)
+    2. Update QuickLogForm interaction tests (17 tests)
+       - Radix Select: Different DOM structure (combobox role, not select element)
+       - React Hook Form: Button not disabled, validates on submit
+       - Last set indicator: Text split across multiple elements
+       - Form interactions: Need to trigger Radix Select properly
+  - **Estimated Effort**: 2-3 hours
+  - **Files**:
+    - `src/components/dashboard/exercise-manager.test.tsx`
+    - `src/components/dashboard/quick-log-form.test.tsx`
+
 - [ ] Manual QA on mobile (iOS Safari focus behavior)
 - [ ] Create PR with migration summary
 
