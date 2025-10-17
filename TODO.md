@@ -301,48 +301,13 @@
   - File size: 586 lines → 156 lines (73% reduction)
   - Test pass rate: 88.5% → 100% (127/127 passing)
 
-- [ ] **Extract form logic to useQuickLogForm hook**
-
-  **File**: `src/hooks/useQuickLogForm.ts` (NEW)
-
-  **Extract from QuickLogForm.tsx**:
-  - Lines 70-78: Form initialization with zod schema
-  - Lines 158-179: Form submission logic (`onSubmit`)
-  - Form state management and validation
-
-  **Hook API**:
-
-  ```typescript
-  export function useQuickLogForm(unit: "lbs" | "kg") {
-    const form = useForm<QuickLogFormValues>({
-      resolver: zodResolver(quickLogSchema),
-      defaultValues: {
-        exerciseId: "",
-        reps: undefined,
-        weight: undefined,
-        unit,
-      },
-    });
-
-    const logSet = useMutation(api.sets.logSet);
-
-    const onSubmit = async (values: QuickLogFormValues) => {
-      // Submission logic (lines 158-179)
-    };
-
-    return {
-      form,
-      onSubmit,
-      isSubmitting: form.formState.isSubmitting,
-    };
-  }
-  ```
-
-  **Update QuickLogForm.tsx**: Replace form logic with `const { form, onSubmit } = useQuickLogForm(unit)`
-
-  **Success**: Component still works, TypeScript passes, hook is independently testable
-
-  **Time**: 1-2 hours
+- [x] **Extract form logic to useQuickLogForm hook** ✅
+  - Commit: 3b44dbf
+  - Created src/hooks/useQuickLogForm.ts with form state management
+  - Exported QuickLogFormValues type for reuse
+  - Updated QuickLogForm.tsx to use new hook
+  - All tests pass (127/127), TypeScript clean
+  - Component focused on UI, business logic in hook
 
 - [ ] **Extract last set logic to useLastSet hook**
 

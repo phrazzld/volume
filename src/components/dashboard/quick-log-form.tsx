@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "convex/react";
 import {
   useState,
   useRef,
@@ -8,9 +7,7 @@ import {
   forwardRef,
   useEffect,
   KeyboardEvent,
-  useMemo,
 } from "react";
-import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +31,7 @@ import { InlineExerciseCreator } from "./inline-exercise-creator";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { Exercise, Set } from "@/types/domain";
 import { useQuickLogForm, QuickLogFormValues } from "@/hooks/useQuickLogForm";
+import { useLastSet } from "@/hooks/useLastSet";
 
 interface QuickLogFormProps {
   exercises: Exercise[];
@@ -102,30 +100,8 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     // Watch selected exercise for last set query
     const selectedExerciseId = form.watch("exerciseId");
 
-    // Query last set for selected exercise
-    const allSets = useQuery(api.sets.listSets, {});
-
-    // Find last set for selected exercise
-    const lastSet = useMemo(() => {
-      if (!selectedExerciseId || !allSets) return null;
-      const exerciseSets = allSets.filter(
-        (s) => s.exerciseId === selectedExerciseId
-      );
-      if (exerciseSets.length === 0) return null;
-      return exerciseSets[0]; // Already sorted by performedAt desc
-    }, [selectedExerciseId, allSets]);
-
-    // Format time ago
-    const formatTimeAgo = (timestamp: number) => {
-      const seconds = Math.floor((Date.now() - timestamp) / 1000);
-      if (seconds < 60) return `${seconds} SEC AGO`;
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return `${minutes} MIN AGO`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours} HR AGO`;
-      const days = Math.floor(hours / 24);
-      return `${days} DAY${days === 1 ? "" : "S"} AGO`;
-    };
+    // Get last set and time formatter
+    const { lastSet, formatTimeAgo } = useLastSet(selectedExerciseId);
 
     // Expose repeatSet method to parent via ref
     useImperativeHandle(ref, () => ({
