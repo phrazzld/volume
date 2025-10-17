@@ -237,15 +237,11 @@
 
 ### 3.2: Other Forms Migration
 
-- [ ] Convert InlineExerciseCreator to react-hook-form
-
-  ```
-  Files: src/components/dashboard/inline-exercise-creator.tsx
-  Schema: z.object({ name: z.string().min(1, "Name is required") })
-  Pattern: Follow QuickLogForm pattern (simpler - only 1 field)
-
-  Time: 1.5hr
-  ```
+- [x] Convert InlineExerciseCreator to react-hook-form
+  - Commit: 3e37c9c
+  - Created exerciseNameSchema with validation
+  - Migrated to useForm with FormField wrapper
+  - Preserved keyboard shortcuts and autofocus
 
 - [ ] Convert ExerciseManager edit mode to react-hook-form
 
