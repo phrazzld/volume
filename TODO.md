@@ -309,40 +309,13 @@
   - All tests pass (127/127), TypeScript clean
   - Component focused on UI, business logic in hook
 
-- [ ] **Extract last set logic to useLastSet hook**
-
-  **File**: `src/hooks/useLastSet.ts` (NEW)
-
-  **Extract from QuickLogForm.tsx**:
-  - Lines 119-133: Last set lookup logic
-  - Lines 135-145: Time formatting (`formatTimeAgo`)
-
-  **Hook API**:
-
-  ```typescript
-  export function useLastSet(exerciseId: string | null) {
-    const allSets = useQuery(api.sets.listSets, {});
-
-    const lastSet = useMemo(() => {
-      if (!exerciseId || !allSets) return null;
-      const exerciseSets = allSets.filter((s) => s.exerciseId === exerciseId);
-      if (exerciseSets.length === 0) return null;
-      return exerciseSets[0]; // Already sorted desc
-    }, [exerciseId, allSets]);
-
-    const formatTimeAgo = (timestamp: number) => {
-      // Lines 137-145
-    };
-
-    return { lastSet, formatTimeAgo };
-  }
-  ```
-
-  **Update QuickLogForm.tsx**: Replace logic with `const { lastSet, formatTimeAgo } = useLastSet(selectedExerciseId)`
-
-  **Success**: Component still works, time formatting testable in isolation
-
-  **Time**: 1 hour
+- [x] **Extract last set logic to useLastSet hook** ✅
+  - Commit: 6cc4c27
+  - Created src/hooks/useLastSet.ts with query and formatTimeAgo
+  - Updated QuickLogForm.tsx to use new hook
+  - Removed duplicate query and formatting logic
+  - All tests pass (127/127), TypeScript clean
+  - Time formatting logic now independently testable
 
 - [ ] **Write tests for useQuickLogForm hook**
 
