@@ -332,39 +332,21 @@
   - Reactivity tests for exerciseId and data changes
   - Test count: 152/152 passing (14 new tests)
 
-- [ ] **Simplify QuickLogForm component tests**
-
-  **File**: `src/components/dashboard/quick-log-form.test.tsx`
-
-  **Rewrite to ~100 lines** with focus on integration:
-
-  ```typescript
-  describe("QuickLogForm", () => {
-    it("renders all form fields");
-    it("integrates with useQuickLogForm hook");
-    it("integrates with useLastSet hook");
-    it("shows success toast on submit");
-    it("displays last set indicator when exercise has sets");
-    it("handles error with handleMutationError");
-  });
-  ```
-
-  **Remove**:
-  - All Radix Select interaction tests (already deleted)
-  - Detailed submission tests (covered by hook tests)
-  - Time formatting tests (covered by useLastSet tests)
-
-  **Success**: Component tests validate integration only, business logic tested elsewhere
-
-  **Time**: 1 hour
+- [x] **Simplify QuickLogForm component tests** ✅
+  - Commit: 870d653
+  - Reduced to 6 integration-focused tests (157 lines)
+  - Removed detailed business logic tests (now in hook tests)
+  - Focus: Hook integration, rendering, context integration
+  - Test count: 150/150 passing (removed 2 low-value tests)
+  - Component tests verify integration, hooks test business logic
 
 ### 5.2: Testing Documentation
 
-- [ ] **Add testing strategy to CLAUDE.md**
-
-  **File**: `/Users/phaedrus/Development/volume/CLAUDE.md`
-
-  **Add section after "Development Commands"**:
+- [x] **Add testing strategy to CLAUDE.md** ✅
+  - Commit: cd4b68a
+  - Added Testing Strategy section after Development Commands
+  - Includes: Test Pyramid, Running Tests, When Tests Fail, Adding New Features, Philosophy
+  - Documents pragmatic testing approach and lessons learned
 
   ````markdown
   ## Testing Strategy
@@ -413,58 +395,12 @@
 
   ```
 
-- [ ] **Create PR template with manual QA checklist**
-
-  **File**: `.github/PULL_REQUEST_TEMPLATE.md` (NEW)
-
-  **Content**:
-
-  ```markdown
-  ## Description
-
-  <!-- Brief description of changes -->
-
-  ## Type of Change
-
-  - [ ] Bug fix
-  - [ ] New feature
-  - [ ] Breaking change
-  - [ ] Documentation update
-
-  ## Manual QA Checklist
-
-  ### Desktop (Chrome/Firefox/Safari)
-
-  - [ ] Log a set with exercise + reps + weight
-  - [ ] Log a bodyweight set (no weight)
-  - [ ] Use last set "Use" button
-  - [ ] Delete an exercise
-  - [ ] Edit an exercise name
-  - [ ] Toggle kg/lbs
-  - [ ] View workout history
-
-  ### Mobile (iOS Safari) - CRITICAL
-
-  - [ ] Autofocus works (exercise → reps → weight)
-  - [ ] Keyboard doesn't hide inputs
-  - [ ] Delete confirmation works
-  - [ ] Navigation works smoothly
-
-  ## Test Results
-
-  - [ ] `pnpm test` passes
-  - [ ] `pnpm typecheck` passes
-  - [ ] `pnpm lint` passes
-  - [ ] `pnpm build` succeeds
-
-  ## Screenshots (if applicable)
-
-  <!-- Add screenshots for UI changes -->
-  ```
-
-  **Success**: Consistent manual QA process for all PRs
-
-  **Time**: 15 min
+- [x] **Create PR template with manual QA checklist** ✅
+  - Commit: 5c0d94c
+  - Created `.github/pull_request_template.md`
+  - Includes: Type of Change, Desktop QA (7 flows), Mobile QA (iOS Safari), Test Results
+  - Mobile-first focus with autofocus verification
+  - Consistent manual QA process for all PRs
 
 - [ ] Manual QA on mobile (iOS Safari focus behavior)
 - [ ] Create PR with migration summary
