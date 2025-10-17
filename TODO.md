@@ -243,14 +243,11 @@
   - Migrated to useForm with FormField wrapper
   - Preserved keyboard shortcuts and autofocus
 
-- [ ] Convert ExerciseManager edit mode to react-hook-form
-
-  ```
-  Files: src/components/dashboard/exercise-manager.tsx:31-52
-  Note: Inline editing, form per-row (more complex)
-
-  Time: 2hr
-  ```
+- [x] Convert ExerciseManager edit mode to react-hook-form
+  - Commit: 777fd53
+  - Created exerciseEditSchema for name validation
+  - Single form instance for inline editing (one row at a time)
+  - Preserved keyboard shortcuts and autofocus
 
 ---
 
