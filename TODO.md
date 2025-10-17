@@ -269,14 +269,12 @@
   - Simple confirmation message
   - Consistent with ExerciseManager pattern
 
-- [ ] Replace window.confirm in GroupedSetHistory
-
-  ```
-  Files: src/components/dashboard/grouped-set-history.tsx:41
-  Pattern: Same as ExerciseManager
-
-  Time: 30min
-  ```
+- [x] Replace window.confirm in GroupedSetHistory
+  - Commit: 1f4295c
+  - Replaced browser confirm with AlertDialog
+  - Added setToDelete state
+  - Simple confirmation message
+  - Phase 4.1 complete ✅
 
 ---
 
