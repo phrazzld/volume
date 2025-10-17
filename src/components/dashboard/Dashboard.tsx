@@ -190,7 +190,7 @@ export function Dashboard() {
   };
 
   return (
-    <PageLayout title="DASHBOARD">
+    <PageLayout title="Dashboard">
       {exercises.length === 0 ? (
         /* First Run Experience - Show when no exercises exist */
         <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
