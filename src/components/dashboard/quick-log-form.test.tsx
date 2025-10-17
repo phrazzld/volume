@@ -77,9 +77,9 @@ describe("QuickLogForm", () => {
   it("renders all form fields", () => {
     renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
-    expect(screen.getByLabelText(/EXERCISE/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/REPS/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/WEIGHT/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/exercise/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/reps/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/weight/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /LOG SET/i })
     ).toBeInTheDocument();
@@ -89,8 +89,8 @@ describe("QuickLogForm", () => {
     renderWithContext(<QuickLogForm exercises={mockExercises} />);
 
     // Form should initialize with useQuickLogForm defaults
-    const repsInput = screen.getByLabelText(/REPS/i) as HTMLInputElement;
-    const weightInput = screen.getByLabelText(/WEIGHT/i) as HTMLInputElement;
+    const repsInput = screen.getByLabelText(/reps/i) as HTMLInputElement;
+    const weightInput = screen.getByLabelText(/weight/i) as HTMLInputElement;
 
     // Empty form on initial render
     expect(repsInput.value).toBe("");
@@ -146,12 +146,12 @@ describe("QuickLogForm", () => {
   it("displays weight unit from context", () => {
     renderWithContext(<QuickLogForm exercises={mockExercises} />, "lbs");
 
-    expect(screen.getByText(/WEIGHT \(LBS\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/weight \(lbs\)/i)).toBeInTheDocument();
   });
 
   it("displays kg unit when context set to kg", () => {
     renderWithContext(<QuickLogForm exercises={mockExercises} />, "kg");
 
-    expect(screen.getByText(/WEIGHT \(KG\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/weight \(kg\)/i)).toBeInTheDocument();
   });
 });

@@ -48,9 +48,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
                     <TableHead>Exercise</TableHead>
                     <TableHead className="w-16">Sets</TableHead>
                     <TableHead className="w-20">Reps</TableHead>
-                    <TableHead className="w-32">
-                      Volume ({unit.toUpperCase()})
-                    </TableHead>
+                    <TableHead className="w-32">Volume ({unit})</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -65,7 +63,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
                       </TableCell>
                       <TableCell className="font-bold">
                         {exercise.volume > 0
-                          ? `${formatNumber(exercise.volume)} ${unit.toUpperCase()}`
+                          ? `${formatNumber(exercise.volume)} ${unit}`
                           : "—"}
                       </TableCell>
                     </TableRow>
@@ -111,7 +109,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
                     {/* Total Volume */}
                     <div className="p-3 border-r">
                       <p className="text-xs text-muted-foreground mb-2">
-                        Volume ({unit.toUpperCase()})
+                        Volume ({unit})
                       </p>
                       <p className="text-xl font-bold tabular-nums">
                         {stats.totalVolume > 0

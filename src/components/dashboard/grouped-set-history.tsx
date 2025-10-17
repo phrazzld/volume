@@ -152,7 +152,7 @@ export function GroupedSetHistory({
                         {/* WEIGHT */}
                         <TableCell className="font-bold">
                           {set.weight
-                            ? `${set.weight} ${(set.unit || preferredUnit).toUpperCase()}`
+                            ? `${set.weight} ${set.unit || preferredUnit}`
                             : "-"}
                         </TableCell>
 

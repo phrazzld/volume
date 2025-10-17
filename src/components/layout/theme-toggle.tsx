@@ -31,12 +31,7 @@ export function ThemeToggle() {
     }
   };
 
-  const displayTheme =
-    theme === "system"
-      ? "Auto"
-      : theme
-        ? theme.charAt(0).toUpperCase() + theme.slice(1)
-        : "---";
+  const displayTheme = theme || "---";
 
   return (
     <Button

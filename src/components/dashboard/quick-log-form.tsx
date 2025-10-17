@@ -254,7 +254,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   name="weight"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Weight ({unit.toUpperCase()})</FormLabel>
+                      <FormLabel>Weight ({unit})</FormLabel>
                       <div className="flex gap-1">
                         <FormControl>
                           <Input
