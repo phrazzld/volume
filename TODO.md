@@ -255,37 +255,12 @@
 
 ### 4.1: Dialogs & Confirmation Modals
 
-- [ ] Replace window.confirm with AlertDialog in ExerciseManager
-
-  ```
-  Files: src/components/dashboard/exercise-manager.tsx:54-71
-
-  Before:
-    if (!confirm(`Delete "${exercise.name}"?`)) return;
-
-  After:
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="icon"><Trash2 /></Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete "{exercise.name}"?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={() => deleteExercise({ id: exercise._id })}>
-            Delete
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-
-  Time: 1.5hr
-  ```
+- [x] Replace window.confirm with AlertDialog in ExerciseManager
+  - Commit: 4c764e7
+  - Replaced browser confirm with AlertDialog component
+  - Added exerciseToDelete state for dialog control
+  - Contextual messaging based on set count
+  - Professional UI with keyboard navigation
 
 - [ ] Replace window.confirm in SetCard component
 
