@@ -104,13 +104,13 @@ Today (3 exercises, 15 sets)
 
 ### Implementation Tasks
 
-- [~] **2.3.1: Create exercise grouping utility** (1h)
+- [x] **2.3.1: Create exercise grouping utility** (1h)
   - File: `src/lib/dashboard-utils.ts`
   - Function: `groupSetsByExercise(sets: Set[]) => ExerciseGroup[]`
   - Returns: Array of `{ exerciseId, sets[], totalVolume, totalReps }`
   - Sort: By most recently performed (first set in group)
 
-- [ ] **2.3.2: Create ExerciseSetGroup component** (2h)
+- [~] **2.3.2: Create ExerciseSetGroup component** (2h)
   - File: `src/components/dashboard/exercise-set-group.tsx`
   - Props: `{ exercise, sets, onRepeat, onDelete, preferredUnit }`
   - Features:
