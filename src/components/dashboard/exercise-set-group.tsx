@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronRight, RotateCcw, Trash2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  RotateCcw,
+  Trash2,
+  Trophy,
+} from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +24,7 @@ import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { formatNumber } from "@/lib/number-utils";
 import { Exercise, Set, WeightUnit } from "@/types/domain";
+import { detectHistoricalPRs } from "@/lib/historical-pr-detection";
 
 interface ExerciseSetGroupProps {
   exercise: Exercise;
@@ -41,6 +48,9 @@ export function ExerciseSetGroup({
   const [isExpanded, setIsExpanded] = useState(true);
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
   const [setToDelete, setSetToDelete] = useState<Set | null>(null);
+
+  // Detect which sets were PRs when they were logged
+  const prMap = useMemo(() => detectHistoricalPRs(sets), [sets]);
 
   const formatTime = (timestamp: number) => {
     const now = Date.now();
@@ -115,6 +125,16 @@ export function ExerciseSetGroup({
                 >
                   {/* Set details */}
                   <div className="flex items-center gap-6">
+                    {/* PR Badge */}
+                    {prMap.get(set._id) && (
+                      <div
+                        className="flex items-center gap-1 text-amber-500"
+                        title={`${prMap.get(set._id)} PR`}
+                      >
+                        <Trophy className="w-4 h-4" />
+                      </div>
+                    )}
+
                     {/* Reps */}
                     <div className="w-16">
                       <span className="font-bold tabular-nums">{set.reps}</span>
