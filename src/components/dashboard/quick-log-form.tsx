@@ -53,6 +53,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
 
     const { form, onSubmit } = useQuickLogForm({
       unit,
+      exercises,
       onSetLogged,
       onSuccess: () => {
         focusElement(repsInputRef);

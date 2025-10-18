@@ -18,24 +18,50 @@ vi.mock("@/lib/error-handler", () => ({
 
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(),
+  useQuery: vi.fn(),
+}));
+
+vi.mock("@/lib/pr-detection", () => ({
+  checkForPR: vi.fn(() => null), // Default: no PR detected
+}));
+
+vi.mock("@/components/dashboard/pr-celebration", () => ({
+  showPRCelebration: vi.fn(),
 }));
 
 describe("useQuickLogForm", () => {
   const mockLogSet = vi.fn();
   const mockOnSetLogged = vi.fn();
   const mockOnSuccess = vi.fn();
+  const mockExercises = [
+    {
+      _id: "exercise1" as any,
+      name: "Squats",
+      userId: "user1",
+      createdAt: 1,
+    },
+    {
+      _id: "exercise2" as any,
+      name: "Bench Press",
+      userId: "user1",
+      createdAt: 2,
+    },
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(convexReact.useMutation).mockReturnValue(
       Object.assign(mockLogSet, { withOptimisticUpdate: vi.fn() })
     );
+    // Mock useQuery to return empty array (no previous sets)
+    vi.mocked(convexReact.useQuery).mockReturnValue([]);
   });
 
   it("initializes with correct default values", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -53,6 +79,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "kg",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -65,6 +92,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -87,6 +115,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -114,6 +143,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -145,6 +175,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "kg",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -174,6 +205,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "kg",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -200,6 +232,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -224,6 +257,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -247,6 +281,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
@@ -269,6 +304,7 @@ describe("useQuickLogForm", () => {
     const { result } = renderHook(() =>
       useQuickLogForm({
         unit: "lbs",
+        exercises: mockExercises,
         onSetLogged: mockOnSetLogged,
         onSuccess: mockOnSuccess,
       })
