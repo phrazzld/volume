@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { ExerciseStats } from "@/lib/dashboard-utils";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { TrendingUp, Dumbbell, Repeat, Target } from "lucide-react";
 
 interface DailyStatsCardProps {
   stats: {
@@ -24,7 +25,7 @@ interface DailyStatsCardProps {
 }
 
 export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
-  const [showTotals, setShowTotals] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(true);
   const { unit } = useWeightUnit();
 
   // Format number with commas for readability
@@ -33,15 +34,67 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
   };
 
   return (
-    <Card className="mb-3">
+    <Card>
       <CardHeader>
-        <CardTitle>Daily Metrics</CardTitle>
+        <CardTitle>{"Today's Workout"}</CardTitle>
       </CardHeader>
       <CardContent>
-        {stats ? (
+        {stats && exerciseStats.length > 0 ? (
           <>
-            {/* Per-Exercise Breakdown - PRIMARY (always visible) */}
-            {exerciseStats.length > 0 ? (
+            {/* Hero Stats - PRIMARY (always visible, big numbers) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Total Volume */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
+                <TrendingUp className="w-5 h-5 text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground mb-1">
+                  Volume ({unit})
+                </p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {stats.totalVolume > 0
+                    ? formatNumber(stats.totalVolume)
+                    : "—"}
+                </p>
+              </div>
+
+              {/* Total Sets */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
+                <Repeat className="w-5 h-5 text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground mb-1">Sets</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {stats.totalSets}
+                </p>
+              </div>
+
+              {/* Total Reps */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
+                <Target className="w-5 h-5 text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground mb-1">Reps</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {stats.totalReps}
+                </p>
+              </div>
+
+              {/* Exercises Worked */}
+              <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
+                <Dumbbell className="w-5 h-5 text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground mb-1">Exercises</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {stats.exercisesWorked}
+                </p>
+              </div>
+            </div>
+
+            {/* Per-Exercise Breakdown - SECONDARY (collapsible) */}
+            <button
+              onClick={() => setShowBreakdown(!showBreakdown)}
+              className="w-full px-3 py-2 border-y text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-center mb-4"
+            >
+              {showBreakdown
+                ? "▲ Hide Exercise Breakdown"
+                : "▼ Show Exercise Breakdown"}
+            </button>
+
+            {showBreakdown && (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -70,72 +123,13 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
                   ))}
                 </TableBody>
               </Table>
-            ) : (
-              <div className="p-8 text-center">
-                <p className="text-muted-foreground text-sm mb-2">
-                  No sets today
-                </p>
-                <p className="text-sm">{"Let's go! 💪"}</p>
-              </div>
-            )}
-
-            {/* Aggregate Totals - SECONDARY (collapsible) */}
-            {exerciseStats.length > 0 && (
-              <>
-                <button
-                  onClick={() => setShowTotals(!showTotals)}
-                  className="w-full px-3 py-2 border-t text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs text-center"
-                >
-                  {showTotals ? "▲ Hide Totals" : "▼ Show Totals"}
-                </button>
-                {showTotals && (
-                  <div className="grid grid-cols-4 border-t">
-                    {/* Total Sets */}
-                    <div className="p-3 border-r">
-                      <p className="text-xs text-muted-foreground mb-2">Sets</p>
-                      <p className="text-xl font-bold tabular-nums">
-                        {stats.totalSets}
-                      </p>
-                    </div>
-
-                    {/* Total Reps */}
-                    <div className="p-3 border-r">
-                      <p className="text-xs text-muted-foreground mb-2">Reps</p>
-                      <p className="text-xl font-bold tabular-nums">
-                        {stats.totalReps}
-                      </p>
-                    </div>
-
-                    {/* Total Volume */}
-                    <div className="p-3 border-r">
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Volume ({unit})
-                      </p>
-                      <p className="text-xl font-bold tabular-nums">
-                        {stats.totalVolume > 0
-                          ? formatNumber(stats.totalVolume)
-                          : "—"}
-                      </p>
-                    </div>
-
-                    {/* Exercises Worked */}
-                    <div className="p-3">
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Exercises
-                      </p>
-                      <p className="text-xl font-bold tabular-nums">
-                        {stats.exercisesWorked}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </>
             )}
           </>
         ) : (
-          <div className="p-8 text-center">
+          <div className="py-12 text-center">
+            <Dumbbell className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-sm mb-2">No sets today</p>
-            <p className="text-sm">{"Let's go! 💪"}</p>
+            <p className="text-lg font-medium">{"Let's get started! 💪"}</p>
           </div>
         )}
       </CardContent>
