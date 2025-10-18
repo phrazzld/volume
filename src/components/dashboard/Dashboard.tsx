@@ -25,6 +25,7 @@ import {
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
 import { getTodayRange } from "@/lib/date-utils";
+import { calculateStreak } from "@/lib/streak-calculator";
 import type { Exercise, Set } from "@/types/domain";
 
 export function Dashboard() {
@@ -64,6 +65,12 @@ export function Dashboard() {
   const exerciseStats = useMemo(
     () => calculateDailyStatsByExercise(todaysSets, exercises, unit),
     [todaysSets, exercises, unit]
+  );
+
+  // Calculate workout streak
+  const currentStreak = useMemo(
+    () => (allSets ? calculateStreak(allSets) : 0),
+    [allSets]
   );
 
   // Group today's sets by exercise for workout view
@@ -209,7 +216,11 @@ export function Dashboard() {
       ) : (
         <>
           {/* Daily Stats Card */}
-          <DailyStatsCard stats={dailyStats} exerciseStats={exerciseStats} />
+          <DailyStatsCard
+            stats={dailyStats}
+            exerciseStats={exerciseStats}
+            currentStreak={currentStreak}
+          />
 
           {/* Quick Log Form - MOVED TO PRIME POSITION */}
           <QuickLogForm

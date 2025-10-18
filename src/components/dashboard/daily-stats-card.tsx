@@ -13,7 +13,8 @@ import {
 import { ExerciseStats } from "@/lib/dashboard-utils";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { formatNumber } from "@/lib/number-utils";
-import { TrendingUp, Dumbbell, Repeat, Target } from "lucide-react";
+import { TrendingUp, Dumbbell, Repeat, Target, Flame } from "lucide-react";
+import { formatStreak, getStreakMilestone } from "@/lib/streak-calculator";
 
 interface DailyStatsCardProps {
   stats: {
@@ -23,9 +24,14 @@ interface DailyStatsCardProps {
     exercisesWorked: number;
   } | null;
   exerciseStats: ExerciseStats[];
+  currentStreak: number;
 }
 
-export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
+export function DailyStatsCard({
+  stats,
+  exerciseStats,
+  currentStreak,
+}: DailyStatsCardProps) {
   const [showBreakdown, setShowBreakdown] = useState(true);
   const { unit } = useWeightUnit();
 
@@ -38,7 +44,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
         {stats && exerciseStats.length > 0 ? (
           <>
             {/* Hero Stats - PRIMARY (always visible, big numbers) */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               {/* Total Volume */}
               <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
                 <TrendingUp className="w-5 h-5 text-muted-foreground mb-2" />
@@ -77,6 +83,37 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
                 <p className="text-4xl font-bold tabular-nums">
                   {stats.exercisesWorked}
                 </p>
+              </div>
+
+              {/* Workout Streak */}
+              <div
+                className={`flex flex-col items-center justify-center p-4 rounded-lg border ${
+                  currentStreak >= 7
+                    ? "bg-amber-500/10 border-amber-500/20"
+                    : "bg-muted/50"
+                }`}
+              >
+                <Flame
+                  className={`w-5 h-5 mb-2 ${
+                    currentStreak >= 7
+                      ? "text-amber-500"
+                      : "text-muted-foreground"
+                  }`}
+                />
+                <p className="text-xs text-muted-foreground mb-1">Streak</p>
+                <p className="text-4xl font-bold tabular-nums">
+                  {currentStreak}
+                </p>
+                {getStreakMilestone(currentStreak) && (
+                  <p className="text-xs text-amber-500 mt-1">
+                    {getStreakMilestone(currentStreak) === "week" &&
+                      "Week milestone! 🎉"}
+                    {getStreakMilestone(currentStreak) === "month" &&
+                      "Month milestone! 🔥"}
+                    {getStreakMilestone(currentStreak) === "hundred" &&
+                      "100 days! 💪"}
+                  </p>
+                )}
               </div>
             </div>
 
