@@ -154,7 +154,7 @@ Today (3 exercises, 15 sets)
 **Current:** Generic gray, minimal color usage
 **Target:** Purposeful color for hierarchy and emotion
 
-- [~] **Define color tokens** in `tailwind.config.ts`
+- [x] **Define color tokens** in `tailwind.config.ts`
 
 ```typescript
 // Add to theme.extend.colors
@@ -180,11 +180,11 @@ colors: {
 }
 ```
 
-- [ ] **Apply colors strategically**
-  - Log Set button: `bg-primary hover:bg-primary-hover`
-  - PR badges: `bg-success text-success-foreground`
-  - Insights/tips: `border-accent bg-accent-light`
-  - Keep most UI neutral (don't overuse color)
+- [x] **Apply colors strategically**
+  - Log Set button: `bg-primary hover:bg-primary-hover` ✓ (shadcn Button default)
+  - PR badges: `bg-success text-success-foreground` (Phase 4)
+  - Insights/tips: `border-accent bg-accent-light` (Phase 4)
+  - Keep most UI neutral (don't overuse color) ✓
 
 ### 3.2: Typography Scale (30m)
 
