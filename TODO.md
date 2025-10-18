@@ -2,12 +2,12 @@
 
 ## Progress Summary
 
-**Status:** Phase 2.2 Complete ✅ | Phase 2.3 Next (Exercise Grouping)
+**Status:** Phase 2.3 Complete ✅ | Phase 3 Next (Visual Design)
 
 - ✅ **Phase 1:** Information Architecture (Navigation restructure, Exercises page)
 - ✅ **Phase 2.1:** Hero Stats Card (Big numbers, icons, visual hierarchy)
 - ✅ **Phase 2.2:** Quick Log Form Review (Already optimized)
-- ⏳ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
+- ✅ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
 - ⏳ **Phase 3:** Visual Design System (Colors, typography, spacing)
 - ⏳ **Phase 4:** Motivational Elements (PRs, streaks, insights)
 - ⏳ **Phase 5:** Mobile Optimization (Bottom sheet, touch targets)
@@ -119,13 +119,13 @@ Today (3 exercises, 15 sets)
     - Compact set list (no "Exercise" column needed)
     - Actions: Repeat, Delete (same as current)
 
-- [~] **2.3.3: Update GroupedSetHistory component** (1h)
+- [x] **2.3.3: Update GroupedSetHistory component** (1h)
   - File: `src/components/dashboard/grouped-set-history.tsx`
   - Replace chronological table with exercise groups
   - Remove "Exercise" column (redundant)
   - Preserve time formatting, actions
 
-- [ ] **2.3.4: Update Dashboard.tsx** (30m)
+- [x] **2.3.4: Update Dashboard.tsx** (30m)
   - File: `src/components/dashboard/Dashboard.tsx`
   - Pass `groupSetsByExercise(todaysSets)` to GroupedSetHistory
   - Update component title to "Today's Workout"
