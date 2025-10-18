@@ -199,25 +199,33 @@ Meta text:      text-sm (14px)                // Timestamps, hints
 Tiny text:      text-xs (12px)                // Footnotes
 ```
 
-- [~] **Apply to key components**
-  - DailyStatsCard hero numbers: Increase to `text-4xl`
-  - Card titles: Ensure `text-xl font-semibold`
-  - Timestamps: `text-sm text-muted-foreground`
+- [x] **Apply to key components**
+  - DailyStatsCard hero numbers: Increase to `text-4xl` ✓
+  - Card titles: Ensure `text-xl font-semibold` ✓
+  - Timestamps: `text-sm text-muted-foreground` ✓
 
 ### 3.3: Spacing Rhythm (30m)
 
 **Current:** Inconsistent spacing
 **Target:** 8px base unit throughout
 
-- [ ] **Audit spacing** in key components
-  - Card padding: `p-6` (24px)
-  - Section gaps: `space-y-8` (32px)
-  - Form field gaps: `gap-4` (16px)
-  - Inline element gaps: `gap-2` (8px)
+- [x] **Audit spacing** in key components
+  - Card padding: `p-6` (24px) ✓ Already consistent (shadcn default)
+  - Section gaps: `space-y-8` (32px) → PageLayout needs update (currently `space-y-4`)
+  - Form field gaps: `gap-4` (16px) ✓ Already consistent
+  - Inline element gaps: `gap-2` (8px) → Mixed (`gap-1` to `gap-6`), acceptable variation
 
-- [ ] **Update PageLayout** spacing
+  ```
+  Audit findings:
+  - PageLayout spacing: space-y-4 (16px) → should be space-y-8 (32px)
+  - Card components: p-6 already standard ✓
+  - Form grids: gap-4 already standard ✓
+  - Inline gaps: Contextual variation (gap-1 for icons, gap-2 for buttons, gap-3+ for sections)
+  ```
+
+- [x] **Update PageLayout** spacing
   - File: `src/components/layout/page-layout.tsx`
-  - Standardize page content spacing
+  - Standardize page content spacing ✓
 
 ### 3.4: Visual Depth (30m)
 
