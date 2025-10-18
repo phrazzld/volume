@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   calculateDailyStats,
   calculateDailyStatsByExercise,
-  groupSetsByDay,
+  groupSetsByExercise,
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
 import { getTodayRange } from "@/lib/date-utils";
@@ -65,8 +65,11 @@ export function Dashboard() {
     [todaysSets, exercises, unit]
   );
 
-  // Group today's sets by time
-  const groupedSets = useMemo(() => groupSetsByDay(todaysSets), [todaysSets]);
+  // Group today's sets by exercise for workout view
+  const exerciseGroups = useMemo(
+    () => groupSetsByExercise(todaysSets, unit),
+    [todaysSets, unit]
+  );
 
   // Build exercise Map for O(1) lookups (fixes BACKLOG #11)
   const exerciseMap = useMemo(
@@ -208,7 +211,7 @@ export function Dashboard() {
 
           {/* Today's Set History */}
           <GroupedSetHistory
-            groupedSets={groupedSets}
+            exerciseGroups={exerciseGroups}
             exerciseMap={exerciseMap}
             onRepeat={handleRepeatSet}
             onDelete={handleDeleteSet}

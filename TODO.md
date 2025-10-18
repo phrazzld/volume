@@ -110,7 +110,7 @@ Today (3 exercises, 15 sets)
   - Returns: Array of `{ exerciseId, sets[], totalVolume, totalReps }`
   - Sort: By most recently performed (first set in group)
 
-- [~] **2.3.2: Create ExerciseSetGroup component** (2h)
+- [x] **2.3.2: Create ExerciseSetGroup component** (2h)
   - File: `src/components/dashboard/exercise-set-group.tsx`
   - Props: `{ exercise, sets, onRepeat, onDelete, preferredUnit }`
   - Features:
@@ -119,7 +119,7 @@ Today (3 exercises, 15 sets)
     - Compact set list (no "Exercise" column needed)
     - Actions: Repeat, Delete (same as current)
 
-- [ ] **2.3.3: Update GroupedSetHistory component** (1h)
+- [~] **2.3.3: Update GroupedSetHistory component** (1h)
   - File: `src/components/dashboard/grouped-set-history.tsx`
   - Replace chronological table with exercise groups
   - Remove "Exercise" column (redundant)

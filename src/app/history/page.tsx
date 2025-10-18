@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePaginatedQuery, useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
+import { ChronologicalSetHistory } from "@/components/dashboard/chronological-set-history";
 import { groupSetsByDay } from "@/lib/dashboard-utils";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -85,7 +85,7 @@ export default function HistoryPage() {
 
   return (
     <PageLayout title="Workout History">
-      <GroupedSetHistory
+      <ChronologicalSetHistory
         groupedSets={groupedSets}
         exerciseMap={exerciseMap}
         onRepeat={handleRepeat}
