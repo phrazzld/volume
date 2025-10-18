@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { ExerciseStats } from "@/lib/dashboard-utils";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import { formatNumber } from "@/lib/number-utils";
 import { TrendingUp, Dumbbell, Repeat, Target } from "lucide-react";
 
 interface DailyStatsCardProps {
@@ -27,11 +28,6 @@ interface DailyStatsCardProps {
 export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
   const [showBreakdown, setShowBreakdown] = useState(true);
   const { unit } = useWeightUnit();
-
-  // Format number with commas for readability
-  const formatNumber = (num: number): string => {
-    return num.toLocaleString("en-US");
-  };
 
   return (
     <Card>

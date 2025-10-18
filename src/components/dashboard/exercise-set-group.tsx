@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
+import { formatNumber } from "@/lib/number-utils";
 import { Exercise, Set, WeightUnit } from "@/types/domain";
 
 interface ExerciseSetGroupProps {
@@ -40,10 +41,6 @@ export function ExerciseSetGroup({
   const [isExpanded, setIsExpanded] = useState(true);
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
   const [setToDelete, setSetToDelete] = useState<Set | null>(null);
-
-  const formatNumber = (num: number): string => {
-    return num.toLocaleString("en-US");
-  };
 
   const formatTime = (timestamp: number) => {
     const now = Date.now();

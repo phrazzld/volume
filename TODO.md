@@ -2,13 +2,13 @@
 
 ## Progress Summary
 
-**Status:** Phase 2.3 Complete ✅ | Phase 3 Next (Visual Design)
+**Status:** Phase 3 Complete ✅ | Phase 4 Next (Motivational Elements)
 
 - ✅ **Phase 1:** Information Architecture (Navigation restructure, Exercises page)
 - ✅ **Phase 2.1:** Hero Stats Card (Big numbers, icons, visual hierarchy)
 - ✅ **Phase 2.2:** Quick Log Form Review (Already optimized)
 - ✅ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
-- ⏳ **Phase 3:** Visual Design System (Colors, typography, spacing)
+- ✅ **Phase 3:** Visual Design System (Colors, typography, spacing, shadows)
 - ⏳ **Phase 4:** Motivational Elements (PRs, streaks, insights)
 - ⏳ **Phase 5:** Mobile Optimization (Bottom sheet, touch targets)
 
@@ -188,10 +188,10 @@ colors: {
 
 ### 3.2: Typography Scale (30m)
 
-- [ ] **Define text sizes** in `tailwind.config.ts` or use built-in scale
+- [x] **Define text sizes** in `tailwind.config.ts` or use built-in scale ✓
 
 ```typescript
-// Usage guide (not config, just reference)
+// Usage guide - Using Tailwind's built-in scale (no custom config needed)
 Hero numbers:  text-4xl (48px) font-bold      // Daily volume, PR stats
 Section titles: text-xl (20px) font-semibold  // Card titles
 Body text:      text-base (16px)              // Form labels, table data
@@ -394,13 +394,13 @@ Tiny text:      text-xs (12px)                // Footnotes
 
 These can be done anytime for immediate polish:
 
-- [ ] Add primary color to "Log Set" button
-- [ ] Increase hero stat font size to `text-4xl`
-- [ ] Add subtle card shadows (`shadow-sm`)
-- [ ] Round volume numbers (12,450 → 12.5K)
+- [x] Add primary color to "Log Set" button ✓ (Phase 3 - Button default variant)
+- [x] Increase hero stat font size to `text-4xl` ✓ (Phase 3 - Typography)
+- [x] Add subtle card shadows (`shadow-sm`) ✓ (Phase 3 - Visual Depth)
+- [x] Round volume numbers (12,450 → 12.4K) ✓
 - [ ] Add loading spinner to "Log Set" button
 - [ ] Improve empty state illustrations
-- [ ] Add hover states to exercise groups
+- [x] Add hover states to exercise groups ✓ (Phase 3 - Card hover:shadow-md)
 - [ ] Smooth scroll to latest set after logging
 
 ---
