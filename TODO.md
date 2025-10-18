@@ -251,7 +251,7 @@ Tiny text:      text-xs (12px)                // Footnotes
 
 **Goal:** Add gamification and feedback to encourage consistent use.
 
-### 4.1: PR Detection (2h)
+### 4.1: PR Detection (2h) ✅
 
 - [x] **Create PR detection utility** ✓
   - File: `src/lib/pr-detection.ts`
@@ -259,29 +259,30 @@ Tiny text:      text-xs (12px)                // Footnotes
   - Types: `'weight' | 'reps' | 'volume' | null`
   - Logic: Compare current set against all previous for same exercise
 
-- [ ] **Create PR celebration component**
+- [x] **Create PR celebration component** ✓
   - File: `src/components/dashboard/pr-celebration.tsx`
   - Shows: "🎉 NEW PR! Squats: 315 × 12 (previous: 315 × 10)"
   - Auto-dismiss after 5 seconds
-  - Optional: Confetti animation (react-confetti library)
+  - Uses Sonner toast with 🏆 icon
 
-- [ ] **Integrate PR detection**
-  - Check after each set logged
-  - Show celebration toast
-  - Add PR badge in set history (🏆 icon)
+- [x] **Integrate PR detection** ✓
+  - Check after each set logged (useQuickLogForm hook)
+  - Show celebration toast (showPRCelebration)
+  - Add PR badge in set history (🏆 Trophy icon in ExerciseSetGroup)
 
-### 4.2: Streak Counter (1h)
+### 4.2: Streak Counter (1h) ✅
 
-- [ ] **Create streak calculation utility**
+- [x] **Create streak calculation utility** ✓
   - File: `src/lib/streak-calculator.ts`
   - Query all sets, group by day
   - Calculate consecutive days with sets logged
-  - Handle timezone properly
+  - Handle timezone properly (using date-fns)
 
-- [ ] **Display streak in header or hero stats**
-  - Component: DailyStatsCard or Nav
-  - Format: "🔥 7 Day Streak"
+- [x] **Display streak in DailyStatsCard** ✓
+  - Component: DailyStatsCard
+  - Format: "🔥 X Day Streak"
   - Celebrate milestones (7, 30, 100 days)
+  - Highlighted background for 7+ day streaks
 
 ### 4.3: Contextual Insights (1h)
 
