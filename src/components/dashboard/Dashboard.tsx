@@ -33,6 +33,7 @@ export function Dashboard() {
     null
   );
   const formRef = useRef<QuickLogFormHandle>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
   const { unit } = useWeightUnit();
 
   // Fetch data from Convex
@@ -103,10 +104,18 @@ export function Dashboard() {
     formRef.current?.repeatSet(set);
   };
 
-  // Handle set logged - show undo toast
+  // Handle set logged - show undo toast and scroll to history
   const handleSetLogged = (setId: Id<"sets">) => {
     setLastLoggedSetId(setId);
     setUndoToastVisible(true);
+
+    // Smooth scroll to history section to show the newly logged set
+    setTimeout(() => {
+      historyRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 100); // Small delay to ensure DOM has updated
   };
 
   // Handle undo - delete the last logged set
@@ -210,12 +219,14 @@ export function Dashboard() {
           />
 
           {/* Today's Set History */}
-          <GroupedSetHistory
-            exerciseGroups={exerciseGroups}
-            exerciseMap={exerciseMap}
-            onRepeat={handleRepeatSet}
-            onDelete={handleDeleteSet}
-          />
+          <div ref={historyRef}>
+            <GroupedSetHistory
+              exerciseGroups={exerciseGroups}
+              exerciseMap={exerciseMap}
+              onRepeat={handleRepeatSet}
+              onDelete={handleDeleteSet}
+            />
+          </div>
         </>
       )}
 

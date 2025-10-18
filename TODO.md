@@ -401,7 +401,7 @@ These can be done anytime for immediate polish:
 - [x] Add loading spinner to "Log Set" button ✓
 - [ ] Improve empty state illustrations
 - [x] Add hover states to exercise groups ✓ (Phase 3 - Card hover:shadow-md)
-- [ ] Smooth scroll to latest set after logging
+- [x] Smooth scroll to latest set after logging ✓
 
 ---
 
