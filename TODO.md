@@ -253,7 +253,7 @@ Tiny text:      text-xs (12px)                // Footnotes
 
 ### 4.1: PR Detection (2h)
 
-- [ ] **Create PR detection utility**
+- [x] **Create PR detection utility** ✓
   - File: `src/lib/pr-detection.ts`
   - Function: `checkForPR(set, previousSets) => PRType | null`
   - Types: `'weight' | 'reps' | 'volume' | null`
