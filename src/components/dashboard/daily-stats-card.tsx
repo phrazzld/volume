@@ -49,7 +49,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
                 <p className="text-xs text-muted-foreground mb-1">
                   Volume ({unit})
                 </p>
-                <p className="text-2xl font-bold tabular-nums">
+                <p className="text-4xl font-bold tabular-nums">
                   {stats.totalVolume > 0
                     ? formatNumber(stats.totalVolume)
                     : "—"}
@@ -60,7 +60,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
               <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
                 <Repeat className="w-5 h-5 text-muted-foreground mb-2" />
                 <p className="text-xs text-muted-foreground mb-1">Sets</p>
-                <p className="text-2xl font-bold tabular-nums">
+                <p className="text-4xl font-bold tabular-nums">
                   {stats.totalSets}
                 </p>
               </div>
@@ -69,7 +69,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
               <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
                 <Target className="w-5 h-5 text-muted-foreground mb-2" />
                 <p className="text-xs text-muted-foreground mb-1">Reps</p>
-                <p className="text-2xl font-bold tabular-nums">
+                <p className="text-4xl font-bold tabular-nums">
                   {stats.totalReps}
                 </p>
               </div>
@@ -78,7 +78,7 @@ export function DailyStatsCard({ stats, exerciseStats }: DailyStatsCardProps) {
               <div className="flex flex-col items-center justify-center p-4 rounded-lg border bg-muted/50">
                 <Dumbbell className="w-5 h-5 text-muted-foreground mb-2" />
                 <p className="text-xs text-muted-foreground mb-1">Exercises</p>
-                <p className="text-2xl font-bold tabular-nums">
+                <p className="text-4xl font-bold tabular-nums">
                   {stats.exercisesWorked}
                 </p>
               </div>

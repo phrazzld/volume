@@ -199,7 +199,7 @@ Meta text:      text-sm (14px)                // Timestamps, hints
 Tiny text:      text-xs (12px)                // Footnotes
 ```
 
-- [ ] **Apply to key components**
+- [~] **Apply to key components**
   - DailyStatsCard hero numbers: Increase to `text-4xl`
   - Card titles: Ensure `text-xl font-semibold`
   - Timestamps: `text-sm text-muted-foreground`
