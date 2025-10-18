@@ -9,7 +9,11 @@ import type { Set } from "@/types/domain";
  * @param toUnit - Target unit ("lbs" or "kg")
  * @returns Converted weight value
  */
-export function convertWeight(weight: number, fromUnit: WeightUnit, toUnit: WeightUnit): number {
+export function convertWeight(
+  weight: number,
+  fromUnit: WeightUnit,
+  toUnit: WeightUnit
+): number {
   if (fromUnit === toUnit) return weight;
 
   // Convert lbs to kg: divide by 2.20462
@@ -81,7 +85,7 @@ export function calculateDailyStats(
       // Convert weight to target unit before calculating volume
       const setUnit = normalizeWeightUnit(set.unit);
       const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
-      return sum + (set.reps * convertedWeight);
+      return sum + set.reps * convertedWeight;
     }, 0),
     exercisesWorked: new Set(todaySets.map((s) => s.exerciseId)).size,
   };
@@ -249,4 +253,70 @@ export function sortExercisesByRecency(
     if (aUsed !== bUsed) return bUsed - aUsed;
     return a.name.localeCompare(b.name);
   });
+}
+
+export interface ExerciseGroup {
+  exerciseId: Id<"exercises">;
+  sets: Set[];
+  totalVolume: number;
+  totalReps: number;
+  mostRecentSetTime: number;
+}
+
+/**
+ * Group sets by exercise for a workout session view.
+ * Shows which exercises were performed and aggregates their totals.
+ * Sorted by most recently performed (last set in each exercise group).
+ *
+ * @param sets - Array of sets to group (typically today's sets)
+ * @param targetUnit - Unit to convert all weights to for volume calculation
+ * @returns Array of exercise groups sorted by most recent activity
+ */
+export function groupSetsByExercise(
+  sets: Set[] | undefined,
+  targetUnit: WeightUnit = "lbs"
+): ExerciseGroup[] {
+  if (!sets || sets.length === 0) return [];
+
+  // Group sets by exercise
+  const groupsMap = new Map<Id<"exercises">, ExerciseGroup>();
+
+  sets.forEach((set) => {
+    if (!groupsMap.has(set.exerciseId)) {
+      groupsMap.set(set.exerciseId, {
+        exerciseId: set.exerciseId,
+        sets: [],
+        totalVolume: 0,
+        totalReps: 0,
+        mostRecentSetTime: 0,
+      });
+    }
+
+    const group = groupsMap.get(set.exerciseId)!;
+    group.sets.push(set);
+    group.totalReps += set.reps;
+
+    // Track most recent set time for sorting
+    if (set.performedAt > group.mostRecentSetTime) {
+      group.mostRecentSetTime = set.performedAt;
+    }
+
+    // Calculate volume with unit conversion
+    if (set.weight) {
+      const setUnit = normalizeWeightUnit(set.unit);
+      const convertedWeight = convertWeight(set.weight, setUnit, targetUnit);
+      group.totalVolume += set.reps * convertedWeight;
+    }
+  });
+
+  // Convert to array and sort by most recently performed
+  const groups = Array.from(groupsMap.values());
+
+  groups.forEach((group) => {
+    // Sort sets within each group newest first
+    group.sets.sort((a, b) => b.performedAt - a.performedAt);
+  });
+
+  // Sort groups by most recent set time (most recent exercise first)
+  return groups.sort((a, b) => b.mostRecentSetTime - a.mostRecentSetTime);
 }

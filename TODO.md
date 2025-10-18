@@ -104,7 +104,7 @@ Today (3 exercises, 15 sets)
 
 ### Implementation Tasks
 
-- [ ] **2.3.1: Create exercise grouping utility** (1h)
+- [~] **2.3.1: Create exercise grouping utility** (1h)
   - File: `src/lib/dashboard-utils.ts`
   - Function: `groupSetsByExercise(sets: Set[]) => ExerciseGroup[]`
   - Returns: Array of `{ exerciseId, sets[], totalVolume, totalReps }`
