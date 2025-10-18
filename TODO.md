@@ -398,7 +398,7 @@ These can be done anytime for immediate polish:
 - [x] Increase hero stat font size to `text-4xl` ✓ (Phase 3 - Typography)
 - [x] Add subtle card shadows (`shadow-sm`) ✓ (Phase 3 - Visual Depth)
 - [x] Round volume numbers (12,450 → 12.4K) ✓
-- [ ] Add loading spinner to "Log Set" button
+- [x] Add loading spinner to "Log Set" button ✓
 - [ ] Improve empty state illustrations
 - [x] Add hover states to exercise groups ✓ (Phase 3 - Card hover:shadow-md)
 - [ ] Smooth scroll to latest set after logging

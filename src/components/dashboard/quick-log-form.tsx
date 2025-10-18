@@ -32,6 +32,7 @@ import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { Exercise, Set } from "@/types/domain";
 import { useQuickLogForm, QuickLogFormValues } from "@/hooks/useQuickLogForm";
 import { useLastSet } from "@/hooks/useLastSet";
+import { Loader2 } from "lucide-react";
 
 interface QuickLogFormProps {
   exercises: Exercise[];
@@ -307,7 +308,14 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                     className="w-full h-[46px]"
                     disabled={form.formState.isSubmitting}
                   >
-                    {form.formState.isSubmitting ? "Logging..." : "Log Set"}
+                    {form.formState.isSubmitting ? (
+                      <>
+                        <Loader2 className="animate-spin" />
+                        Logging...
+                      </>
+                    ) : (
+                      "Log Set"
+                    )}
                   </Button>
                 </div>
               </div>
