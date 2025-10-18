@@ -1,428 +1,483 @@
-# TODO: Complete shadcn/ui Migration
+# TODO: Dashboard UX Redesign
 
 ## Progress Summary
 
-**Status:** Phase 2 Complete ✅ | Phase 3 In Progress (1/9 tasks)
+**Status:** Phase 2.2 Complete ✅ | Phase 2.3 Next (Exercise Grouping)
 
-- ✅ Phase 1: Foundation Setup
-- ✅ Phase 2: Core Components Migration (Buttons, Inputs, Select, Table, Card, Layout)
-- ✅ **Bonus:** Terminal Styling Cleanup (all terminal-\* classes removed)
-- 🔄 Phase 3: Forms & Validation (zod schema created, forms pending)
-- ⏳ Phase 4: Complex Components (dialogs, modals)
+- ✅ **Phase 1:** Information Architecture (Navigation restructure, Exercises page)
+- ✅ **Phase 2.1:** Hero Stats Card (Big numbers, icons, visual hierarchy)
+- ✅ **Phase 2.2:** Quick Log Form Review (Already optimized)
+- ⏳ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
+- ⏳ **Phase 3:** Visual Design System (Colors, typography, spacing)
+- ⏳ **Phase 4:** Motivational Elements (PRs, streaks, insights)
+- ⏳ **Phase 5:** Mobile Optimization (Bottom sheet, touch targets)
+
+**Previous Work:**
+
+- ✅ shadcn/ui migration complete (PR #15)
+- ✅ 150 tests passing, TypeScript clean
+- ✅ React-hook-form + zod validation throughout
 
 ---
 
 ## Context & Patterns
 
-### shadcn MCP Tools (ALWAYS USE)
+### Current Tech Stack
 
-**Before migration:**
-
-1. `mcp__shadcn__search_items_in_registries(query="component-name")`
-2. `mcp__shadcn__get_item_examples_from_registries(query="component-demo")`
-3. `mcp__shadcn__view_items_in_registries(items=["@shadcn/component"])`
-
-**After migration:**
-
-- `mcp__shadcn__get_audit_checklist()` - Run quality checks
+- **UI Components:** shadcn/ui (Radix primitives + Tailwind)
+- **Forms:** react-hook-form + zod validation
+- **State:** Convex (useQuery/useMutation)
+- **Icons:** lucide-react
+- **Testing:** vitest + @testing-library/react
+- **Styling:** Tailwind CSS (utility-first)
 
 ### Codebase Patterns
 
-- Tests: `vitest` + `@testing-library/react`
-- Mutations: `useMutation(api.*.*)` from Convex
-- Context: `WeightUnitProvider` for app-wide state
-- Layout: `LAYOUT` constants from `src/lib/layout-constants.ts`
-- Errors: `handleMutationError()` from `src/lib/error-handler.ts`
+```typescript
+// Data fetching
+const data = useQuery(api.module.functionName, { args });
+
+// Mutations
+const mutate = useMutation(api.module.functionName);
+await mutate({ args });
+
+// Forms
+const form = useForm<FormValues>({
+  resolver: zodResolver(schema),
+  defaultValues: { ... }
+});
+
+// Error handling
+import { handleMutationError } from "@/lib/error-handler";
+try {
+  await mutation();
+} catch (error) {
+  handleMutationError(error, "Context");
+}
+```
+
+### Design Principles
+
+From brainstorming session:
+
+1. **User-facing language** - "Today" not "Dashboard", "Exercises" not "Manage"
+2. **Visual hierarchy** - Hero stats > actions > details
+3. **Data density** - Show value, hide noise (collapsible breakdowns)
+4. **Motivational** - Celebrate achievements (PRs, streaks)
+5. **Mobile-first** - Touch targets, keyboard behavior, bottom sheets
 
 ---
 
-## Phase 3: Forms & Validation (IN PROGRESS)
+## Phase 2.3: Exercise Grouping (HIGH IMPACT)
 
-### 3.1: QuickLogForm Migration
+**Goal:** Restructure set history to group by exercise, not just chronological order.
 
-- [x] Create zod schema for QuickLogForm
-  - Commit: 831ac65
-  - Schema: `quickLogSchema` with exerciseId, reps, weight, unit
+**Current State:**
 
-- [x] Convert QuickLogForm to react-hook-form (ALL-IN-ONE MIGRATION)
-  - Commit: df788db
-  - Migrated all form state to useForm hook
-  - Wrapped all inputs in FormField components
-  - Preserved autofocus flow and keyboard navigation
-  - TypeScript passes, core functionality intact
+```
+Today (15 sets)
+├─ 5:30 PM - Squats - 12 reps @ 315 lbs
+├─ 5:33 PM - Squats - 10 reps @ 315 lbs
+├─ 5:35 PM - Bench Press - 8 reps @ 225 lbs
+├─ 5:38 PM - Squats - 10 reps @ 315 lbs  ← Hard to scan
+└─ ...
+```
 
-  ```
-  **CRITICAL: This task includes autofocus + last set preservation. Do NOT split.**
+**Target State:**
 
-  Files: src/components/dashboard/quick-log-form.tsx
-  Pattern: Form component in src/components/ui/form.tsx (FormField, FormItem, FormControl)
-  Schema: quickLogSchema already exists (lines 34-39)
+```
+Today (3 exercises, 15 sets)
 
-  **🔍 STEP 1: Research (REQUIRED):**
-    1. mcp__shadcn__get_item_examples_from_registries(query="form-rhf-demo")
-    2. mcp__shadcn__get_item_examples_from_registries(query="form-rhf-input")
-    3. Review how to use refs with FormField render props
+▾ Squats • 5 sets • 3,500 lbs
+  ├─ 12 × 315 lbs  5:30 PM  [↻][×]
+  ├─ 10 × 315 lbs  5:33 PM  [↻][×]
+  ├─ 10 × 315 lbs  5:38 PM  [↻][×]
+  ├─ 8  × 315 lbs  5:40 PM  [↻][×]
+  └─ 8  × 315 lbs  5:42 PM  [↻][×]
 
-  **STEP 2: State Migration (lines 55-63):**
-    REMOVE:
-      - const [selectedExerciseId, setSelectedExerciseId] = useState...
-      - const [reps, setReps] = useState("")
-      - const [weight, setWeight] = useState("")
-      - const [isSubmitting, setIsSubmitting] = useState(false)
+▾ Bench Press • 5 sets • 4,500 lbs
+  └─ ...
 
-    ADD:
-      import { useForm } from "react-hook-form"
-      import { zodResolver } from "@hookform/resolvers/zod"
-      import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+▾ Barbell Rows • 5 sets • 4,450 lbs
+  └─ ...
+```
 
-      const form = useForm<QuickLogFormValues>({
-        resolver: zodResolver(quickLogSchema),
-        defaultValues: {
-          exerciseId: "",
-          reps: undefined,  // Use undefined for number inputs
-          weight: undefined,
-          unit: unit  // Use current weight unit from context
-        },
-      })
+### Implementation Tasks
 
-    KEEP:
-      - const [showInlineCreator, setShowInlineCreator] = useState(false)
-      - const repsInputRef = useRef<HTMLInputElement>(null)
-      - const weightInputRef = useRef<HTMLInputElement>(null)
+- [ ] **2.3.1: Create exercise grouping utility** (1h)
+  - File: `src/lib/dashboard-utils.ts`
+  - Function: `groupSetsByExercise(sets: Set[]) => ExerciseGroup[]`
+  - Returns: Array of `{ exerciseId, sets[], totalVolume, totalReps }`
+  - Sort: By most recently performed (first set in group)
 
-  **STEP 3: Form Submission (lines 150-181):**
-    REPLACE submitForm with:
-      const onSubmit = async (values: QuickLogFormValues) => {
-        try {
-          const setId = await logSet({
-            exerciseId: values.exerciseId as Id<"exercises">,
-            reps: values.reps!,
-            weight: values.weight,
-            unit: values.weight ? values.unit : undefined,
-          })
+- [ ] **2.3.2: Create ExerciseSetGroup component** (2h)
+  - File: `src/components/dashboard/exercise-set-group.tsx`
+  - Props: `{ exercise, sets, onRepeat, onDelete, preferredUnit }`
+  - Features:
+    - Collapsible (expanded by default)
+    - Shows aggregate stats in header (N sets • X volume)
+    - Compact set list (no "Exercise" column needed)
+    - Actions: Repeat, Delete (same as current)
 
-          // Keep exercise selected, clear reps/weight
-          form.reset({
-            exerciseId: values.exerciseId,  // CRITICAL: Preserve selection
-            reps: undefined,
-            weight: undefined,
-            unit: values.unit
-          })
+- [ ] **2.3.3: Update GroupedSetHistory component** (1h)
+  - File: `src/components/dashboard/grouped-set-history.tsx`
+  - Replace chronological table with exercise groups
+  - Remove "Exercise" column (redundant)
+  - Preserve time formatting, actions
 
-          // Focus reps for next set
-          focusElement(repsInputRef)
-          toast.success("Set logged!")
-          onSetLogged?.(setId)
-        } catch (error) {
-          handleMutationError(error, "Log Set")
-        }
-      }
+- [ ] **2.3.4: Update Dashboard.tsx** (30m)
+  - File: `src/components/dashboard/Dashboard.tsx`
+  - Pass `groupSetsByExercise(todaysSets)` to GroupedSetHistory
+  - Update component title to "Today's Workout"
 
-    UPDATE handleSubmit:
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+**Success Criteria:**
 
-  **STEP 4: Exercise Select Field (lines 240-272):**
-    WRAP Select in FormField:
-      <FormField
-        control={form.control}
-        name="exerciseId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Exercise *</FormLabel>
-            <Select
-              value={field.value}
-              onValueChange={(value) => {
-                if (value === "CREATE_NEW") {
-                  setShowInlineCreator(true)
-                  field.onChange("")  // Clear field
-                } else {
-                  field.onChange(value)  // Update form state
-                }
-              }}
-              disabled={form.formState.isSubmitting}
-            >
-              {/* Keep existing SelectTrigger/SelectContent */}
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+- ✓ Sets grouped by exercise, not just time
+- ✓ Exercise groups collapsible (all expanded by default)
+- ✓ Aggregate stats visible (N sets, X volume)
+- ✓ Repeat and Delete actions still work
+- ✓ Time formatting preserved
+- ✓ Mobile responsive
+- ✓ TypeScript clean, tests pass
 
-  **STEP 5: Reps Input Field (lines 270-287):**
-    WRAP Input in FormField:
-      <FormField
-        control={form.control}
-        name="reps"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Reps *</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                ref={repsInputRef}  // CRITICAL: Preserve ref
-                type="number"
-                inputMode="numeric"
-                min="1"
-                onKeyDown={handleRepsKeyDown}  // CRITICAL: Keep keyboard nav
-                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                value={field.value ?? ""}  // Convert undefined to empty string
-                disabled={form.formState.isSubmitting}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-  **STEP 6: Weight Input Field (lines 289-315):**
-    Similar pattern to reps, preserve weightInputRef + handleWeightKeyDown
-
-  **STEP 7: Last Set Indicator (lines 213-238):**
-    UPDATE "Use" button:
-      onClick={() => {
-        form.setValue("reps", lastSet.reps)
-        form.setValue("weight", lastSet.weight ?? undefined)
-        focusElement(repsInputRef)
-      }}
-
-  **STEP 8: Autofocus Effect (lines 143-148):**
-    UPDATE to watch form.watch("exerciseId"):
-      const selectedExerciseId = form.watch("exerciseId")
-      useEffect(() => {
-        if (selectedExerciseId) {
-          focusElement(repsInputRef)
-        }
-      }, [selectedExerciseId])
-
-  **STEP 9: repeatSet imperative handle (lines 131-141):**
-    UPDATE to use form.setValue:
-      useImperativeHandle(ref, () => ({
-        repeatSet: (set: Set) => {
-          form.setValue("exerciseId", set.exerciseId)
-          form.setValue("reps", set.reps)
-          form.setValue("weight", set.weight ?? undefined)
-          focusElement(repsInputRef)
-        },
-      }))
-
-  **STEP 10: Verify & Test:**
-    - mcp__shadcn__get_audit_checklist()
-    - pnpm typecheck
-    - pnpm lint
-    - Manual test: Focus flow (exercise → reps → weight → submit → reps)
-    - Manual test: Last set "Use" button prefills form
-    - Manual test: Enter key navigation works
-    - Manual test: Form resets after submit but keeps exercise selected
-
-  Success Criteria:
-    ✅ Form validates with zod schema
-    ✅ Validation errors show inline
-    ✅ Autofocus works: select exercise → focus reps
-    ✅ Enter key: reps → weight → submit
-    ✅ After submit: exercise stays selected, reps/weight clear, focus on reps
-    ✅ "Use" button prefills reps/weight from last set
-    ✅ repeatSet() imperative API still works
-    ✅ No TypeScript errors
-    ✅ Mobile Safari focus still works (double RAF preserved)
-
-  Edge Cases:
-    - Empty weight (optional field) - use undefined, not empty string
-    - Number input controlled value - convert undefined to ""
-    - Exercise selection with CREATE_NEW - clear field when opening creator
-    - Form reset - must preserve exerciseId for quick multi-set logging
-
-  Time: 3-4hr (complex, many moving parts)
-  Risk: HIGH - Critical UX feature, test thoroughly before committing
-  ```
-
-### 3.2: Other Forms Migration
-
-- [x] Convert InlineExerciseCreator to react-hook-form
-  - Commit: 3e37c9c
-  - Created exerciseNameSchema with validation
-  - Migrated to useForm with FormField wrapper
-  - Preserved keyboard shortcuts and autofocus
-
-- [x] Convert ExerciseManager edit mode to react-hook-form
-  - Commit: 777fd53
-  - Created exerciseEditSchema for name validation
-  - Single form instance for inline editing (one row at a time)
-  - Preserved keyboard shortcuts and autofocus
+**Effort:** 4-5 hours
+**Risk:** Medium (data restructuring, visual changes)
 
 ---
 
-## Phase 4: Complex Components
+## Phase 3: Visual Design System (POLISH)
 
-### 4.1: Dialogs & Confirmation Modals
+**Goal:** Define cohesive color palette, typography scale, and spacing rhythm.
 
-- [x] Replace window.confirm with AlertDialog in ExerciseManager
-  - Commit: 4c764e7
-  - Replaced browser confirm with AlertDialog component
-  - Added exerciseToDelete state for dialog control
-  - Contextual messaging based on set count
-  - Professional UI with keyboard navigation
+### 3.1: Color System (1h)
 
-- [x] Replace window.confirm in SetCard component
-  - Commit: 55a332e
-  - Replaced browser confirm with AlertDialog
-  - Added showDeleteDialog state
-  - Simple confirmation message
-  - Consistent with ExerciseManager pattern
+**Current:** Generic gray, minimal color usage
+**Target:** Purposeful color for hierarchy and emotion
 
-- [x] Replace window.confirm in GroupedSetHistory
-  - Commit: 1f4295c
-  - Replaced browser confirm with AlertDialog
-  - Added setToDelete state
-  - Simple confirmation message
-  - Phase 4.1 complete ✅
+- [ ] **Define color tokens** in `tailwind.config.ts`
 
----
+```typescript
+// Add to theme.extend.colors
+colors: {
+  // Primary: Action & Energy (blue/cyan)
+  primary: {
+    DEFAULT: 'hsl(210, 100%, 50%)',  // Vibrant blue
+    hover: 'hsl(210, 100%, 45%)',
+    active: 'hsl(210, 100%, 40%)',
+  },
 
-## Phase 5: Final Cleanup & Testing
+  // Success: Achievement (bright green)
+  success: {
+    DEFAULT: 'hsl(142, 76%, 36%)',
+    light: 'hsl(142, 76%, 90%)',
+  },
 
-- [x] Remove unused terminal theme colors from tailwind.config.ts
-  - Already cleaned during Phase 2 migration
+  // Accent: Attention (amber/orange)
+  accent: {
+    DEFAULT: 'hsl(38, 92%, 50%)',
+    light: 'hsl(38, 92%, 90%)',
+  },
+}
+```
 
-- [x] **Update ExerciseManager tests for AlertDialog** ✅
-  - Commit: 45f4457
-  - All 5 delete tests updated and passing
-  - Replaced `window.confirm` with AlertDialog button interactions
+- [ ] **Apply colors strategically**
+  - Log Set button: `bg-primary hover:bg-primary-hover`
+  - PR badges: `bg-success text-success-foreground`
+  - Insights/tips: `border-accent bg-accent-light`
+  - Keep most UI neutral (don't overuse color)
 
-### 5.1: Testing Refactor (Pragmatic Approach)
+### 3.2: Typography Scale (30m)
 
-**Context**: 17 tests failing due to Radix Select portal/timing issues. Component works correctly in dev. Solution: Extract business logic to hooks, test logic directly, skip flaky UI interaction tests.
+- [ ] **Define text sizes** in `tailwind.config.ts` or use built-in scale
 
-**Test Philosophy**: Test business logic (hooks/utilities), not UI implementation (third-party components). Focus on value: 80% coverage from 20% effort.
+```typescript
+// Usage guide (not config, just reference)
+Hero numbers:  text-4xl (48px) font-bold      // Daily volume, PR stats
+Section titles: text-xl (20px) font-semibold  // Card titles
+Body text:      text-base (16px)              // Form labels, table data
+Meta text:      text-sm (14px)                // Timestamps, hints
+Tiny text:      text-xs (12px)                // Footnotes
+```
 
-- [x] **Remove failing Radix Select interaction tests** ✅
-  - Commit: 9490eb8
-  - Removed 17 failing tests (portal/timing issues)
-  - Kept 8 passing tests (smoke + state management)
-  - File size: 586 lines → 156 lines (73% reduction)
-  - Test pass rate: 88.5% → 100% (127/127 passing)
+- [ ] **Apply to key components**
+  - DailyStatsCard hero numbers: Increase to `text-4xl`
+  - Card titles: Ensure `text-xl font-semibold`
+  - Timestamps: `text-sm text-muted-foreground`
 
-- [x] **Extract form logic to useQuickLogForm hook** ✅
-  - Commit: 3b44dbf
-  - Created src/hooks/useQuickLogForm.ts with form state management
-  - Exported QuickLogFormValues type for reuse
-  - Updated QuickLogForm.tsx to use new hook
-  - All tests pass (127/127), TypeScript clean
-  - Component focused on UI, business logic in hook
+### 3.3: Spacing Rhythm (30m)
 
-- [x] **Extract last set logic to useLastSet hook** ✅
-  - Commit: 6cc4c27
-  - Created src/hooks/useLastSet.ts with query and formatTimeAgo
-  - Updated QuickLogForm.tsx to use new hook
-  - Removed duplicate query and formatting logic
-  - All tests pass (127/127), TypeScript clean
-  - Time formatting logic now independently testable
+**Current:** Inconsistent spacing
+**Target:** 8px base unit throughout
 
-- [x] **Write tests for useQuickLogForm hook** ✅
-  - Commit: 3319918
-  - Created src/hooks/useQuickLogForm.test.ts with 11 tests
-  - Tests cover all business logic (initialization, validation, submission, error handling)
-  - Test count: 138/138 passing (11 new tests)
-  - 100% coverage of form business logic without UI interaction
+- [ ] **Audit spacing** in key components
+  - Card padding: `p-6` (24px)
+  - Section gaps: `space-y-8` (32px)
+  - Form field gaps: `gap-4` (16px)
+  - Inline element gaps: `gap-2` (8px)
 
-- [x] **Write tests for useLastSet hook** ✅
-  - Commit: 26da743
-  - Created src/hooks/useLastSet.test.ts with 14 tests
-  - Tests cover all edge cases (null, empty, filtering)
-  - Complete formatTimeAgo coverage (seconds, minutes, hours, days)
-  - Reactivity tests for exerciseId and data changes
-  - Test count: 152/152 passing (14 new tests)
+- [ ] **Update PageLayout** spacing
+  - File: `src/components/layout/page-layout.tsx`
+  - Standardize page content spacing
 
-- [x] **Simplify QuickLogForm component tests** ✅
-  - Commit: 870d653
-  - Reduced to 6 integration-focused tests (157 lines)
-  - Removed detailed business logic tests (now in hook tests)
-  - Focus: Hook integration, rendering, context integration
-  - Test count: 150/150 passing (removed 2 low-value tests)
-  - Component tests verify integration, hooks test business logic
+### 3.4: Visual Depth (30m)
 
-### 5.2: Testing Documentation
+- [ ] **Add subtle shadows** to cards
+  - Update Card component or use `shadow-sm` utility
+  - Hover states: `hover:shadow-md transition-shadow`
+  - Elevate important actions (Log Set button)
 
-- [x] **Add testing strategy to CLAUDE.md** ✅
-  - Commit: cd4b68a
-  - Added Testing Strategy section after Development Commands
-  - Includes: Test Pyramid, Running Tests, When Tests Fail, Adding New Features, Philosophy
-  - Documents pragmatic testing approach and lessons learned
+**Success Criteria:**
 
-  ````markdown
-  ## Testing Strategy
+- ✓ Consistent color usage (primary, success, accent)
+- ✓ Clear typography hierarchy (4xl → xl → base → sm → xs)
+- ✓ 8px base spacing rhythm
+- ✓ Subtle depth via shadows
+- ✓ Visual changes enhance, don't distract
 
-  ### Test Pyramid
-
-  1. **Backend (Convex)** ⭐⭐⭐⭐⭐ - Full coverage of mutations/queries
-  2. **Utilities & Hooks** ⭐⭐⭐⭐⭐ - Pure functions, business logic
-  3. **Components** ⭐⭐⭐ - Smoke tests + critical integration
-  4. **Manual QA** ⭐⭐⭐⭐ - PR checklist (see .github/PULL_REQUEST_TEMPLATE.md)
-  5. **E2E (Future)** ⭐⭐ - Playwright when patterns emerge
-
-  ### Running Tests
-
-  ```bash
-  pnpm test              # All tests
-  pnpm test:coverage     # Coverage report
-  pnpm test path/to/file # Single file
-  pnpm test:ui           # Vitest UI
-  ```
-  ````
-
-  ### When Tests Fail
-  - **Backend/Utility tests** → Fix immediately (business logic)
-  - **Hook tests** → Fix immediately (business logic)
-  - **Component tests** → Evaluate: test issue or code issue?
-  - **Flaky component test** → Extract logic to hook, test there
-
-  ### Adding New Features
-  1. Write backend tests first (TDD)
-  2. Extract complex logic to hooks
-  3. Test hooks thoroughly
-  4. Component tests: smoke + critical integration only
-  5. Add to manual QA checklist
-
-  ### Philosophy
-  - Test **behavior**, not **implementation**
-  - Test **business logic**, not **third-party libraries**
-  - Test **what matters**, not **everything possible**
-
-  ```
-
-  **Success**: Clear testing guidance for contributors
-
-  **Time**: 30 min
-
-  ```
-
-- [x] **Create PR template with manual QA checklist** ✅
-  - Commit: 5c0d94c
-  - Created `.github/pull_request_template.md`
-  - Includes: Type of Change, Desktop QA (7 flows), Mobile QA (iOS Safari), Test Results
-  - Mobile-first focus with autofocus verification
-  - Consistent manual QA process for all PRs
-
-- [ ] Manual QA on mobile (iOS Safari focus behavior)
-- [x] Create PR with migration summary ✅
-  - PR #15: https://github.com/phrazzld/volume/pull/15
-  - Draft PR with comprehensive description
-  - 56 commits, 5 phases, 52 files changed
-  - 150 tests passing, all quality checks green
+**Effort:** 2-3 hours
+**Risk:** Low (mostly styling tweaks)
 
 ---
 
-## MCP Tool Reference
+## Phase 4: Motivational Elements (ENGAGEMENT)
+
+**Goal:** Add gamification and feedback to encourage consistent use.
+
+### 4.1: PR Detection (2h)
+
+- [ ] **Create PR detection utility**
+  - File: `src/lib/pr-detection.ts`
+  - Function: `checkForPR(set, previousSets) => PRType | null`
+  - Types: `'weight' | 'reps' | 'volume' | null`
+  - Logic: Compare current set against all previous for same exercise
+
+- [ ] **Create PR celebration component**
+  - File: `src/components/dashboard/pr-celebration.tsx`
+  - Shows: "🎉 NEW PR! Squats: 315 × 12 (previous: 315 × 10)"
+  - Auto-dismiss after 5 seconds
+  - Optional: Confetti animation (react-confetti library)
+
+- [ ] **Integrate PR detection**
+  - Check after each set logged
+  - Show celebration toast
+  - Add PR badge in set history (🏆 icon)
+
+### 4.2: Streak Counter (1h)
+
+- [ ] **Create streak calculation utility**
+  - File: `src/lib/streak-calculator.ts`
+  - Query all sets, group by day
+  - Calculate consecutive days with sets logged
+  - Handle timezone properly
+
+- [ ] **Display streak in header or hero stats**
+  - Component: DailyStatsCard or Nav
+  - Format: "🔥 7 Day Streak"
+  - Celebrate milestones (7, 30, 100 days)
+
+### 4.3: Contextual Insights (1h)
+
+- [ ] **Create insights generator**
+  - File: `src/lib/workout-insights.ts`
+  - Examples:
+    - "3 more sets to beat Monday's volume!"
+    - "You're 2 reps away from a new PR!"
+    - "Consistent week! 5/7 days logged"
+
+- [ ] **Display insights card** (optional)
+  - Below daily stats or above set history
+  - 1-2 insights max (avoid clutter)
+  - Accent color border/background
+
+### 4.4: Progress Indicators (1h)
+
+- [ ] **Add progress vs. goals**
+  - Example: "This week: ████████░░ 82% of last week's volume"
+  - Could be in DailyStatsCard or separate card
+
+**Success Criteria:**
+
+- ✓ PR detection works accurately
+- ✓ PR celebration shown (toast + badge)
+- ✓ Streak counter accurate and visible
+- ✓ Insights helpful, not annoying (max 1-2)
+- ✓ Users feel encouraged, not pressured
+
+**Effort:** 5-6 hours
+**Risk:** Medium (logic complexity, UX balance)
+
+---
+
+## Phase 5: Mobile Optimization (CRITICAL UX)
+
+**Goal:** Optimize for gym usage (primary use case is mobile).
+
+### 5.1: Bottom Sheet Quick Log (3h)
+
+**Current:** Inline form on page
+**Target:** Floating action button → slide-up drawer
+
+- [ ] **Add floating action button** (FAB)
+  - File: `src/components/dashboard/floating-action-button.tsx`
+  - Position: `fixed bottom-20 right-4` (above bottom nav)
+  - Icon: Plus or Dumbbell
+  - Shows: Only on mobile (hidden md:hidden)
+
+- [ ] **Create bottom sheet drawer**
+  - Library: `vaul` (shadcn-compatible) or custom
+  - Slides up from bottom when FAB clicked
+  - Contains QuickLogForm
+  - Dismissible via swipe or backdrop click
+  - Keyboard-aware (adjusts for virtual keyboard)
+
+- [ ] **Alternative: Keep inline form, optimize spacing**
+  - Simpler approach if bottom sheet is overkill
+  - Ensure form always visible, not buried below hero stats
+
+### 5.2: Touch Target Sizing (1h)
+
+**WCAG Guideline:** Min 44×44px for touch targets
+
+- [ ] **Audit interactive elements**
+  - Buttons: Ensure `h-11` (44px) minimum
+  - Form inputs: Already 46px, good
+  - Icon buttons: Add padding if needed
+  - Table actions (Repeat, Delete): Increase size
+
+- [ ] **Add touch-friendly spacing**
+  - Increase gaps between buttons in action columns
+  - Ensure no accidental taps
+
+### 5.3: Keyboard Behavior (1h)
+
+- [ ] **Auto-advance on number inputs**
+  - After entering reps → auto-focus weight (already done via Enter)
+  - Consider auto-advance on valid input (e.g., 2 digits)
+
+- [ ] **Numeric keyboard optimization**
+  - Ensure `inputMode="numeric"` on all number fields (already done)
+  - Test on iOS Safari (primary platform)
+
+### 5.4: Performance on Low-End Devices (1h)
+
+- [ ] **Test on throttled connection**
+  - Ensure loading states visible
+  - Optimistic UI updates feel instant
+
+- [ ] **Reduce animation complexity** if needed
+  - Simplify confetti or other animations
+  - Ensure 60fps scrolling
+
+**Success Criteria:**
+
+- ✓ FAB or optimized inline form (mobile-friendly)
+- ✓ All touch targets ≥44px
+- ✓ Keyboard auto-advances smoothly
+- ✓ No accidental taps/clicks
+- ✓ Fast, responsive on mobile
+- ✓ iOS Safari tested and working
+
+**Effort:** 4-5 hours
+**Risk:** Medium (platform-specific bugs, UX testing needed)
+
+---
+
+## Quick Wins (< 30 min each)
+
+These can be done anytime for immediate polish:
+
+- [ ] Add primary color to "Log Set" button
+- [ ] Increase hero stat font size to `text-4xl`
+- [ ] Add subtle card shadows (`shadow-sm`)
+- [ ] Round volume numbers (12,450 → 12.5K)
+- [ ] Add loading spinner to "Log Set" button
+- [ ] Improve empty state illustrations
+- [ ] Add hover states to exercise groups
+- [ ] Smooth scroll to latest set after logging
+
+---
+
+## Testing Checklist
+
+After each phase:
+
+- [ ] TypeScript: `pnpm typecheck` passes
+- [ ] Linting: `pnpm lint` passes
+- [ ] Tests: `pnpm test --run` all passing
+- [ ] Manual QA: Desktop Chrome (primary dev browser)
+- [ ] Manual QA: Mobile iOS Safari (primary user platform)
+- [ ] Manual QA: Dark mode toggle still works
+- [ ] Manual QA: All happy paths work (log set, create exercise, delete)
+
+---
+
+## Commit Strategy
+
+**Commit after each completed task** for easy rollback:
 
 ```bash
-# Search for components
-mcp__shadcn__search_items_in_registries(query="alert-dialog")
+# Phase 2.3
+git commit -m "feat(ui): add exercise grouping utility"
+git commit -m "feat(ui): create ExerciseSetGroup component"
+git commit -m "feat(ui): restructure set history by exercise"
 
-# View examples
-mcp__shadcn__get_item_examples_from_registries(query="alert-dialog-demo")
+# Phase 3
+git commit -m "style: define color system (primary, success, accent)"
+git commit -m "style: apply typography scale"
+git commit -m "style: standardize spacing rhythm"
 
-# View API docs
-mcp__shadcn__view_items_in_registries(items=["@shadcn/alert-dialog"])
+# Phase 4
+git commit -m "feat(gamification): add PR detection"
+git commit -m "feat(gamification): add streak counter"
+git commit -m "feat(gamification): add contextual insights"
 
-# Post-implementation audit
-mcp__shadcn__get_audit_checklist()
+# Phase 5
+git commit -m "feat(mobile): add floating action button"
+git commit -m "feat(mobile): optimize touch targets"
+git commit -m "feat(mobile): improve keyboard behavior"
 ```
+
+---
+
+## Future Considerations (Post-Redesign)
+
+These ideas came up during brainstorming but are out of scope for current work:
+
+- **Routine templates** - Pre-built workout structures
+- **Rest timer** - Auto-start after logging set
+- **Plate calculator** - Show barbell loading
+- **Exercise search/filter** - For users with 50+ exercises
+- **Analytics page** - Charts, trends, progress over time
+- **Social features** - Share PRs, leaderboards
+- **Offline mode** - IndexedDB + background sync
+
+See `BACKLOG.md` for full roadmap.
+
+---
+
+## Resources
+
+**Design Inspiration:**
+
+- Strong app (market leader, comprehensive)
+- Hevy app (social-first, community routines)
+- Strava (athlete-focused, data-driven)
+- Linear (clean, modern, purposeful color)
+
+**shadcn/ui Docs:**
+
+- Components: https://ui.shadcn.com/docs/components
+- Themes: https://ui.shadcn.com/themes
+- Icons (lucide): https://lucide.dev/icons
+
+**Best Practices:**
+
+- WCAG 2.1 AA accessibility
+- Mobile-first design
+- Progressive enhancement
+- Semantic HTML
+
+---
+
+**Last Updated:** 2025-10-17
+**Current Branch:** `feature/shadcn-migration` (will merge to master after Phase 2.3 + Phase 3)
