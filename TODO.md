@@ -409,9 +409,9 @@ These can be done anytime for immediate polish:
 
 After each phase:
 
-- [ ] TypeScript: `pnpm typecheck` passes
-- [ ] Linting: `pnpm lint` passes
-- [ ] Tests: `pnpm test --run` all passing
+- [x] TypeScript: `pnpm typecheck` passes ✓
+- [x] Linting: `pnpm lint` passes ✓ (No warnings or errors)
+- [x] Tests: `pnpm test --run` all passing ✓ (157/157)
 - [ ] Manual QA: Desktop Chrome (primary dev browser)
 - [ ] Manual QA: Mobile iOS Safari (primary user platform)
 - [ ] Manual QA: Dark mode toggle still works
