@@ -154,7 +154,7 @@ Today (3 exercises, 15 sets)
 **Current:** Generic gray, minimal color usage
 **Target:** Purposeful color for hierarchy and emotion
 
-- [ ] **Define color tokens** in `tailwind.config.ts`
+- [~] **Define color tokens** in `tailwind.config.ts`
 
 ```typescript
 // Add to theme.extend.colors
