@@ -4,6 +4,16 @@ import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
@@ -17,17 +27,21 @@ interface SetCardProps {
 
 export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { unit: preferredUnit } = useWeightUnit();
   // Use the unit stored with the set, fallback to user preference for legacy sets
   const displayUnit = set.unit || preferredUnit;
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this set? This cannot be undone.")) return;
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
 
+  const confirmDelete = async () => {
     setIsDeleting(true);
     try {
       await onDelete();
       toast.success("Set deleted");
+      setShowDeleteDialog(false);
     } catch (error) {
       handleMutationError(error, "Delete Set");
       setIsDeleting(false);
@@ -68,7 +82,9 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
             {set.weight && (
               <>
                 <span className="text-gray-400 dark:text-gray-500">•</span>
-                <span>{set.weight} {displayUnit}</span>
+                <span>
+                  {set.weight} {displayUnit}
+                </span>
               </>
             )}
           </div>
@@ -88,7 +104,7 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
             <RotateCcw className="h-5 w-5" />
           </button>
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
             aria-label="Delete this set"
             title="Delete this set"
@@ -98,6 +114,24 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Set</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete this set? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

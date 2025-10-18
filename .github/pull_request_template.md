@@ -1,41 +1,44 @@
+# Pull Request
+
 ## Description
 
-<!-- Brief summary of changes -->
+<!-- Brief description of changes -->
 
 ## Type of Change
 
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] Refactoring (no functional changes)
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
 - [ ] Documentation update
-- [ ] Dependency update
+- [ ] Refactoring
+- [ ] Test improvements
 
-## Testing
+## Manual QA Checklist
 
-<!-- Describe the tests you ran and/or added -->
+### Desktop (Chrome/Firefox/Safari)
 
-- [ ] Tests added/updated (if applicable)
-- [ ] All tests pass (`pnpm test`)
-- [ ] Manual testing performed
+- [ ] Log a set with exercise + reps + weight
+- [ ] Log a bodyweight set (no weight)
+- [ ] Use last set "Use" button
+- [ ] Delete an exercise
+- [ ] Edit an exercise name
+- [ ] Toggle kg/lbs
+- [ ] View workout history
 
-**Testing notes:**
+### Mobile (iOS Safari) - CRITICAL
 
-<!-- Describe manual testing steps, edge cases verified, etc. -->
+- [ ] Autofocus works (exercise → reps → weight)
+- [ ] Keyboard doesn't hide inputs
+- [ ] Delete confirmation works
+- [ ] Navigation works smoothly
 
-## Code Quality
+## Test Results
 
-- [ ] Types updated (if applicable)
-- [ ] Lint passes (`pnpm lint`)
-- [ ] Type check passes (`pnpm typecheck`)
-- [ ] Code formatted (`pnpm format`)
+- [ ] `pnpm test` passes
+- [ ] `pnpm typecheck` passes
+- [ ] `pnpm lint` passes
+- [ ] `pnpm build` succeeds
 
-## Related Issues
+## Screenshots (if applicable)
 
-<!-- Link to related issues/tickets -->
-
-Closes #
-
-## Screenshots/Demo
-
-<!-- If UI changes, add screenshots or demo -->
+<!-- Add screenshots for UI changes -->

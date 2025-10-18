@@ -2,6 +2,8 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { Sun, Moon, Monitor } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -14,9 +16,9 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button className="h-10 px-4 border border-terminal-border bg-terminal-bgSecondary text-terminal-textSecondary font-mono text-sm uppercase flex items-center justify-center">
-        ———
-      </button>
+      <Button variant="ghost" size="icon" disabled>
+        <Monitor className="h-4 w-4" />
+      </Button>
     );
   }
 
@@ -30,15 +32,26 @@ export function ThemeToggle() {
     }
   };
 
-  const displayTheme = theme === "system" ? "AUTO" : theme?.toUpperCase();
+  const getThemeIcon = () => {
+    if (theme === "light") return <Sun className="h-4 w-4" />;
+    if (theme === "dark") return <Moon className="h-4 w-4" />;
+    return <Monitor className="h-4 w-4" />;
+  };
+
+  const getThemeLabel = () => {
+    if (theme === "light") return "Light";
+    if (theme === "dark") return "Dark";
+    return "System";
+  };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={cycleTheme}
-      className="h-10 px-4 border border-terminal-border bg-terminal-bgSecondary text-terminal-text hover:border-terminal-info hover:text-terminal-info transition-colors font-mono text-sm uppercase flex items-center justify-center"
-      title={`Theme: ${displayTheme} (click to cycle)`}
+      title={`Theme: ${getThemeLabel()} (click to cycle)`}
     >
-      {displayTheme}
-    </button>
+      {getThemeIcon()}
+    </Button>
   );
 }

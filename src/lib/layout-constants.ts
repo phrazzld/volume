@@ -26,7 +26,7 @@ export const LAYOUT = {
      */
     maxWidth: "max-w-7xl mx-auto" as const,
     /** Vertical spacing between major sections (TerminalPanels, cards) */
-    spacing: "space-y-4" as const, // 1rem / 16px
+    spacing: "space-y-8" as const, // 2rem / 32px (8px base unit × 4)
   },
 
   /**
