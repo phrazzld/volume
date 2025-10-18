@@ -229,10 +229,10 @@ Tiny text:      text-xs (12px)                // Footnotes
 
 ### 3.4: Visual Depth (30m)
 
-- [ ] **Add subtle shadows** to cards
-  - Update Card component or use `shadow-sm` utility
-  - Hover states: `hover:shadow-md transition-shadow`
-  - Elevate important actions (Log Set button)
+- [x] **Add subtle shadows** to cards
+  - Update Card component or use `shadow-sm` utility ✓
+  - Hover states: `hover:shadow-md transition-shadow` ✓
+  - Elevate important actions (Log Set button) ✓
 
 **Success Criteria:**
 
