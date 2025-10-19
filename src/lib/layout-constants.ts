@@ -21,12 +21,12 @@ export const LAYOUT = {
      */
     padding: "px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6" as const,
     /**
-     * Max content width: 1280px (matches Nav/Footer max-w-7xl)
-     * Ensures content edges align with navbar and footer
+     * Max content width: 768px (max-w-3xl)
+     * Narrower for form-focused pages, better readability
      */
-    maxWidth: "max-w-7xl mx-auto" as const,
-    /** Vertical spacing between major sections (TerminalPanels, cards) */
-    spacing: "space-y-8" as const, // 2rem / 32px (8px base unit × 4)
+    maxWidth: "max-w-3xl mx-auto" as const,
+    /** Vertical spacing between major sections (cards) */
+    spacing: "space-y-12" as const, // 3rem / 48px - Better visual separation
   },
 
   /**

@@ -31,9 +31,9 @@ export function GroupedSetHistory({
 
   if (exerciseGroups.length === 0) {
     return (
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>{"Today's Sets"}</CardTitle>
+          <CardTitle className="text-base">Recent Sets</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="py-12 text-center">
@@ -54,10 +54,10 @@ export function GroupedSetHistory({
   );
 
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle>
-          {"Today's Sets"} ({exerciseGroups.length} exercise
+        <CardTitle className="text-base text-muted-foreground font-normal">
+          Recent Sets ({exerciseGroups.length} exercise
           {exerciseGroups.length === 1 ? "" : "s"}, {totalSets} set
           {totalSets === 1 ? "" : "s"})
         </CardTitle>

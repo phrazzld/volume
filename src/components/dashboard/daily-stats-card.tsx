@@ -18,9 +18,9 @@ interface DailyStatsCardProps {
 
 export function DailyStatsCard({ exerciseStats }: DailyStatsCardProps) {
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle>{"Today's Progress"}</CardTitle>
+        <CardTitle className="text-lg">{"Today's Progress"}</CardTitle>
       </CardHeader>
       <CardContent>
         {exerciseStats.length > 0 ? (

@@ -142,9 +142,9 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     };
 
     return (
-      <Card className="mb-3">
+      <Card className="shadow-md">
         <CardHeader>
-          <CardTitle>Log Set</CardTitle>
+          <CardTitle className="text-xl">Log Set</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -250,47 +250,45 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   )}
                 />
 
-                {/* Weight Input (with inline unit toggle) */}
+                {/* Weight Input */}
                 <FormField
                   control={form.control}
                   name="weight"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Weight ({unit})</FormLabel>
-                      <div className="flex gap-1">
-                        <FormControl>
-                          <Input
-                            {...field}
-                            ref={weightInputRef}
-                            type="number"
-                            inputMode="decimal"
-                            step="0.5"
-                            min="0"
-                            onKeyDown={handleWeightKeyDown}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                            value={field.value ?? ""}
-                            placeholder="Optional"
-                            className="w-full md:w-32 h-[46px] tabular-nums"
-                            disabled={form.formState.isSubmitting}
-                          />
-                        </FormControl>
-                        <Button
+                      <FormLabel>
+                        Weight ({unit}){" "}
+                        <button
                           type="button"
-                          variant="outline"
                           onClick={toggleUnit}
-                          className="w-20 h-[46px]"
+                          className="text-xs text-muted-foreground hover:text-foreground underline cursor-pointer"
                           aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
-                          title={`Switch to ${unit === "lbs" ? "KG" : "LBS"}`}
                         >
-                          ⟷ {unit === "lbs" ? "KG" : "LBS"}
-                        </Button>
-                      </div>
+                          switch to {unit === "lbs" ? "kg" : "lbs"}
+                        </button>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          ref={weightInputRef}
+                          type="number"
+                          inputMode="decimal"
+                          step="0.5"
+                          min="0"
+                          onKeyDown={handleWeightKeyDown}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined
+                            )
+                          }
+                          value={field.value ?? ""}
+                          placeholder="Optional"
+                          className="w-full md:w-32 h-[46px] tabular-nums"
+                          disabled={form.formState.isSubmitting}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
