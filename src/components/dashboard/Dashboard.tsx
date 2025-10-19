@@ -19,13 +19,11 @@ import { LAYOUT } from "@/lib/layout-constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
-  calculateDailyStats,
   calculateDailyStatsByExercise,
   groupSetsByExercise,
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
 import { getTodayRange } from "@/lib/date-utils";
-import { calculateStreak } from "@/lib/streak-calculator";
 import type { Exercise, Set } from "@/types/domain";
 
 export function Dashboard() {
@@ -55,22 +53,10 @@ export function Dashboard() {
     );
   }, [allSets]);
 
-  // Calculate daily stats (convert all volumes to user's preferred unit)
-  const dailyStats = useMemo(
-    () => calculateDailyStats(todaysSets, unit),
-    [todaysSets, unit]
-  );
-
   // Calculate per-exercise daily stats (convert all volumes to user's preferred unit)
   const exerciseStats = useMemo(
     () => calculateDailyStatsByExercise(todaysSets, exercises, unit),
     [todaysSets, exercises, unit]
-  );
-
-  // Calculate workout streak
-  const currentStreak = useMemo(
-    () => (allSets ? calculateStreak(allSets) : 0),
-    [allSets]
   );
 
   // Group today's sets by exercise for workout view
@@ -215,19 +201,15 @@ export function Dashboard() {
         <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
       ) : (
         <>
-          {/* Daily Stats Card */}
-          <DailyStatsCard
-            stats={dailyStats}
-            exerciseStats={exerciseStats}
-            currentStreak={currentStreak}
-          />
-
-          {/* Quick Log Form - MOVED TO PRIME POSITION */}
+          {/* Quick Log Form - PRIME POSITION */}
           <QuickLogForm
             ref={formRef}
             exercises={activeExercisesByRecency}
             onSetLogged={handleSetLogged}
           />
+
+          {/* Simple Progress Table */}
+          <DailyStatsCard exerciseStats={exerciseStats} />
 
           {/* Today's Set History */}
           <div ref={historyRef}>
