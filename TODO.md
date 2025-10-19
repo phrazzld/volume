@@ -2,14 +2,14 @@
 
 ## Progress Summary
 
-**Status:** Phase 3 Complete ✅ | Phase 4 Next (Motivational Elements)
+**Status:** Phase 4 Partially Complete ✅ | Phase 5 Next (Mobile Optimization)
 
 - ✅ **Phase 1:** Information Architecture (Navigation restructure, Exercises page)
 - ✅ **Phase 2.1:** Hero Stats Card (Big numbers, icons, visual hierarchy)
 - ✅ **Phase 2.2:** Quick Log Form Review (Already optimized)
 - ✅ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
 - ✅ **Phase 3:** Visual Design System (Colors, typography, spacing, shadows)
-- ⏳ **Phase 4:** Motivational Elements (PRs, streaks, insights)
+- ✅ **Phase 4:** Motivational Elements (PRs ✅, Streaks ✅ | Insights ⏸️ deferred)
 - ⏳ **Phase 5:** Mobile Optimization (Bottom sheet, touch targets)
 
 **Previous Work:**
@@ -284,36 +284,28 @@ Tiny text:      text-xs (12px)                // Footnotes
   - Celebrate milestones (7, 30, 100 days)
   - Highlighted background for 7+ day streaks
 
-### 4.3: Contextual Insights (1h)
+### 4.3: Contextual Insights ⏸️ **DEFERRED TO BACKLOG**
 
-- [ ] **Create insights generator**
-  - File: `src/lib/workout-insights.ts`
-  - Examples:
-    - "3 more sets to beat Monday's volume!"
-    - "You're 2 reps away from a new PR!"
-    - "Consistent week! 5/7 days logged"
+**Reason:** Feature work beyond aesthetic overhaul scope. Branch focus is UI/UX polish.
 
-- [ ] **Display insights card** (optional)
-  - Below daily stats or above set history
-  - 1-2 insights max (avoid clutter)
-  - Accent color border/background
+~~Create insights generator (see BACKLOG.md for details)~~
 
-### 4.4: Progress Indicators (1h)
+### 4.4: Progress Indicators ⏸️ **DEFERRED TO BACKLOG**
 
-- [ ] **Add progress vs. goals**
-  - Example: "This week: ████████░░ 82% of last week's volume"
-  - Could be in DailyStatsCard or separate card
+**Reason:** Feature work beyond aesthetic overhaul scope. Branch focus is UI/UX polish.
+
+~~Add progress vs. goals (see BACKLOG.md for details)~~
 
 **Success Criteria:**
 
-- ✓ PR detection works accurately
-- ✓ PR celebration shown (toast + badge)
-- ✓ Streak counter accurate and visible
-- ✓ Insights helpful, not annoying (max 1-2)
-- ✓ Users feel encouraged, not pressured
+- ✅ PR detection works accurately
+- ✅ PR celebration shown (toast + badge)
+- ✅ Streak counter accurate and visible
+- ⏸️ Insights helpful, not annoying (max 1-2) - DEFERRED
+- ⏸️ Users feel encouraged, not pressured - DEFERRED
 
-**Effort:** 5-6 hours
-**Risk:** Medium (logic complexity, UX balance)
+**Effort:** 3 hours (completed: PR detection + streak)
+**Risk:** Low (core gamification features working)
 
 ---
 
