@@ -4,7 +4,6 @@ import { useQuery, useMutation } from "convex/react";
 import { useMemo, useState, useRef } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { DailyStatsCard } from "@/components/dashboard/daily-stats-card";
 import {
   QuickLogForm,
   QuickLogFormHandle,
@@ -19,7 +18,6 @@ import { LAYOUT } from "@/lib/layout-constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
-  calculateDailyStatsByExercise,
   groupSetsByExercise,
   sortExercisesByRecency,
 } from "@/lib/dashboard-utils";
@@ -52,12 +50,6 @@ export function Dashboard() {
       (set) => set.performedAt >= start && set.performedAt <= end
     );
   }, [allSets]);
-
-  // Calculate per-exercise daily stats (convert all volumes to user's preferred unit)
-  const exerciseStats = useMemo(
-    () => calculateDailyStatsByExercise(todaysSets, exercises, unit),
-    [todaysSets, exercises, unit]
-  );
 
   // Group today's sets by exercise for workout view
   const exerciseGroups = useMemo(
@@ -208,10 +200,7 @@ export function Dashboard() {
             onSetLogged={handleSetLogged}
           />
 
-          {/* Simple Progress Table */}
-          <DailyStatsCard exerciseStats={exerciseStats} />
-
-          {/* Today's Set History */}
+          {/* Today's Set History - Aggregated stats with drill-down */}
           <div ref={historyRef}>
             <GroupedSetHistory
               exerciseGroups={exerciseGroups}

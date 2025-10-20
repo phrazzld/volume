@@ -33,7 +33,7 @@ export function GroupedSetHistory({
     return (
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle className="text-base">Recent Sets</CardTitle>
+          <CardTitle className="text-base">Today</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="py-12 text-center">
@@ -57,7 +57,7 @@ export function GroupedSetHistory({
     <Card className="shadow-sm">
       <CardHeader>
         <CardTitle className="text-base text-muted-foreground font-normal">
-          Recent Sets ({exerciseGroups.length} exercise
+          Today ({exerciseGroups.length} exercise
           {exerciseGroups.length === 1 ? "" : "s"}, {totalSets} set
           {totalSets === 1 ? "" : "s"})
         </CardTitle>

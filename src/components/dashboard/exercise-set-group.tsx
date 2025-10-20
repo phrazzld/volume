@@ -45,7 +45,7 @@ export function ExerciseSetGroup({
   onRepeat,
   onDelete,
 }: ExerciseSetGroupProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
   const [setToDelete, setSetToDelete] = useState<Set | null>(null);
 
