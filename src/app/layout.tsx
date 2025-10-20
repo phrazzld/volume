@@ -46,7 +46,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning className={inter.variable}>
-        <body className="antialiased font-sans pb-20 md:pb-12">
+        <body className="antialiased font-sans">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WeightUnitProvider>
               <ConvexClientProvider>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "convex/react";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import {
@@ -29,6 +29,7 @@ export function Dashboard() {
   const [lastLoggedSetId, setLastLoggedSetId] = useState<Id<"sets"> | null>(
     null
   );
+  const [isHydrated, setIsHydrated] = useState(false);
   const formRef = useRef<QuickLogFormHandle>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const { unit } = useWeightUnit();
@@ -38,6 +39,17 @@ export function Dashboard() {
   const exercises = useQuery(api.exercises.listExercises, {
     includeDeleted: true,
   });
+
+  // Hydration guard - ensure data is stable before showing content
+  // Waits for one full render cycle after queries resolve to prevent flashing empty states
+  useEffect(() => {
+    if (allSets !== undefined && exercises !== undefined && !isHydrated) {
+      // Use RAF to ensure React completes render cycle with stable data
+      requestAnimationFrame(() => {
+        setIsHydrated(true);
+      });
+    }
+  }, [allSets, exercises, isHydrated]);
 
   // Delete set mutation
   const deleteSet = useMutation(api.sets.deleteSet);
@@ -122,8 +134,8 @@ export function Dashboard() {
     setLastLoggedSetId(null);
   };
 
-  // Loading state
-  if (allSets === undefined || exercises === undefined) {
+  // Loading state - show skeleton until data is stable
+  if (!isHydrated) {
     return (
       <PageLayout title="Dashboard">
         {/* Stats skeleton */}
@@ -172,6 +184,12 @@ export function Dashboard() {
     );
   }
 
+  // Type guard - by this point, isHydrated is true, so both queries must be defined
+  // This satisfies TypeScript's type narrowing
+  if (allSets === undefined || exercises === undefined) {
+    return null; // Should never happen, but required for type safety
+  }
+
   // Handle first exercise created - auto-select it and focus form
   const handleFirstExerciseCreated = (exerciseId: Id<"exercises">) => {
     // The exercise will appear in the list on next render
@@ -207,6 +225,7 @@ export function Dashboard() {
               exerciseMap={exerciseMap}
               onRepeat={handleRepeatSet}
               onDelete={handleDeleteSet}
+              isLoading={!isHydrated}
             />
           </div>
         </>

@@ -18,8 +18,9 @@ export const LAYOUT = {
      * Responsive padding (matches Nav/Footer):
      * - Horizontal: 16px mobile, 24px tablet, 32px desktop
      * - Vertical: 12px mobile, 16px tablet, 24px desktop
+     * - Bottom: 80px mobile for bottom nav (fixed positioning overlay)
      */
-    padding: "px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6" as const,
+    padding: "px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 pb-20" as const,
     /**
      * Max content width: 768px (max-w-3xl)
      * Narrower for form-focused pages, better readability

@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, History, Settings, Dumbbell } from "lucide-react";
@@ -12,6 +13,7 @@ const navItems = [
 ];
 
 export function BottomNav() {
+  const { userId } = useAuth();
   const pathname = usePathname();
 
   // Determine if a nav item is active
@@ -21,6 +23,11 @@ export function BottomNav() {
     }
     return pathname.startsWith(href);
   };
+
+  // Hide bottom nav for unauthenticated users
+  if (!userId) {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t pb-safe">

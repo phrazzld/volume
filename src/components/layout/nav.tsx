@@ -25,56 +25,51 @@ export function Nav() {
     return pathname.startsWith(href);
   };
 
+  // Hide nav entirely when unauthenticated
+  if (!userId) {
+    return null;
+  }
+
   return (
-    <nav className="bg-background border-b">
+    <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-xl font-bold tracking-tight">
+            <Link
+              href="/"
+              className="text-xl font-bold tracking-tight hover:text-primary transition-colors"
+            >
               Volume
             </Link>
             {/* Desktop navigation links - hidden on mobile */}
-            {userId && (
-              <div className="hidden md:flex items-center gap-6">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`text-sm transition-colors ${
-                      isActive(link.href)
-                        ? "text-foreground font-medium underline decoration-2 underline-offset-4"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="hidden md:flex items-center gap-6">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`text-sm transition-colors duration-200 ${
+                    isActive(link.href)
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            {userId ? (
-              <div className="h-10 w-10 flex items-center justify-center">
-                <UserButton
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: "h-9 w-9",
-                    },
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/sign-in">Log In</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/sign-up">Sign Up</Link>
-                </Button>
-              </div>
-            )}
+            <div className="h-10 w-10 flex items-center justify-center">
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "h-9 w-9",
+                  },
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -49,7 +49,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
     const repsInputRef = useRef<HTMLInputElement>(null);
     const weightInputRef = useRef<HTMLInputElement>(null);
 
-    const { unit, toggleUnit } = useWeightUnit();
+    const { unit } = useWeightUnit();
 
     const { form, onSubmit } = useQuickLogForm({
       unit,
@@ -256,17 +256,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                   name="weight"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Weight ({unit}){" "}
-                        <button
-                          type="button"
-                          onClick={toggleUnit}
-                          className="text-xs text-muted-foreground hover:text-foreground underline cursor-pointer"
-                          aria-label={`Switch to ${unit === "lbs" ? "kilograms" : "pounds"}`}
-                        >
-                          switch to {unit === "lbs" ? "kg" : "lbs"}
-                        </button>
-                      </FormLabel>
+                      <FormLabel>Weight ({unit})</FormLabel>
                       <FormControl>
                         <Input
                           {...field}

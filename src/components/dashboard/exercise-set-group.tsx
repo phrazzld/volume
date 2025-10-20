@@ -69,6 +69,7 @@ export function ExerciseSetGroup({
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full px-4 py-3 bg-muted/50 hover:bg-muted transition-colors flex items-center justify-between"
         >
+          {/* LEFT: Chevron + Exercise Name */}
           <div className="flex items-center gap-3">
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -76,13 +77,15 @@ export function ExerciseSetGroup({
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             )}
             <span className="font-semibold text-base">{exercise.name}</span>
-            <span className="text-sm text-muted-foreground">
-              {sets.length} set{sets.length === 1 ? "" : "s"} •{" "}
-              {totalVolume > 0
-                ? `${formatNumber(Math.round(totalVolume))} ${preferredUnit}`
-                : `${totalReps} reps`}
-            </span>
           </div>
+
+          {/* RIGHT: Stats - Always right-aligned */}
+          <span className="text-sm text-muted-foreground">
+            {sets.length} set{sets.length === 1 ? "" : "s"} •{" "}
+            {totalVolume > 0
+              ? `${formatNumber(Math.round(totalVolume))} ${preferredUnit}`
+              : `${totalReps} reps`}
+          </span>
         </button>
 
         {/* Expanded content - Set list */}

@@ -9,6 +9,23 @@ export default {
   ],
   theme: {
     extend: {
+      fontSize: {
+        // Semantic marketing typography with responsive sizing
+        "display-lg": [
+          "clamp(3rem, 8vw, 5rem)",
+          { lineHeight: "1.1", fontWeight: "800", letterSpacing: "-0.02em" },
+        ],
+        "display-md": [
+          "clamp(2rem, 6vw, 3.5rem)",
+          { lineHeight: "1.2", fontWeight: "700", letterSpacing: "-0.01em" },
+        ],
+        "heading-lg": ["1.875rem", { lineHeight: "1.3", fontWeight: "700" }], // 30px
+        "heading-md": ["1.5rem", { lineHeight: "1.4", fontWeight: "600" }], // 24px
+        "heading-sm": ["1.25rem", { lineHeight: "1.5", fontWeight: "600" }], // 20px
+        "body-lg": ["1.125rem", { lineHeight: "1.6", fontWeight: "400" }], // 18px
+        "body-base": ["1rem", { lineHeight: "1.6", fontWeight: "400" }], // 16px
+        "body-sm": ["0.875rem", { lineHeight: "1.5", fontWeight: "400" }], // 14px
+      },
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

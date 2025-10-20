@@ -19,6 +19,7 @@ interface GroupedSetHistoryProps {
   exerciseMap: Map<Id<"exercises">, Exercise>;
   onRepeat: (set: Set) => void;
   onDelete: (setId: Id<"sets">) => void;
+  isLoading?: boolean;
 }
 
 export function GroupedSetHistory({
@@ -26,9 +27,32 @@ export function GroupedSetHistory({
   exerciseMap,
   onRepeat,
   onDelete,
+  isLoading = false,
 }: GroupedSetHistoryProps) {
   const { unit: preferredUnit } = useWeightUnit();
 
+  // Loading state - show skeleton while data is fetching
+  if (isLoading) {
+    return (
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">Today</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="border rounded-lg p-4">
+              <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+            </div>
+            <div className="border rounded-lg p-4">
+              <div className="h-6 w-40 bg-muted animate-pulse rounded" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Empty state - user has no sets logged today
   if (exerciseGroups.length === 0) {
     return (
       <Card className="shadow-sm">
