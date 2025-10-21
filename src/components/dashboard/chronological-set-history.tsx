@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * @deprecated Use ChronologicalGroupedSetHistory instead.
+ * This component uses a table-based layout and is being replaced
+ * by a modern collapsible exercise group UI pattern.
+ * Scheduled for removal in next major version.
+ */
+
 import { useState } from "react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { Id } from "../../../convex/_generated/dataModel";

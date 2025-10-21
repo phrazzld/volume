@@ -28,6 +28,7 @@ interface ExerciseSetGroupProps {
   preferredUnit: WeightUnit;
   onRepeat: (set: Set) => void;
   onDelete: (setId: Id<"sets">) => void;
+  showRepeat?: boolean;
 }
 
 export function ExerciseSetGroup({
@@ -38,6 +39,7 @@ export function ExerciseSetGroup({
   preferredUnit,
   onRepeat,
   onDelete,
+  showRepeat = true,
 }: ExerciseSetGroupProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
@@ -132,16 +134,18 @@ export function ExerciseSetGroup({
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onRepeat(set)}
-                      disabled={isDeleting}
-                      aria-label="Repeat set"
-                      className="h-8 w-8 p-0"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
+                    {showRepeat && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onRepeat(set)}
+                        disabled={isDeleting}
+                        aria-label="Repeat set"
+                        className="h-8 w-8 p-0"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
