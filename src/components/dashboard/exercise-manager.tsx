@@ -117,7 +117,7 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
   };
 
   return (
-    <Card className="mb-3">
+    <Card>
       <CardHeader>
         <CardTitle>Exercise Registry ({exercises.length})</CardTitle>
       </CardHeader>

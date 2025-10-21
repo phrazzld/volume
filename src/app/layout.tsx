@@ -50,9 +50,11 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WeightUnitProvider>
               <ConvexClientProvider>
-                <Nav />
-                {children}
-                <Footer />
+                <div className="min-h-screen flex flex-col">
+                  <Nav />
+                  <div className="flex-1 flex flex-col">{children}</div>
+                  <Footer />
+                </div>
                 {/* Bottom navigation - mobile only */}
                 <div className="md:hidden">
                   <BottomNav />

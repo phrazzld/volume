@@ -205,31 +205,32 @@ export function Dashboard() {
   };
 
   return (
-    <PageLayout title="Today">
-      {exercises.length === 0 ? (
-        /* First Run Experience - Show when no exercises exist */
-        <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
-      ) : (
-        <>
-          {/* Quick Log Form - PRIME POSITION */}
-          <QuickLogForm
-            ref={formRef}
-            exercises={activeExercisesByRecency}
-            onSetLogged={handleSetLogged}
-          />
+    <>
+      <PageLayout title="Today">
+        {exercises.length === 0 ? (
+          /* First Run Experience - Show when no exercises exist */
+          <FirstRunExperience onExerciseCreated={handleFirstExerciseCreated} />
+        ) : (
+          <>
+            {/* Quick Log Form - PRIME POSITION */}
+            <QuickLogForm
+              ref={formRef}
+              exercises={activeExercisesByRecency}
+              onSetLogged={handleSetLogged}
+            />
 
-          {/* Today's Set History - Aggregated stats with drill-down */}
-          <div ref={historyRef}>
+            {/* Today's Set History - Aggregated stats with drill-down */}
             <GroupedSetHistory
+              ref={historyRef}
               exerciseGroups={exerciseGroups}
               exerciseMap={exerciseMap}
               onRepeat={handleRepeatSet}
               onDelete={handleDeleteSet}
               isLoading={!isHydrated}
             />
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </PageLayout>
 
       {/* Undo Toast - Fixed position overlay, not affected by spacing */}
       <UndoToast
@@ -237,6 +238,6 @@ export function Dashboard() {
         onUndo={handleUndo}
         onDismiss={handleDismissToast}
       />
-    </PageLayout>
+    </>
   );
 }

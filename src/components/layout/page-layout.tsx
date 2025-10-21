@@ -48,11 +48,17 @@ export function PageLayout({
 }: PageLayoutProps) {
   return (
     <main
-      className={`min-h-screen ${LAYOUT.page.padding} ${
+      className={`flex-1 w-full flex flex-col ${LAYOUT.page.padding} ${
         maxWidth ? LAYOUT.page.maxWidth : ""
       }`}
     >
-      {title && <h1 className="text-2xl font-bold mb-4">{title}</h1>}
+      {title && (
+        <h1
+          className={`text-2xl font-bold tracking-tight ${LAYOUT.page.titleSpacing}`}
+        >
+          {title}
+        </h1>
+      )}
       <div className={LAYOUT.page.spacing}>{children}</div>
     </main>
   );

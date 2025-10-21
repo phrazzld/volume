@@ -58,7 +58,7 @@ export function FirstRunExperience({
   };
 
   return (
-    <Card className="mb-3">
+    <Card>
       <CardHeader>
         <CardTitle>Welcome to Volume</CardTitle>
       </CardHeader>

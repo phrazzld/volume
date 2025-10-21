@@ -94,7 +94,7 @@ export default function HistoryPage() {
 
       {/* Load More button */}
       {status === "CanLoadMore" && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center">
           <button
             onClick={() => loadMore(PAGINATION_PAGE_SIZE)}
             className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:opacity-90 transition-opacity"
@@ -107,7 +107,7 @@ export default function HistoryPage() {
 
       {/* Loading more indicator */}
       {status === "LoadingMore" && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center">
           <div className="animate-pulse">
             <div className="px-6 py-2 bg-muted text-muted-foreground rounded-md text-sm border">
               Loading...

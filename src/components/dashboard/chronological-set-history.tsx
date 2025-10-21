@@ -69,7 +69,7 @@ export function ChronologicalSetHistory({
 
   if (groupedSets.length === 0) {
     return (
-      <Card className="mb-3">
+      <Card>
         <CardHeader>
           <CardTitle>Set History</CardTitle>
         </CardHeader>

@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
@@ -22,19 +23,19 @@ interface GroupedSetHistoryProps {
   isLoading?: boolean;
 }
 
-export function GroupedSetHistory({
-  exerciseGroups,
-  exerciseMap,
-  onRepeat,
-  onDelete,
-  isLoading = false,
-}: GroupedSetHistoryProps) {
+export const GroupedSetHistory = forwardRef<
+  HTMLDivElement,
+  GroupedSetHistoryProps
+>(function GroupedSetHistory(
+  { exerciseGroups, exerciseMap, onRepeat, onDelete, isLoading = false },
+  ref
+) {
   const { unit: preferredUnit } = useWeightUnit();
 
   // Loading state - show skeleton while data is fetching
   if (isLoading) {
     return (
-      <Card className="shadow-sm">
+      <Card ref={ref} className="shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">Today</CardTitle>
         </CardHeader>
@@ -55,7 +56,7 @@ export function GroupedSetHistory({
   // Empty state - user has no sets logged today
   if (exerciseGroups.length === 0) {
     return (
-      <Card className="shadow-sm">
+      <Card ref={ref} className="shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">Today</CardTitle>
         </CardHeader>
@@ -78,7 +79,7 @@ export function GroupedSetHistory({
   );
 
   return (
-    <Card className="shadow-sm">
+    <Card ref={ref} className="shadow-sm">
       <CardHeader>
         <CardTitle className="text-base text-muted-foreground font-normal">
           Today ({exerciseGroups.length} exercise
@@ -109,4 +110,4 @@ export function GroupedSetHistory({
       </CardContent>
     </Card>
   );
-}
+});

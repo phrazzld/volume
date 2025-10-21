@@ -17,17 +17,20 @@ export const LAYOUT = {
     /**
      * Responsive padding (matches Nav/Footer):
      * - Horizontal: 16px mobile, 24px tablet, 32px desktop
-     * - Vertical: 12px mobile, 16px tablet, 24px desktop
-     * - Bottom: 80px mobile for bottom nav (fixed positioning overlay)
+     * - Top: 24px mobile, 32px tablet, 40px desktop
+     * - Bottom: 96px mobile (bottom nav buffer), 64px md, 48px lg+
      */
-    padding: "px-4 sm:px-6 lg:px-8 py-3 sm:py-4 lg:py-6 pb-20" as const,
+    padding:
+      "px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 lg:pt-10 pb-24 md:pb-16 lg:pb-12" as const,
     /**
-     * Max content width: 768px (max-w-3xl)
+     * Max content width: 760px (custom max-w)
      * Narrower for form-focused pages, better readability
      */
-    maxWidth: "max-w-3xl mx-auto" as const,
+    maxWidth: "max-w-[760px] mx-auto" as const,
     /** Vertical spacing between major sections (cards) */
-    spacing: "space-y-12" as const, // 3rem / 48px - Better visual separation
+    spacing: "space-y-10" as const, // 2.5rem / 40px - Consistent breathing room
+    /** Spacing applied below page titles */
+    titleSpacing: "mb-8" as const,
   },
 
   /**
