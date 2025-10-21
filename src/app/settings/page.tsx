@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ExerciseManager } from "@/components/dashboard/exercise-manager";
+import { InlineExerciseCreator } from "@/components/dashboard/inline-exercise-creator";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useWeightUnit, WeightUnit } from "@/contexts/WeightUnitContext";
 import { PageLayout } from "@/components/layout/page-layout";
+import { Plus } from "lucide-react";
 
 // Helper to generate unit button classes
 const getUnitButtonClasses = (isActive: boolean) =>
@@ -16,6 +20,8 @@ const getUnitButtonClasses = (isActive: boolean) =>
   }`;
 
 export default function SettingsPage() {
+  const [showCreator, setShowCreator] = useState(false);
+
   // Fetch exercises and sets for ExerciseManager (active only)
   const exercises = useQuery(api.exercises.listExercises, {
     includeDeleted: false,
@@ -47,7 +53,33 @@ export default function SettingsPage() {
   return (
     <PageLayout title="Settings">
       {/* Exercise Management Section */}
-      <ExerciseManager exercises={exercises} sets={sets} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Exercise Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Create Exercise Section */}
+          {!showCreator ? (
+            <Button
+              onClick={() => setShowCreator(true)}
+              className="w-full mb-4"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Exercise
+            </Button>
+          ) : (
+            <div className="mb-4">
+              <InlineExerciseCreator
+                onCreated={() => setShowCreator(false)}
+                onCancel={() => setShowCreator(false)}
+              />
+            </div>
+          )}
+
+          {/* Exercise List */}
+          <ExerciseManager exercises={exercises} sets={sets} />
+        </CardContent>
+      </Card>
 
       {/* Preferences Section */}
       <Card>
