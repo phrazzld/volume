@@ -1,54 +1,54 @@
-import { ImageResponse } from 'next/og'
+import { ImageResponse } from "next/og";
 
-export const runtime = 'edge'
-export const size = { width: 180, height: 180 }
-export const contentType = 'image/png'
+export const runtime = "edge";
+export const size = { width: 180, height: 180 };
+export const contentType = "image/png";
 
-// Three ascending bars representing training volume progression (Apple touch icon)
+// Three black bars centered vertically - audio equalizer / dumbbell aesthetic (Apple touch icon)
 export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
         style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          gap: '8px',
-          background: '#000000', // Black background for Apple icon
-          padding: '20px',
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "8px",
+          background: "hsl(210, 100%, 50%)", // Primary blue background
+          padding: "30px",
         }}
       >
-        {/* Bar 1: Short */}
+        {/* Bar 1: Short (45px) */}
         <div
           style={{
-            width: 32,
-            height: 50,
-            background: '#00ff00',
+            width: 28,
+            height: 45,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 4,
           }}
         />
-        {/* Bar 2: Medium */}
+        {/* Bar 2: Medium (75px) */}
         <div
           style={{
-            width: 32,
-            height: 90,
-            background: '#00ff00',
+            width: 28,
+            height: 75,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 4,
           }}
         />
-        {/* Bar 3: Tall */}
+        {/* Bar 3: Tall (105px) */}
         <div
           style={{
-            width: 32,
-            height: 130,
-            background: '#00ff00',
+            width: 28,
+            height: 105,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 4,
           }}
         />
       </div>
     ),
     { ...size }
-  )
+  );
 }

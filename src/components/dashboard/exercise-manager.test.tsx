@@ -101,7 +101,7 @@ describe("ExerciseManager", () => {
     it("displays exercise count in title", () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      expect(screen.getByText(/EXERCISE REGISTRY \(2\)/)).toBeInTheDocument();
+      expect(screen.getByText(/Exercise Registry \(2\)/)).toBeInTheDocument();
     });
 
     it("shows set count per exercise", () => {
@@ -246,13 +246,15 @@ describe("ExerciseManager", () => {
     });
 
     it("shows confirmation dialog before deleting", async () => {
-      const confirmSpy = vi.spyOn(window, "confirm");
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
       const deleteButtons = screen.getAllByTitle("Delete exercise");
       fireEvent.click(deleteButtons[0]);
 
-      expect(confirmSpy).toHaveBeenCalled();
+      // AlertDialog should be visible
+      await waitFor(() => {
+        expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+      });
     });
 
     it("deletes exercise when confirmed", async () => {
@@ -260,6 +262,14 @@ describe("ExerciseManager", () => {
 
       const deleteButtons = screen.getAllByTitle("Delete exercise");
       fireEvent.click(deleteButtons[0]);
+
+      // Wait for AlertDialog to appear and click Delete
+      await waitFor(() => {
+        expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      const deleteButton = screen.getByRole("button", { name: /delete/i });
+      fireEvent.click(deleteButton);
 
       await waitFor(() => {
         expect(mockDeleteExercise).toHaveBeenCalledWith({
@@ -270,40 +280,49 @@ describe("ExerciseManager", () => {
     });
 
     it("does not delete if cancelled", async () => {
-      vi.stubGlobal(
-        "confirm",
-        vi.fn(() => false)
-      );
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
       const deleteButtons = screen.getAllByTitle("Delete exercise");
       fireEvent.click(deleteButtons[0]);
+
+      // Wait for AlertDialog and click Cancel
+      await waitFor(() => {
+        expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      const cancelButton = screen.getByRole("button", { name: /cancel/i });
+      fireEvent.click(cancelButton);
 
       await waitFor(() => {
         expect(mockDeleteExercise).not.toHaveBeenCalled();
       });
     });
 
-    it("shows set count in confirmation for exercises with sets", () => {
-      const confirmSpy = vi.spyOn(window, "confirm");
+    it("shows set count in confirmation for exercises with sets", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
       const deleteButtons = screen.getAllByTitle("Delete exercise");
       fireEvent.click(deleteButtons[0]); // Bench Press has 2 sets
 
-      const confirmMessage = confirmSpy.mock.calls[0][0];
-      expect(confirmMessage).toContain("2 sets");
+      // Check AlertDialog shows set count
+      await waitFor(() => {
+        expect(screen.getByText(/2 sets/i)).toBeInTheDocument();
+      });
     });
 
-    it("shows different message for exercises without sets", () => {
-      const confirmSpy = vi.spyOn(window, "confirm");
+    it("shows different message for exercises without sets", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
       const deleteButtons = screen.getAllByTitle("Delete exercise");
       fireEvent.click(deleteButtons[1]); // Squats has 0 sets
 
-      const confirmMessage = confirmSpy.mock.calls[0][0];
-      expect(confirmMessage).toContain("This cannot be undone");
+      // Check AlertDialog shows warning message
+      await waitFor(() => {
+        const dialog = screen.getByRole("alertdialog");
+        expect(dialog).toBeInTheDocument();
+        // Should NOT show "X sets" for exercise with no sets
+        expect(dialog.textContent).not.toMatch(/\d+\s+sets/i);
+      });
     });
   });
 
@@ -343,6 +362,14 @@ describe("ExerciseManager", () => {
 
       const deleteButtons = screen.getAllByTitle("Delete exercise");
       fireEvent.click(deleteButtons[0]);
+
+      // Wait for AlertDialog and click Delete
+      await waitFor(() => {
+        expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+      });
+
+      const deleteButton = screen.getByRole("button", { name: /delete/i });
+      fireEvent.click(deleteButton);
 
       await waitFor(() => {
         expect(handleMutationError).toHaveBeenCalledWith(

@@ -55,7 +55,69 @@ describe("handleMutationError", () => {
 
 ---
 
-### 9. [Maintainability] Time Formatting Duplication - 3 Implementations ⚠️ **CRITICAL DUPLICATION**
+### 9. [Testing] E2E Test Infrastructure with Playwright
+
+**Context**: Post-MVP enhancement for regression prevention
+**Priority**: **LOW** - Add only when patterns emerge
+**Effort**: 6-8 hours initial setup + ongoing maintenance
+
+**Recommendation**: Wait until production deployment shows which user flows need E2E coverage
+
+**Setup**:
+
+```bash
+pnpm add -D @playwright/test
+npx playwright install
+```
+
+**Critical Flows to Cover** (when implemented):
+
+- Complete workout flow (create exercise → log sets → view history)
+- Exercise management (create → edit → delete with sets)
+- Weight unit switching persistence
+- Mobile focus flow (exercise → reps → weight → submit)
+
+**Benefits**: Catches regressions in critical user journeys
+**Cost**: Slow test execution, flaky on portal components, high maintenance
+
+**Decision Point**: Add E2E after 3+ production regressions slip through unit/integration tests
+
+---
+
+### 10. [Testing] Visual Regression Testing
+
+**Tools**: Chromatic, Percy, or Playwright screenshots
+**Priority**: **LOW** - Post-MVP
+**Effort**: 4-6 hours setup
+
+**Use Cases**:
+
+- Component library visual changes
+- Responsive layout verification
+- Dark mode consistency
+- Cross-browser rendering
+
+**Recommendation**: Useful for team collaboration, overkill for solo MVP
+
+---
+
+### 11. [Testing] Performance Testing for Large Datasets
+
+**File**: `tests/performance/large-history.spec.ts`
+**Priority**: **MEDIUM** - Add when users report slowness
+**Effort**: 2-3 hours
+
+**Test Scenarios**:
+
+- Render 1000+ sets in GroupedSetHistory
+- Filter/search performance in ExerciseManager
+- Dashboard stats calculation with 500+ exercises
+
+**Approach**: Vitest benchmarks or Chrome DevTools profiling
+
+---
+
+### 12. [Maintainability] Time Formatting Duplication - 3 Implementations ⚠️ **CRITICAL DUPLICATION**
 
 **Files**: `quick-log-form.tsx:88-96`, `grouped-set-history.tsx:46-63`, `set-card.tsx:37-51`
 **Perspectives**: maintainability-maven, complexity-archaeologist, architecture-guardian

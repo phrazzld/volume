@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePaginatedQuery, useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
-import { GroupedSetHistory } from "@/components/dashboard/grouped-set-history";
+import { ChronologicalGroupedSetHistory } from "@/components/dashboard/chronological-grouped-set-history";
 import { groupSetsByDay } from "@/lib/dashboard-utils";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -20,11 +20,13 @@ export default function HistoryPage() {
   );
 
   // Fetch exercises for names (include deleted to show accurate history)
-  const exercises = useQuery(api.exercises.listExercises, { includeDeleted: true });
+  const exercises = useQuery(api.exercises.listExercises, {
+    includeDeleted: true,
+  });
 
   // Build exercise Map for O(1) lookups
   const exerciseMap = useMemo(
-    () => new Map((exercises ?? []).map(ex => [ex._id, ex])),
+    () => new Map((exercises ?? []).map((ex) => [ex._id, ex])),
     [exercises]
   );
 
@@ -45,17 +47,14 @@ export default function HistoryPage() {
   // Loading state (first page)
   if (status === "LoadingFirstPage") {
     return (
-      <PageLayout title="WORKOUT HISTORY">
+      <PageLayout title="Workout History">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="border border-terminal-border bg-terminal-bg p-4 rounded"
-            >
-              <div className="h-6 bg-terminal-bgSecondary w-1/3 mb-3 rounded" />
+            <div key={i} className="border rounded-md p-4">
+              <div className="h-6 bg-muted w-1/3 mb-3 rounded" />
               <div className="space-y-2">
-                <div className="h-4 bg-terminal-bgSecondary w-full rounded" />
-                <div className="h-4 bg-terminal-bgSecondary w-5/6 rounded" />
+                <div className="h-4 bg-muted w-full rounded" />
+                <div className="h-4 bg-muted w-5/6 rounded" />
               </div>
             </div>
           ))}
@@ -67,17 +66,15 @@ export default function HistoryPage() {
   // Empty state
   if (results.length === 0) {
     return (
-      <PageLayout title="WORKOUT HISTORY">
-        <div className="border border-terminal-border bg-terminal-bg p-12 text-center rounded">
-          <p className="text-terminal-textSecondary uppercase font-mono text-sm mb-2">
-            NO WORKOUT HISTORY YET
+      <PageLayout title="Workout History">
+        <div className="border rounded-md p-12 text-center">
+          <p className="text-muted-foreground text-sm mb-2">
+            No workout history yet
           </p>
-          <p className="text-terminal-info font-mono text-xs mb-1">
-            START YOUR JOURNEY! 🚀
-          </p>
-          <p className="text-terminal-textMuted font-mono text-xs mt-2">
+          <p className="text-sm mb-1">Start your journey! 🚀</p>
+          <p className="text-muted-foreground text-xs mt-2">
             Log your first set on the{" "}
-            <Link href="/" className="text-terminal-success hover:underline">
+            <Link href="/" className="hover:underline">
               Dashboard
             </Link>
           </p>
@@ -87,33 +84,34 @@ export default function HistoryPage() {
   }
 
   return (
-    <PageLayout title="WORKOUT HISTORY">
-      <GroupedSetHistory
+    <PageLayout title="Workout History">
+      <ChronologicalGroupedSetHistory
         groupedSets={groupedSets}
         exerciseMap={exerciseMap}
         onRepeat={handleRepeat}
         onDelete={handleDelete}
+        showRepeat={false}
       />
 
       {/* Load More button */}
       {status === "CanLoadMore" && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center">
           <button
             onClick={() => loadMore(PAGINATION_PAGE_SIZE)}
-            className="px-6 py-2 bg-terminal-success text-terminal-bg font-mono uppercase text-sm hover:opacity-90 transition-opacity border border-terminal-success"
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:opacity-90 transition-opacity"
             type="button"
           >
-            LOAD MORE
+            Load More
           </button>
         </div>
       )}
 
       {/* Loading more indicator */}
       {status === "LoadingMore" && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center">
           <div className="animate-pulse">
-            <div className="px-6 py-2 bg-terminal-bgSecondary text-terminal-textMuted font-mono uppercase text-sm border border-terminal-border">
-              LOADING...
+            <div className="px-6 py-2 bg-muted text-muted-foreground rounded-md text-sm border">
+              Loading...
             </div>
           </div>
         </div>

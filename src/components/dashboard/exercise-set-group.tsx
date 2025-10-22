@@ -1,0 +1,189 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown, ChevronRight, RotateCcw, Trash2 } from "lucide-react";
+import { Id } from "../../../convex/_generated/dataModel";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { handleMutationError } from "@/lib/error-handler";
+import { formatNumber } from "@/lib/number-utils";
+import { formatTimestamp } from "@/lib/date-utils";
+import { Exercise, Set, WeightUnit } from "@/types/domain";
+
+interface ExerciseSetGroupProps {
+  exercise: Exercise;
+  sets: Set[];
+  totalVolume: number;
+  totalReps: number;
+  preferredUnit: WeightUnit;
+  onRepeat: (set: Set) => void;
+  onDelete: (setId: Id<"sets">) => void;
+  showRepeat?: boolean;
+}
+
+export function ExerciseSetGroup({
+  exercise,
+  sets,
+  totalVolume,
+  totalReps,
+  preferredUnit,
+  onRepeat,
+  onDelete,
+  showRepeat = true,
+}: ExerciseSetGroupProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [deletingId, setDeletingId] = useState<Id<"sets"> | null>(null);
+  const [setToDelete, setSetToDelete] = useState<Set | null>(null);
+
+  const handleDeleteClick = (set: Set) => {
+    setSetToDelete(set);
+  };
+
+  const confirmDelete = async () => {
+    if (!setToDelete) return;
+
+    setDeletingId(setToDelete._id);
+    try {
+      await onDelete(setToDelete._id);
+      toast.success("Set deleted");
+      setSetToDelete(null);
+    } catch (error) {
+      handleMutationError(error, "Delete Set");
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <>
+      <div className="border rounded-lg overflow-hidden">
+        {/* Header - Always visible, clickable to expand/collapse */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full px-4 py-3 bg-muted/50 hover:bg-muted transition-colors flex items-center justify-between"
+        >
+          {/* LEFT: Chevron + Exercise Name */}
+          <div className="flex items-center gap-3">
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            )}
+            <span className="font-semibold text-base">{exercise.name}</span>
+          </div>
+
+          {/* RIGHT: Stats - Always right-aligned */}
+          <span className="text-sm text-muted-foreground">
+            {sets.length} set{sets.length === 1 ? "" : "s"} •{" "}
+            {totalVolume > 0
+              ? `${formatNumber(Math.round(totalVolume))} ${preferredUnit}`
+              : `${totalReps} reps`}
+          </span>
+        </button>
+
+        {/* Expanded content - Set list */}
+        {isExpanded && (
+          <div className="divide-y">
+            {sets.map((set) => {
+              const isDeleting = deletingId === set._id;
+              return (
+                <div
+                  key={set._id}
+                  className="px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                >
+                  {/* Set details */}
+                  <div className="flex items-center gap-6">
+                    {/* Reps */}
+                    <div className="w-16">
+                      <span className="font-bold tabular-nums">{set.reps}</span>
+                      <span className="text-muted-foreground text-sm ml-1">
+                        reps
+                      </span>
+                    </div>
+
+                    {/* Weight (if present) */}
+                    <div className="w-32">
+                      {set.weight ? (
+                        <>
+                          <span className="font-bold tabular-nums">
+                            {set.weight}
+                          </span>
+                          <span className="text-muted-foreground text-sm ml-1">
+                            {set.unit || preferredUnit}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </div>
+
+                    {/* Time */}
+                    <div className="text-sm text-muted-foreground">
+                      {formatTimestamp(set.performedAt)}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    {showRepeat && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onRepeat(set)}
+                        disabled={isDeleting}
+                        aria-label="Repeat set"
+                        className="h-8 w-8 p-0"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteClick(set)}
+                      disabled={isDeleting}
+                      aria-label="Delete set"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={setToDelete !== null}
+        onOpenChange={(open) => !open && setSetToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete set?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

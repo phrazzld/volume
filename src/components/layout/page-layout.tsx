@@ -9,7 +9,7 @@ interface PageLayoutProps {
 
   /**
    * Optional page title displayed as h1
-   * (e.g., "DASHBOARD", "WORKOUT HISTORY", "SETTINGS")
+   * (e.g., "Dashboard", "Workout History", "Settings")
    */
   title?: string;
 
@@ -35,7 +35,7 @@ interface PageLayoutProps {
  *
  * @example
  * ```tsx
- * <PageLayout title="DASHBOARD">
+ * <PageLayout title="Dashboard">
  *   <DailyStatsCard />
  *   <QuickLogForm />
  * </PageLayout>
@@ -48,12 +48,14 @@ export function PageLayout({
 }: PageLayoutProps) {
   return (
     <main
-      className={`min-h-screen ${LAYOUT.page.padding} ${
+      className={`flex-1 w-full flex flex-col ${LAYOUT.page.padding} ${
         maxWidth ? LAYOUT.page.maxWidth : ""
       }`}
     >
       {title && (
-        <h1 className="text-2xl font-bold font-mono text-terminal-text uppercase mb-4">
+        <h1
+          className={`text-2xl font-bold tracking-tight ${LAYOUT.page.titleSpacing}`}
+        >
           {title}
         </h1>
       )}

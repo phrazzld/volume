@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { TerminalPanel } from "@/components/ui/terminal-panel";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { handleMutationError } from "@/lib/error-handler";
 
 interface FirstRunExperienceProps {
@@ -58,31 +58,19 @@ export function FirstRunExperience({
   };
 
   return (
-    <TerminalPanel
-      title="SYSTEM INITIALIZATION"
-      titleColor="info"
-      showCornerBrackets={true}
-      className="mb-3"
-    >
-      <div className="p-6">
-        {/* ASCII Art Box */}
+    <Card>
+      <CardHeader>
+        <CardTitle>Welcome to Volume</CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="text-center mb-6">
-          <pre className="text-terminal-info font-mono text-xs mb-4 inline-block">
-            {`┌─────────────────┐
-│   VOLUME  v0.1  │
-│  WORKOUT TRACKER│
-└─────────────────┘`}
-          </pre>
-          <h2 className="text-lg font-bold uppercase text-terminal-text mb-2 font-mono tracking-wider">
-            WELCOME TO VOLUME
-          </h2>
-          <p className="text-terminal-textSecondary font-mono text-sm">
-            CREATE YOUR FIRST EXERCISE TO BEGIN TRACKING
+          <p className="text-muted-foreground text-sm mb-4">
+            Create your first exercise to begin tracking
           </p>
         </div>
 
         {/* Inline Exercise Creator */}
-        <div className="mb-6 p-4 bg-terminal-bgSecondary border border-terminal-info">
+        <div className="mb-6 p-4 border rounded-md">
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -90,25 +78,25 @@ export function FirstRunExperience({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="EXERCISE NAME (e.g., PUSH-UPS)"
-              className="flex-1 px-3 py-3 bg-terminal-bg border border-terminal-border text-terminal-text font-mono placeholder-terminal-textMuted focus:border-terminal-info focus:ring-1 focus:ring-terminal-info uppercase"
+              placeholder="Exercise name (e.g., Push-ups)"
+              className="flex-1 px-3 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={isCreating}
             />
             <button
               type="button"
               onClick={() => handleCreateExercise(name)}
               disabled={!name.trim() || isCreating}
-              className="px-6 py-3 bg-terminal-info text-terminal-bg font-bold uppercase font-mono text-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
-              {isCreating ? "..." : "CREATE"}
+              {isCreating ? "..." : "Create"}
             </button>
           </div>
         </div>
 
         {/* Popular Exercises Quick Create */}
         <div>
-          <p className="text-xs font-bold uppercase text-terminal-textSecondary mb-3 font-mono">
-            OR SELECT POPULAR EXERCISE:
+          <p className="text-xs font-bold text-muted-foreground mb-3">
+            Or select popular exercise:
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {POPULAR_EXERCISES.map((exercise) => (
@@ -117,14 +105,14 @@ export function FirstRunExperience({
                 type="button"
                 onClick={() => handleQuickCreate(exercise)}
                 disabled={isCreating}
-                className="px-4 py-3 text-sm border border-terminal-border text-terminal-text font-mono hover:border-terminal-info hover:text-terminal-info transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase"
+                className="px-4 py-3 text-sm border rounded-md hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exercise}
               </button>
             ))}
           </div>
         </div>
-      </div>
-    </TerminalPanel>
+      </CardContent>
+    </Card>
   );
 }

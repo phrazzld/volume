@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -10,15 +10,15 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { WeightUnitProvider } from "@/contexts/WeightUnitContext";
 import { Toaster } from "sonner";
 
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ["400", "500", "600", "700"],
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
   title: "Volume - Workout Tracker",
-  description: "Simple workout tracking app for tracking sets, reps, and weight",
+  description:
+    "Simple workout tracking app for tracking sets, reps, and weight",
   applicationName: "Volume",
   authors: [{ name: "Volume" }],
   generator: "Next.js",
@@ -33,12 +33,8 @@ export const metadata: Metadata = {
     maximumScale: 1,
   },
   icons: {
-    icon: [
-      { url: "/icon", type: "image/png" },
-    ],
-    apple: [
-      { url: "/apple-icon", sizes: "180x180", type: "image/png" },
-    ],
+    icon: [{ url: "/icon", type: "image/png" }],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
 };
 
@@ -49,14 +45,16 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning className={ibmPlexMono.variable}>
-        <body className="antialiased bg-terminal-bg pb-20 md:pb-12">
+      <html lang="en" suppressHydrationWarning className={inter.variable}>
+        <body className="antialiased font-sans">
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WeightUnitProvider>
               <ConvexClientProvider>
-                <Nav />
-                {children}
-                <Footer />
+                <div className="min-h-screen flex flex-col">
+                  <Nav />
+                  <div className="flex-1 flex flex-col">{children}</div>
+                  <Footer />
+                </div>
                 {/* Bottom navigation - mobile only */}
                 <div className="md:hidden">
                   <BottomNav />
@@ -64,17 +62,7 @@ export default function RootLayout({
               </ConvexClientProvider>
             </WeightUnitProvider>
           </ThemeProvider>
-          <Toaster
-            position="bottom-right"
-            theme="dark"
-            toastOptions={{
-              style: {
-                background: "var(--terminal-bg-secondary)",
-                border: "1px solid var(--terminal-border)",
-                color: "var(--terminal-text)",
-              },
-            }}
-          />
+          <Toaster position="bottom-right" />
         </body>
       </html>
     </ClerkProvider>
