@@ -4,12 +4,8 @@ export const runtime = "edge";
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
-// Three gradient bars centered vertically (audio equalizer / dumbbell aesthetic)
+// Three black bars centered vertically (audio equalizer / dumbbell aesthetic)
 export default function Icon() {
-  // Gradient: Blue (primary/energy) → Green (success/achievement)
-  const gradient =
-    "linear-gradient(to top, hsl(210, 100%, 50%), hsl(142, 76%, 36%))";
-
   return new ImageResponse(
     (
       <div
@@ -29,7 +25,7 @@ export default function Icon() {
           style={{
             width: 6,
             height: 10,
-            background: gradient,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 1.5,
           }}
         />
@@ -38,7 +34,7 @@ export default function Icon() {
           style={{
             width: 6,
             height: 18,
-            background: gradient,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 1.5,
           }}
         />
@@ -47,7 +43,7 @@ export default function Icon() {
           style={{
             width: 6,
             height: 26,
-            background: gradient,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 1.5,
           }}
         />

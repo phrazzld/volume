@@ -4,12 +4,8 @@ export const runtime = "edge";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-// Three gradient bars centered vertically - audio equalizer / dumbbell aesthetic (Apple touch icon)
+// Three black bars centered vertically - audio equalizer / dumbbell aesthetic (Apple touch icon)
 export default function AppleIcon() {
-  // Lighter gradient for contrast on blue background
-  const gradient =
-    "linear-gradient(to top, hsl(210, 100%, 60%), hsl(142, 76%, 45%))";
-
   return new ImageResponse(
     (
       <div
@@ -29,7 +25,7 @@ export default function AppleIcon() {
           style={{
             width: 28,
             height: 45,
-            background: gradient,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 4,
           }}
         />
@@ -38,7 +34,7 @@ export default function AppleIcon() {
           style={{
             width: 28,
             height: 75,
-            background: gradient,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 4,
           }}
         />
@@ -47,7 +43,7 @@ export default function AppleIcon() {
           style={{
             width: 28,
             height: 105,
-            background: gradient,
+            background: "hsl(0, 0%, 0%)",
             borderRadius: 4,
           }}
         />
