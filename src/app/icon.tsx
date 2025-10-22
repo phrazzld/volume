@@ -4,7 +4,7 @@ export const runtime = "edge";
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
-// Three ascending bars with blue-to-green gradient representing progression
+// Three gradient bars centered vertically (audio equalizer / dumbbell aesthetic)
 export default function Icon() {
   // Gradient: Blue (primary/energy) → Green (success/achievement)
   const gradient =
@@ -17,7 +17,7 @@ export default function Icon() {
           width: "100%",
           height: "100%",
           display: "flex",
-          alignItems: "flex-end",
+          alignItems: "center",
           justifyContent: "center",
           gap: "2px",
           background: "transparent",

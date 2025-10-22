@@ -4,7 +4,7 @@ export const runtime = "edge";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-// Three ascending bars with gradient representing progression (Apple touch icon)
+// Three gradient bars centered vertically - audio equalizer / dumbbell aesthetic (Apple touch icon)
 export default function AppleIcon() {
   // Lighter gradient for contrast on blue background
   const gradient =
@@ -17,7 +17,7 @@ export default function AppleIcon() {
           width: "100%",
           height: "100%",
           display: "flex",
-          alignItems: "flex-end",
+          alignItems: "center",
           justifyContent: "center",
           gap: "8px",
           background: "hsl(210, 100%, 50%)", // Primary blue background
