@@ -33,10 +33,9 @@ http.route({
       });
 
       // Fetch created exercise to return full object
-      const exercise = await ctx.runQuery(api.exercises.listExercises, {
-        includeDeleted: true,
+      const created = await ctx.runQuery(api.exercises.getExercise, {
+        id: exerciseId,
       });
-      const created = exercise.find((e) => e._id === exerciseId);
 
       return new Response(
         JSON.stringify({
@@ -220,10 +219,9 @@ http.route({
       });
 
       // Fetch restored exercise
-      const exercises = await ctx.runQuery(api.exercises.listExercises, {
-        includeDeleted: true,
+      const restored = await ctx.runQuery(api.exercises.getExercise, {
+        id: id as any,
       });
-      const restored = exercises.find((e) => e._id === id);
 
       return new Response(
         JSON.stringify({
@@ -292,8 +290,9 @@ http.route({
       });
 
       // Fetch created set to return full object
-      const sets = await ctx.runQuery(api.sets.listSets, {});
-      const created = sets.find((s) => s._id === setId);
+      const created = await ctx.runQuery(api.sets.getSet, {
+        id: setId,
+      });
 
       return new Response(
         JSON.stringify({
