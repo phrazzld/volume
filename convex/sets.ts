@@ -107,6 +107,25 @@ export const listSetsPaginated = query({
   },
 });
 
+// Get a single set by ID
+export const getSet = query({
+  args: { id: v.id("sets") },
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);
+    const set = await ctx.db.get(args.id);
+
+    if (!set) {
+      throw new Error("Set not found");
+    }
+
+    if (set.userId !== identity.subject) {
+      throw new Error("You do not own this set");
+    }
+
+    return set;
+  },
+});
+
 // Delete a set
 export const deleteSet = mutation({
   args: {

@@ -1,484 +1,478 @@
-# TODO: Dashboard UX Redesign
+# TODO - PR #17 Critical Fixes
 
-## Progress Summary
-
-**Status:** Phase 4 Partially Complete ✅ | Phase 5 Next (Mobile Optimization)
-
-- ✅ **Phase 1:** Information Architecture (Navigation restructure, Exercises page)
-- ✅ **Phase 2.1:** Hero Stats Card (Big numbers, icons, visual hierarchy)
-- ✅ **Phase 2.2:** Quick Log Form Review (Already optimized)
-- ✅ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
-- ✅ **Phase 3:** Visual Design System (Colors, typography, spacing, shadows)
-- ✅ **Phase 4:** Motivational Elements (PRs ✅, Streaks ✅ | Insights ⏸️ deferred)
-- ⏳ **Phase 5:** Mobile Optimization (Bottom sheet, touch targets)
-
-**Previous Work:**
-
-- ✅ shadcn/ui migration complete (PR #15)
-- ✅ 150 tests passing, TypeScript clean
-- ✅ React-hook-form + zod validation throughout
+Critical issues identified in automated code review that must be addressed before merging.
 
 ---
 
-## Context & Patterns
+## 🔴 CRITICAL (Block Merge)
 
-### Current Tech Stack
+### ✅ 1. Fix Inefficient POST Query Pattern [COMPLETED]
 
-- **UI Components:** shadcn/ui (Radix primitives + Tailwind)
-- **Forms:** react-hook-form + zod validation
-- **State:** Convex (useQuery/useMutation)
-- **Icons:** lucide-react
-- **Testing:** vitest + @testing-library/react
-- **Styling:** Tailwind CSS (utility-first)
+**Problem**: After creating resources, code fetches ALL user records then filters client-side
+**Impact**: O(n) performance, 50KB+ wasted bandwidth at 1000 records
+**Files**: `convex/http.ts:36-39, 223-226, 295-296`
 
-### Codebase Patterns
+**Tasks**:
+
+#### 1a. Add getSingleExercise Query
+
+**File**: `convex/exercises.ts`
+
+Add new query function:
 
 ```typescript
-// Data fetching
-const data = useQuery(api.module.functionName, { args });
+export const getExercise = query({
+  args: { id: v.id("exercises") },
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);
+    const exercise = await ctx.db.get(args.id);
 
-// Mutations
-const mutate = useMutation(api.module.functionName);
-await mutate({ args });
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
 
-// Forms
-const form = useForm<FormValues>({
-  resolver: zodResolver(schema),
-  defaultValues: { ... }
+    if (exercise.userId !== identity.subject) {
+      throw new Error("You do not own this exercise");
+    }
+
+    return exercise;
+  },
 });
+```
 
-// Error handling
-import { handleMutationError } from "@/lib/error-handler";
-try {
-  await mutation();
-} catch (error) {
-  handleMutationError(error, "Context");
+#### 1b. Add getSingleSet Query
+
+**File**: `convex/sets.ts`
+
+Add similar `getSet` query following same pattern
+
+#### 1c. Update POST /api/exercises Endpoint
+
+**File**: `convex/http.ts:31-52`
+
+Replace:
+
+```typescript
+const exercises = await ctx.runQuery(api.exercises.listExercises, {
+  includeDeleted: true,
+});
+const created = exercises.find((e) => e._id === exerciseId);
+```
+
+With:
+
+```typescript
+const created = await ctx.runQuery(api.exercises.getExercise, {
+  id: exerciseId,
+});
+```
+
+#### 1d. Update POST /api/sets Endpoint
+
+**File**: `convex/http.ts:287-311`
+
+Replace inefficient `listSets` call with `getSingleSet` query
+
+#### 1e. Update POST /api/exercises/:id/restore Endpoint
+
+**File**: `convex/http.ts:218-238`
+
+Replace inefficient `listExercises` call with `getExercise` query
+
+**Acceptance**: All POST endpoints fetch only the created record, not all records
+
+---
+
+### ✅ 2. Fix Type Safety Violations [COMPLETED]
+
+**Problem**: `as any` casts bypass TypeScript protection
+**Impact**: Runtime errors from invalid IDs
+**Files**: `convex/http.ts` lines 133, 179, 219, 288, 341, 424
+
+**Tasks**:
+
+#### 2a. Create ID Parser Utilities
+
+**File**: NEW `convex/lib/id-utils.ts`
+
+```typescript
+import { Id } from "../_generated/dataModel";
+
+/**
+ * Parse and validate exercise ID from HTTP request
+ * Throws error if ID is missing or invalid format
+ */
+export function parseExerciseId(id: string | undefined): Id<"exercises"> {
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw new Error("Invalid exercise ID");
+  }
+  // Convex IDs are opaque strings - runtime validation happens in mutations
+  return id as Id<"exercises">;
+}
+
+/**
+ * Parse and validate set ID from HTTP request
+ * Throws error if ID is missing or invalid format
+ */
+export function parseSetId(id: string | undefined): Id<"sets"> {
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw new Error("Invalid set ID");
+  }
+  return id as Id<"sets">;
 }
 ```
 
-### Design Principles
+#### 2b. Replace All `as any` Casts in PATCH /api/exercises/:id
 
-From brainstorming session:
+**File**: `convex/http.ts:107-163`
 
-1. **User-facing language** - "Today" not "Dashboard", "Exercises" not "Manage"
-2. **Visual hierarchy** - Hero stats > actions > details
-3. **Data density** - Show value, hide noise (collapsible breakdowns)
-4. **Motivational** - Celebrate achievements (PRs, streaks)
-5. **Mobile-first** - Touch targets, keyboard behavior, bottom sheets
-
----
-
-## Phase 2.3: Exercise Grouping (HIGH IMPACT)
-
-**Goal:** Restructure set history to group by exercise, not just chronological order.
-
-**Current State:**
-
-```
-Today (15 sets)
-├─ 5:30 PM - Squats - 12 reps @ 315 lbs
-├─ 5:33 PM - Squats - 10 reps @ 315 lbs
-├─ 5:35 PM - Bench Press - 8 reps @ 225 lbs
-├─ 5:38 PM - Squats - 10 reps @ 315 lbs  ← Hard to scan
-└─ ...
-```
-
-**Target State:**
-
-```
-Today (3 exercises, 15 sets)
-
-▾ Squats • 5 sets • 3,500 lbs
-  ├─ 12 × 315 lbs  5:30 PM  [↻][×]
-  ├─ 10 × 315 lbs  5:33 PM  [↻][×]
-  ├─ 10 × 315 lbs  5:38 PM  [↻][×]
-  ├─ 8  × 315 lbs  5:40 PM  [↻][×]
-  └─ 8  × 315 lbs  5:42 PM  [↻][×]
-
-▾ Bench Press • 5 sets • 4,500 lbs
-  └─ ...
-
-▾ Barbell Rows • 5 sets • 4,450 lbs
-  └─ ...
-```
-
-### Implementation Tasks
-
-- [x] **2.3.1: Create exercise grouping utility** (1h)
-  - File: `src/lib/dashboard-utils.ts`
-  - Function: `groupSetsByExercise(sets: Set[]) => ExerciseGroup[]`
-  - Returns: Array of `{ exerciseId, sets[], totalVolume, totalReps }`
-  - Sort: By most recently performed (first set in group)
-
-- [x] **2.3.2: Create ExerciseSetGroup component** (2h)
-  - File: `src/components/dashboard/exercise-set-group.tsx`
-  - Props: `{ exercise, sets, onRepeat, onDelete, preferredUnit }`
-  - Features:
-    - Collapsible (expanded by default)
-    - Shows aggregate stats in header (N sets • X volume)
-    - Compact set list (no "Exercise" column needed)
-    - Actions: Repeat, Delete (same as current)
-
-- [x] **2.3.3: Update GroupedSetHistory component** (1h)
-  - File: `src/components/dashboard/grouped-set-history.tsx`
-  - Replace chronological table with exercise groups
-  - Remove "Exercise" column (redundant)
-  - Preserve time formatting, actions
-
-- [x] **2.3.4: Update Dashboard.tsx** (30m)
-  - File: `src/components/dashboard/Dashboard.tsx`
-  - Pass `groupSetsByExercise(todaysSets)` to GroupedSetHistory
-  - Update component title to "Today's Workout"
-
-**Success Criteria:**
-
-- ✓ Sets grouped by exercise, not just time
-- ✓ Exercise groups collapsible (all expanded by default)
-- ✓ Aggregate stats visible (N sets, X volume)
-- ✓ Repeat and Delete actions still work
-- ✓ Time formatting preserved
-- ✓ Mobile responsive
-- ✓ TypeScript clean, tests pass
-
-**Effort:** 4-5 hours
-**Risk:** Medium (data restructuring, visual changes)
-
----
-
-## Phase 3: Visual Design System (POLISH)
-
-**Goal:** Define cohesive color palette, typography scale, and spacing rhythm.
-
-### 3.1: Color System (1h)
-
-**Current:** Generic gray, minimal color usage
-**Target:** Purposeful color for hierarchy and emotion
-
-- [x] **Define color tokens** in `tailwind.config.ts`
+Replace line 133:
 
 ```typescript
-// Add to theme.extend.colors
-colors: {
-  // Primary: Action & Energy (blue/cyan)
-  primary: {
-    DEFAULT: 'hsl(210, 100%, 50%)',  // Vibrant blue
-    hover: 'hsl(210, 100%, 45%)',
-    active: 'hsl(210, 100%, 40%)',
-  },
+// Before
+id: id as any,
 
-  // Success: Achievement (bright green)
-  success: {
-    DEFAULT: 'hsl(142, 76%, 36%)',
-    light: 'hsl(142, 76%, 90%)',
-  },
+// After
+import { parseExerciseId } from "./lib/id-utils";
+const exerciseId = parseExerciseId(request.url.split("/").pop());
+id: exerciseId,
+```
 
-  // Accent: Attention (amber/orange)
-  accent: {
-    DEFAULT: 'hsl(38, 92%, 50%)',
-    light: 'hsl(38, 92%, 90%)',
-  },
+#### 2c. Replace All `as any` in DELETE /api/exercises/:id
+
+**File**: `convex/http.ts:165-201`
+
+Replace line 179
+
+#### 2d. Replace All `as any` in POST /api/exercises/:id/restore
+
+**File**: `convex/http.ts:203-254`
+
+Replace line 219
+
+#### 2e. Replace All `as any` in POST /api/sets
+
+**File**: `convex/http.ts:256-324`
+
+Replace line 288 (use parseExerciseId for exerciseId param)
+
+#### 2f. Replace All `as any` in GET /api/sets
+
+**File**: `convex/http.ts:326-360`
+
+Replace line 341 (use parseExerciseId for query param)
+
+#### 2g. Replace All `as any` in DELETE /api/sets/:id
+
+**File**: `convex/http.ts:411-445`
+
+Replace line 424 (use parseSetId)
+
+**Acceptance**: Zero `as any` casts in http.ts, all ID parsing uses type-safe utilities
+
+---
+
+### ✅ 3. Add HTTP Endpoint Integration Tests [COMPLETED]
+
+**Problem**: 542 lines of HTTP code with ZERO tests
+**Impact**: API contract violations, auth bypass bugs
+**File**: NEW `convex/http.test.ts`
+
+**Tasks**:
+
+#### 3a. Create Test File Structure
+
+**File**: NEW `convex/http.test.ts`
+
+Setup test infrastructure with ConvexTestingHelper
+
+#### 3b. Test Authentication Enforcement
+
+Write tests verifying:
+
+- All endpoints return 401 without auth token
+- Endpoints work with valid auth token
+- Multi-user isolation (user A can't access user B's data)
+
+#### 3c. Test Input Validation
+
+Write tests for:
+
+- POST /api/exercises with missing name → 400
+- POST /api/sets with missing reps → 400
+- POST /api/sets with invalid exerciseId → 400
+- PATCH /api/preferences with invalid weightUnit → 400
+
+#### 3d. Test Query Parameters
+
+Write tests for:
+
+- GET /api/exercises?includeDeleted=true includes deleted exercises
+- GET /api/exercises?includeDeleted=false excludes deleted
+- GET /api/sets?exerciseId=xyz filters correctly
+- GET /api/sets/paginated?cursor=abc&pageSize=25 handles pagination
+
+#### 3e. Test Path Parameters
+
+Write tests for:
+
+- PATCH /api/exercises/:id updates correct exercise
+- DELETE /api/exercises/:id deletes correct exercise
+- POST /api/exercises/:id/restore restores deleted exercise
+- DELETE /api/sets/:id deletes correct set
+
+#### 3f. Test Error Responses
+
+Write tests for:
+
+- 404 when accessing non-existent resource
+- 403 when accessing another user's resource (IDOR protection)
+- Error response format consistency
+
+**Acceptance**:
+
+- 30+ tests covering all HTTP endpoints
+- All auth, validation, query param, path param scenarios tested
+- Test coverage report shows >80% for http.ts
+
+---
+
+## 🟡 HIGH PRIORITY (Before iOS Dev)
+
+### 4. Standardize Error Status Codes [~1-2hrs]
+
+**Problem**: Same errors return 400 in some places, 500 in others
+**File**: `convex/http.ts` (multiple locations)
+
+**Tasks**:
+
+#### 4a. Create Error Response Utility
+
+**File**: NEW `convex/lib/http-utils.ts`
+
+```typescript
+export function errorResponse(error: unknown, context: string): Response {
+  const message = error instanceof Error ? error.message : `${context} failed`;
+
+  // Map error messages to HTTP status codes
+  let status = 500; // Default to server error
+
+  if (message.includes("not found") || message.includes("does not exist")) {
+    status = 404;
+  } else if (
+    message.includes("required") ||
+    message.includes("invalid") ||
+    message.includes("must be")
+  ) {
+    status = 400;
+  } else if (
+    message.includes("not own") ||
+    message.includes("not authorized") ||
+    message.includes("Unauthorized")
+  ) {
+    status = 403;
+  }
+
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export function jsonResponse(data: unknown, status: number = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 ```
 
-- [x] **Apply colors strategically**
-  - Log Set button: `bg-primary hover:bg-primary-hover` ✓ (shadcn Button default)
-  - PR badges: `bg-success text-success-foreground` (Phase 4)
-  - Insights/tips: `border-accent bg-accent-light` (Phase 4)
-  - Keep most UI neutral (don't overuse color) ✓
+#### 4b. Replace All Error Handling in http.ts
 
-### 3.2: Typography Scale (30m)
+**File**: `convex/http.ts` (15+ catch blocks)
 
-- [x] **Define text sizes** in `tailwind.config.ts` or use built-in scale ✓
+Replace all instances of:
 
 ```typescript
-// Usage guide - Using Tailwind's built-in scale (no custom config needed)
-Hero numbers:  text-4xl (48px) font-bold      // Daily volume, PR stats
-Section titles: text-xl (20px) font-semibold  // Card titles
-Body text:      text-base (16px)              // Form labels, table data
-Meta text:      text-sm (14px)                // Timestamps, hints
-Tiny text:      text-xs (12px)                // Footnotes
+catch (error) {
+  return new Response(
+    JSON.stringify({
+      error: error instanceof Error ? error.message : "...",
+    }),
+    {
+      status: 400, // or 500
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+}
 ```
 
-- [x] **Apply to key components**
-  - DailyStatsCard hero numbers: Increase to `text-4xl` ✓
-  - Card titles: Ensure `text-xl font-semibold` ✓
-  - Timestamps: `text-sm text-muted-foreground` ✓
+With:
 
-### 3.3: Spacing Rhythm (30m)
+```typescript
+import { errorResponse } from "./lib/http-utils";
 
-**Current:** Inconsistent spacing
-**Target:** 8px base unit throughout
-
-- [x] **Audit spacing** in key components
-  - Card padding: `p-6` (24px) ✓ Already consistent (shadcn default)
-  - Section gaps: `space-y-8` (32px) → PageLayout needs update (currently `space-y-4`)
-  - Form field gaps: `gap-4` (16px) ✓ Already consistent
-  - Inline element gaps: `gap-2` (8px) → Mixed (`gap-1` to `gap-6`), acceptable variation
-
-  ```
-  Audit findings:
-  - PageLayout spacing: space-y-4 (16px) → should be space-y-8 (32px)
-  - Card components: p-6 already standard ✓
-  - Form grids: gap-4 already standard ✓
-  - Inline gaps: Contextual variation (gap-1 for icons, gap-2 for buttons, gap-3+ for sections)
-  ```
-
-- [x] **Update PageLayout** spacing
-  - File: `src/components/layout/page-layout.tsx`
-  - Standardize page content spacing ✓
-
-### 3.4: Visual Depth (30m)
-
-- [x] **Add subtle shadows** to cards
-  - Update Card component or use `shadow-sm` utility ✓
-  - Hover states: `hover:shadow-md transition-shadow` ✓
-  - Elevate important actions (Log Set button) ✓
-
-**Success Criteria:**
-
-- ✓ Consistent color usage (primary, success, accent)
-- ✓ Clear typography hierarchy (4xl → xl → base → sm → xs)
-- ✓ 8px base spacing rhythm
-- ✓ Subtle depth via shadows
-- ✓ Visual changes enhance, don't distract
-
-**Effort:** 2-3 hours
-**Risk:** Low (mostly styling tweaks)
-
----
-
-## Phase 4: Motivational Elements (ENGAGEMENT)
-
-**Goal:** Add gamification and feedback to encourage consistent use.
-
-### 4.1: PR Detection (2h) ✅
-
-- [x] **Create PR detection utility** ✓
-  - File: `src/lib/pr-detection.ts`
-  - Function: `checkForPR(set, previousSets) => PRType | null`
-  - Types: `'weight' | 'reps' | 'volume' | null`
-  - Logic: Compare current set against all previous for same exercise
-
-- [x] **Create PR celebration component** ✓
-  - File: `src/components/dashboard/pr-celebration.tsx`
-  - Shows: "🎉 NEW PR! Squats: 315 × 12 (previous: 315 × 10)"
-  - Auto-dismiss after 5 seconds
-  - Uses Sonner toast with 🏆 icon
-
-- [x] **Integrate PR detection** ✓
-  - Check after each set logged (useQuickLogForm hook)
-  - Show celebration toast (showPRCelebration)
-  - Add PR badge in set history (🏆 Trophy icon in ExerciseSetGroup)
-
-### 4.2: Streak Counter (1h) ✅
-
-- [x] **Create streak calculation utility** ✓
-  - File: `src/lib/streak-calculator.ts`
-  - Query all sets, group by day
-  - Calculate consecutive days with sets logged
-  - Handle timezone properly (using date-fns)
-
-- [x] **Display streak in DailyStatsCard** ✓
-  - Component: DailyStatsCard
-  - Format: "🔥 X Day Streak"
-  - Celebrate milestones (7, 30, 100 days)
-  - Highlighted background for 7+ day streaks
-
-### 4.3: Contextual Insights ⏸️ **DEFERRED TO BACKLOG**
-
-**Reason:** Feature work beyond aesthetic overhaul scope. Branch focus is UI/UX polish.
-
-~~Create insights generator (see BACKLOG.md for details)~~
-
-### 4.4: Progress Indicators ⏸️ **DEFERRED TO BACKLOG**
-
-**Reason:** Feature work beyond aesthetic overhaul scope. Branch focus is UI/UX polish.
-
-~~Add progress vs. goals (see BACKLOG.md for details)~~
-
-**Success Criteria:**
-
-- ✅ PR detection works accurately
-- ✅ PR celebration shown (toast + badge)
-- ✅ Streak counter accurate and visible
-- ⏸️ Insights helpful, not annoying (max 1-2) - DEFERRED
-- ⏸️ Users feel encouraged, not pressured - DEFERRED
-
-**Effort:** 3 hours (completed: PR detection + streak)
-**Risk:** Low (core gamification features working)
-
----
-
-## Phase 5: Mobile Optimization (CRITICAL UX)
-
-**Goal:** Optimize for gym usage (primary use case is mobile).
-
-### 5.1: Bottom Sheet Quick Log (3h)
-
-**Current:** Inline form on page
-**Target:** Floating action button → slide-up drawer
-
-- [ ] **Add floating action button** (FAB)
-  - File: `src/components/dashboard/floating-action-button.tsx`
-  - Position: `fixed bottom-20 right-4` (above bottom nav)
-  - Icon: Plus or Dumbbell
-  - Shows: Only on mobile (hidden md:hidden)
-
-- [ ] **Create bottom sheet drawer**
-  - Library: `vaul` (shadcn-compatible) or custom
-  - Slides up from bottom when FAB clicked
-  - Contains QuickLogForm
-  - Dismissible via swipe or backdrop click
-  - Keyboard-aware (adjusts for virtual keyboard)
-
-- [ ] **Alternative: Keep inline form, optimize spacing**
-  - Simpler approach if bottom sheet is overkill
-  - Ensure form always visible, not buried below hero stats
-
-### 5.2: Touch Target Sizing (1h)
-
-**WCAG Guideline:** Min 44×44px for touch targets
-
-- [ ] **Audit interactive elements**
-  - Buttons: Ensure `h-11` (44px) minimum
-  - Form inputs: Already 46px, good
-  - Icon buttons: Add padding if needed
-  - Table actions (Repeat, Delete): Increase size
-
-- [ ] **Add touch-friendly spacing**
-  - Increase gaps between buttons in action columns
-  - Ensure no accidental taps
-
-### 5.3: Keyboard Behavior (1h)
-
-- [ ] **Auto-advance on number inputs**
-  - After entering reps → auto-focus weight (already done via Enter)
-  - Consider auto-advance on valid input (e.g., 2 digits)
-
-- [ ] **Numeric keyboard optimization**
-  - Ensure `inputMode="numeric"` on all number fields (already done)
-  - Test on iOS Safari (primary platform)
-
-### 5.4: Performance on Low-End Devices (1h)
-
-- [ ] **Test on throttled connection**
-  - Ensure loading states visible
-  - Optimistic UI updates feel instant
-
-- [ ] **Reduce animation complexity** if needed
-  - Simplify confetti or other animations
-  - Ensure 60fps scrolling
-
-**Success Criteria:**
-
-- ✓ FAB or optimized inline form (mobile-friendly)
-- ✓ All touch targets ≥44px
-- ✓ Keyboard auto-advances smoothly
-- ✓ No accidental taps/clicks
-- ✓ Fast, responsive on mobile
-- ✓ iOS Safari tested and working
-
-**Effort:** 4-5 hours
-**Risk:** Medium (platform-specific bugs, UX testing needed)
-
----
-
-## Quick Wins (< 30 min each)
-
-These can be done anytime for immediate polish:
-
-- [x] Add primary color to "Log Set" button ✓ (Phase 3 - Button default variant)
-- [x] Increase hero stat font size to `text-4xl` ✓ (Phase 3 - Typography)
-- [x] Add subtle card shadows (`shadow-sm`) ✓ (Phase 3 - Visual Depth)
-- [x] Round volume numbers (12,450 → 12.4K) ✓
-- [x] Add loading spinner to "Log Set" button ✓
-- [ ] Improve empty state illustrations
-- [x] Add hover states to exercise groups ✓ (Phase 3 - Card hover:shadow-md)
-- [x] Smooth scroll to latest set after logging ✓
-
----
-
-## Testing Checklist
-
-After each phase:
-
-- [x] TypeScript: `pnpm typecheck` passes ✓
-- [x] Linting: `pnpm lint` passes ✓ (No warnings or errors)
-- [x] Tests: `pnpm test --run` all passing ✓ (157/157)
-- [ ] Manual QA: Desktop Chrome (primary dev browser)
-- [ ] Manual QA: Mobile iOS Safari (primary user platform)
-- [ ] Manual QA: Dark mode toggle still works
-- [ ] Manual QA: All happy paths work (log set, create exercise, delete)
-
----
-
-## Commit Strategy
-
-**Commit after each completed task** for easy rollback:
-
-```bash
-# Phase 2.3
-git commit -m "feat(ui): add exercise grouping utility"
-git commit -m "feat(ui): create ExerciseSetGroup component"
-git commit -m "feat(ui): restructure set history by exercise"
-
-# Phase 3
-git commit -m "style: define color system (primary, success, accent)"
-git commit -m "style: apply typography scale"
-git commit -m "style: standardize spacing rhythm"
-
-# Phase 4
-git commit -m "feat(gamification): add PR detection"
-git commit -m "feat(gamification): add streak counter"
-git commit -m "feat(gamification): add contextual insights"
-
-# Phase 5
-git commit -m "feat(mobile): add floating action button"
-git commit -m "feat(mobile): optimize touch targets"
-git commit -m "feat(mobile): improve keyboard behavior"
+catch (error) {
+  return errorResponse(error, "Create exercise");
+}
 ```
 
----
+#### 4c. Replace All Success Responses
 
-## Future Considerations (Post-Redesign)
+Replace all `new Response(JSON.stringify(...))` with `jsonResponse(...)`
 
-These ideas came up during brainstorming but are out of scope for current work:
-
-- **Routine templates** - Pre-built workout structures
-- **Rest timer** - Auto-start after logging set
-- **Plate calculator** - Show barbell loading
-- **Exercise search/filter** - For users with 50+ exercises
-- **Analytics page** - Charts, trends, progress over time
-- **Social features** - Share PRs, leaderboards
-- **Offline mode** - IndexedDB + background sync
-
-See `BACKLOG.md` for full roadmap.
+**Acceptance**: Consistent error codes across all endpoints, reusable utilities
 
 ---
 
-## Resources
+### 5. Fix Brittle URL Parsing [~30min]
 
-**Design Inspiration:**
+**Problem**: Three different parsing strategies, no validation
+**Files**: `convex/http.ts` lines 118, 176, 214-216
 
-- Strong app (market leader, comprehensive)
-- Hevy app (social-first, community routines)
-- Strava (athlete-focused, data-driven)
-- Linear (clean, modern, purposeful color)
+**Tasks**:
 
-**shadcn/ui Docs:**
+#### 5a. Add URL Utility to http-utils.ts
 
-- Components: https://ui.shadcn.com/docs/components
-- Themes: https://ui.shadcn.com/themes
-- Icons (lucide): https://lucide.dev/icons
+**File**: `convex/lib/http-utils.ts`
 
-**Best Practices:**
+```typescript
+/**
+ * Extract path parameter from URL
+ * @param url Full request URL
+ * @param paramName Parameter name (e.g., "exercises", "sets")
+ * @returns Extracted parameter value
+ * @throws Error if parameter not found
+ */
+export function extractPathParam(url: string, paramName: string): string {
+  const urlObj = new URL(url);
+  const segments = urlObj.pathname.split("/").filter(Boolean);
+  const paramIndex = segments.indexOf(paramName) + 1;
 
-- WCAG 2.1 AA accessibility
-- Mobile-first design
-- Progressive enhancement
-- Semantic HTML
+  if (paramIndex === 0 || paramIndex >= segments.length) {
+    throw new Error(`Missing path parameter: ${paramName}`);
+  }
+
+  return segments[paramIndex];
+}
+```
+
+#### 5b. Replace All URL Parsing Logic
+
+Replace:
+
+- Line 118: `request.url.split("/").pop()`
+- Line 176: `request.url.split("/").pop()?.split("?")[0]`
+- Line 214-216: Manual segment extraction
+
+With:
+
+```typescript
+const id = extractPathParam(request.url, "exercises");
+```
+
+**Acceptance**: Single URL parsing strategy, consistent validation
 
 ---
 
-**Last Updated:** 2025-10-17
-**Current Branch:** `feature/shadcn-migration` (will merge to master after Phase 2.3 + Phase 3)
+### 6. Document API Error Codes [~20min]
+
+**Problem**: iOS developers have no error code documentation
+**File**: `convex/README.md`
+
+**Tasks**:
+
+#### 6a. Add Error Response Section
+
+After "Authentication" section, add:
+
+```markdown
+## Error Responses
+
+All endpoints return errors in this JSON format:
+
+\`\`\`json
+{
+"error": "Human-readable error message"
+}
+\`\`\`
+
+### HTTP Status Codes
+
+- **200 OK**: Request succeeded
+- **400 Bad Request**: Invalid input (missing fields, validation failed)
+- **401 Unauthorized**: Missing or invalid authentication token
+- **403 Forbidden**: Valid auth but insufficient permissions
+- **404 Not Found**: Resource doesn't exist
+- **500 Internal Server Error**: Server-side failure
+
+### Common Error Scenarios
+
+#### Missing Authentication
+
+\`\`\`bash
+curl https://curious-salamander-943.convex.cloud/api/exercises
+
+# Response: 401 Unauthorized
+
+\`\`\`
+
+#### Invalid Input
+
+\`\`\`bash
+curl -X POST https://curious-salamander-943.convex.cloud/api/exercises \\
+-H "Authorization: Bearer $TOKEN" \\
+-d '{"name": ""}'
+
+# Response: 400 {"error": "Exercise name is required"}
+
+\`\`\`
+
+#### IDOR Protection
+
+\`\`\`bash
+
+# Trying to access another user's exercise
+
+curl https://curious-salamander-943.convex.cloud/api/exercises/xyz \\
+-H "Authorization: Bearer $TOKEN"
+
+# Response: 403 {"error": "You do not own this exercise"}
+
+\`\`\`
+
+#### Resource Not Found
+
+\`\`\`bash
+curl https://curious-salamander-943.convex.cloud/api/exercises/invalid-id \\
+-H "Authorization: Bearer $TOKEN"
+
+# Response: 404 {"error": "Exercise not found"}
+
+\`\`\`
+```
+
+**Acceptance**: iOS team has clear error handling documentation
+
+---
+
+## Summary
+
+**Critical Path** (must fix before merge):
+
+1. ✅ Inefficient POST queries → ~45 min [COMPLETED]
+2. ✅ Type safety violations → ~60 min [COMPLETED]
+3. ✅ HTTP endpoint tests → ~4-6 hrs [COMPLETED]
+
+**Total**: ✅ All critical tasks completed!
+
+**High Priority** (before iOS dev starts): 4. Error status codes → ~1-2 hrs 5. URL parsing → ~30 min 6. Error documentation → ~20 min
+
+**Total**: 8-10 hours before iOS integration
+
+**Deferred to BACKLOG**:
+
+- Pagination validation (security)
+- Response format standardization
+- Code duplication cleanup
+- Rate limiting (already in BACKLOG)

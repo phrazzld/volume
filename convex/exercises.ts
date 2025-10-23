@@ -104,6 +104,25 @@ export const listExercises = query({
   },
 });
 
+// Get a single exercise by ID
+export const getExercise = query({
+  args: { id: v.id("exercises") },
+  handler: async (ctx, args) => {
+    const identity = await requireAuth(ctx);
+    const exercise = await ctx.db.get(args.id);
+
+    if (!exercise) {
+      throw new Error("Exercise not found");
+    }
+
+    if (exercise.userId !== identity.subject) {
+      throw new Error("You do not own this exercise");
+    }
+
+    return exercise;
+  },
+});
+
 // Update an exercise
 export const updateExercise = mutation({
   args: {
