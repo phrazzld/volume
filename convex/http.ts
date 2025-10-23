@@ -253,4 +253,195 @@ http.route({
   }),
 });
 
+// POST /api/sets - Log a new set
+http.route({
+  path: "/api/sets",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const body = await request.json();
+      const { exerciseId, reps, weight, unit } = body;
+
+      if (!exerciseId || typeof exerciseId !== "string") {
+        return new Response(
+          JSON.stringify({ error: "Exercise ID is required" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (!reps || typeof reps !== "number") {
+        return new Response(JSON.stringify({ error: "Reps is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const setId = await ctx.runMutation(api.sets.logSet, {
+        exerciseId: exerciseId as any,
+        reps,
+        weight,
+        unit,
+      });
+
+      // Fetch created set to return full object
+      const sets = await ctx.runQuery(api.sets.listSets, {});
+      const created = sets.find((s) => s._id === setId);
+
+      return new Response(
+        JSON.stringify({
+          id: created?._id,
+          exerciseId: created?.exerciseId,
+          reps: created?.reps,
+          weight: created?.weight,
+          unit: created?.unit,
+          performedAt: created?.performedAt,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: error instanceof Error ? error.message : "Failed to log set",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
+// GET /api/sets - List sets (optionally filtered by exerciseId)
+http.route({
+  path: "/api/sets",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const url = new URL(request.url);
+      const exerciseId = url.searchParams.get("exerciseId");
+
+      const sets = await ctx.runQuery(api.sets.listSets, {
+        exerciseId: exerciseId ? (exerciseId as any) : undefined,
+      });
+
+      return new Response(JSON.stringify({ sets }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error: error instanceof Error ? error.message : "Failed to list sets",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
+// GET /api/sets/paginated - List sets with pagination
+http.route({
+  path: "/api/sets/paginated",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const url = new URL(request.url);
+      const cursor = url.searchParams.get("cursor");
+      const pageSizeParam = url.searchParams.get("pageSize");
+      const numItems = pageSizeParam ? parseInt(pageSizeParam, 10) : 25;
+
+      const result = await ctx.runQuery(api.sets.listSetsPaginated, {
+        paginationOpts: {
+          numItems,
+          cursor: cursor || null,
+        },
+      });
+
+      return new Response(
+        JSON.stringify({
+          sets: result.page,
+          nextCursor: result.continueCursor,
+          hasMore: !result.isDone,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error:
+            error instanceof Error ? error.message : "Failed to paginate sets",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
+// DELETE /api/sets/:id - Delete a set
+http.route({
+  path: "/api/sets/{id}",
+  method: "DELETE",
+  handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const id = request.url.split("/").pop()?.split("?")[0];
+
+      await ctx.runMutation(api.sets.deleteSet, {
+        id: id as any,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error:
+            error instanceof Error ? error.message : "Failed to delete set",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
 export default http;
