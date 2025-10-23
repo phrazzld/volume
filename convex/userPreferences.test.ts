@@ -86,20 +86,18 @@ describe("User Preferences", () => {
   });
 
   describe("Validation", () => {
-    test("updatePreferences should reject invalid unit via type system", async () => {
-      // This test verifies compile-time type safety
-      // Invalid units are caught by TypeScript before runtime
-      // The mutation accepts v.union(v.literal("lbs"), v.literal("kg"))
+    test("updatePreferences should reject invalid unit via runtime validation", async () => {
+      // The mutation validates weightUnit at runtime via Convex validators
+      // (v.union(v.literal("lbs"), v.literal("kg")))
+      // Note: We use 'as any' to bypass compile-time checks and test runtime validation
 
-      // Attempting to pass invalid unit would cause TypeScript error:
-      // @ts-expect-error - Testing that invalid units are rejected
       const invalidCall = t
         .withIdentity({ subject: user1Subject, name: "User 1" })
         .mutation(api.userPreferences.updatePreferences, {
           weightUnit: "invalid" as any,
         });
 
-      // The mutation itself validates in runtime too
+      // Runtime validation should reject invalid unit
       await expect(invalidCall).rejects.toThrow();
     });
   });
