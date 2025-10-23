@@ -93,6 +93,29 @@ const POUNDS_PER_KILOGRAM = 2.20462;
 
 ---
 
+### [Security] Add Pagination Parameter Validation
+
+**File**: `convex/http.ts:376`
+**Perspectives**: PR #17 code review - security
+**Source**: Automated code review 2025-10-23
+
+**Attack Vector**: No validation on pageSize parameter
+**Risk**: DOS via massive page sizes (999999), negative values (-1), or NaN
+
+**Fix**:
+
+```typescript
+const pageSizeParam = url.searchParams.get("pageSize");
+const numItems = pageSizeParam
+  ? Math.min(Math.max(parseInt(pageSizeParam, 10) || 25, 1), 100)
+  : 25;
+```
+
+**Effort**: 10m | **Risk**: MEDIUM - DOS vector
+**Acceptance**: pageSize clamped to 1-100 range
+
+---
+
 ## Next (This Quarter, <3 months)
 
 ### [Architecture] Split dashboard-utils.ts - Dumping Ground Pattern
@@ -181,6 +204,57 @@ src/lib/exercise-sorting.ts
 
 **Fix**: Add `updateSet` mutation + inline editing UI (pattern from exercise-manager.tsx)
 **Effort**: 3h | **Value**: Fixes common frustration, reduces data loss
+
+---
+
+### [Code Quality] Standardize HTTP Response Format
+
+**Files**: `convex/http.ts` (multiple endpoints)
+**Perspectives**: PR #17 code review - maintainability
+**Source**: Automated code review 2025-10-23
+
+**Inconsistency**: Some endpoints wrap data in objects, others return bare objects
+
+- `GET /api/exercises` → `{ exercises: [...] }` (wrapped)
+- `GET /api/preferences` → `{ weightUnit: "lbs" }` (bare)
+- `POST /api/exercises` → `{ id, name, createdAt }` (bare)
+
+**Impact**: iOS developers need to handle inconsistent response shapes
+
+**Fix Options**:
+
+1. Always wrap: `{ "data": {...} }`
+2. Collections wrapped, single resources bare (current mix)
+
+**Recommendation**: Document chosen convention in README.md
+
+**Effort**: 30m | **Value**: Consistent API contract for iOS team
+**Acceptance**: Single documented convention, update all endpoints or just docs
+
+---
+
+### [Code Quality] Extract jsonResponse Helper - DRY Violation
+
+**File**: `convex/http.ts`
+**Perspectives**: PR #17 code review - code quality
+**Source**: Automated code review 2025-10-23
+
+**Issue**: `headers: { "Content-Type": "application/json" }` repeated 27 times
+
+**Fix**: Extract helper function:
+
+```typescript
+function jsonResponse(body: unknown, status: number = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+```
+
+**Effort**: 15-20m | **Value**: Reduced duplication, easier to maintain
+**Acceptance**: All response creation uses jsonResponse helper
+**Note**: Will be addressed in TODO item #4 (error standardization)
 
 ---
 
