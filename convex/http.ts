@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api } from "./_generated/api";
+import { parseExerciseId, parseSetId } from "./lib/id-utils";
 
 const http = httpRouter();
 
@@ -114,7 +115,7 @@ http.route({
     }
 
     try {
-      const id = request.url.split("/").pop();
+      const id = parseExerciseId(request.url.split("/").pop());
       const body = await request.json();
       const { name } = body;
 
@@ -129,7 +130,7 @@ http.route({
       }
 
       await ctx.runMutation(api.exercises.updateExercise, {
-        id: id as any,
+        id,
         name,
       });
 
@@ -172,10 +173,10 @@ http.route({
     }
 
     try {
-      const id = request.url.split("/").pop()?.split("?")[0];
+      const id = parseExerciseId(request.url.split("/").pop()?.split("?")[0]);
 
       await ctx.runMutation(api.exercises.deleteExercise, {
-        id: id as any,
+        id,
       });
 
       return new Response(JSON.stringify({ success: true }), {
@@ -212,15 +213,15 @@ http.route({
     try {
       const pathSegments = request.url.split("/");
       const idIndex = pathSegments.indexOf("exercises") + 1;
-      const id = pathSegments[idIndex];
+      const id = parseExerciseId(pathSegments[idIndex]);
 
       await ctx.runMutation(api.exercises.restoreExercise, {
-        id: id as any,
+        id,
       });
 
       // Fetch restored exercise
       const restored = await ctx.runQuery(api.exercises.getExercise, {
-        id: id as any,
+        id,
       });
 
       return new Response(
@@ -283,7 +284,7 @@ http.route({
       }
 
       const setId = await ctx.runMutation(api.sets.logSet, {
-        exerciseId: exerciseId as any,
+        exerciseId: parseExerciseId(exerciseId),
         reps,
         weight,
         unit,
@@ -337,7 +338,7 @@ http.route({
       const exerciseId = url.searchParams.get("exerciseId");
 
       const sets = await ctx.runQuery(api.sets.listSets, {
-        exerciseId: exerciseId ? (exerciseId as any) : undefined,
+        exerciseId: exerciseId ? parseExerciseId(exerciseId) : undefined,
       });
 
       return new Response(JSON.stringify({ sets }), {
@@ -418,10 +419,10 @@ http.route({
     }
 
     try {
-      const id = request.url.split("/").pop()?.split("?")[0];
+      const id = parseSetId(request.url.split("/").pop()?.split("?")[0]);
 
       await ctx.runMutation(api.sets.deleteSet, {
-        id: id as any,
+        id,
       });
 
       return new Response(JSON.stringify({ success: true }), {
