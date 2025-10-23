@@ -444,4 +444,99 @@ http.route({
   }),
 });
 
+// GET /api/preferences - Get user preferences
+http.route({
+  path: "/api/preferences",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const preferences = await ctx.runQuery(
+        api.userPreferences.getPreferences,
+        {}
+      );
+
+      return new Response(JSON.stringify(preferences), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to get preferences",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
+// PATCH /api/preferences - Update user preferences
+http.route({
+  path: "/api/preferences",
+  method: "PATCH",
+  handler: httpAction(async (ctx, request) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    try {
+      const body = await request.json();
+      const { weightUnit } = body;
+
+      if (!weightUnit || (weightUnit !== "lbs" && weightUnit !== "kg")) {
+        return new Response(
+          JSON.stringify({ error: "Weight unit must be 'lbs' or 'kg'" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const result = await ctx.runMutation(
+        api.userPreferences.updatePreferences,
+        {
+          weightUnit,
+        }
+      );
+
+      return new Response(
+        JSON.stringify({
+          ...result,
+          updatedAt: Date.now(),
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to update preferences",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }),
+});
+
 export default http;
