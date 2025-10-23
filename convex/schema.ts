@@ -29,4 +29,11 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_exercise", ["exerciseId", "performedAt"])
     .index("by_user_performed", ["userId", "performedAt"]),
+
+  userPreferences: defineTable({
+    userId: v.string(),
+    weightUnit: v.union(v.literal("lbs"), v.literal("kg")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 });
