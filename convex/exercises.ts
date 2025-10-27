@@ -17,31 +17,27 @@ export const createExercise = mutation({
     // Validate and normalize exercise name
     const normalizedName = validateExerciseName(args.name);
 
-    // Check for duplicate (including soft-deleted)
-    const existing = await ctx.db
+    // Check for duplicate (including soft-deleted) - case-insensitive
+    const allUserExercises = await ctx.db
       .query("exercises")
-      .withIndex("by_user_name", (q) =>
-        q.eq("userId", identity.subject).eq("name", normalizedName)
-      )
-      .first();
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    const existing = allUserExercises.find(
+      (e) => e.name.toLowerCase() === normalizedName.toLowerCase()
+    );
 
     if (existing) {
       // If soft-deleted, restore it instead of creating new
       if (existing.deletedAt !== undefined) {
         // Defensive check: Verify no active duplicate exists before restoring
         // (protects against DB corruption or manual state manipulation)
-        const activeDuplicate = await ctx.db
-          .query("exercises")
-          .withIndex("by_user_name", (q) =>
-            q.eq("userId", identity.subject).eq("name", normalizedName)
-          )
-          .filter((q) =>
-            q.and(
-              q.neq(q.field("_id"), existing._id),
-              q.eq(q.field("deletedAt"), undefined)
-            )
-          )
-          .first();
+        const activeDuplicate = allUserExercises.find(
+          (e) =>
+            e._id !== existing._id &&
+            e.name.toLowerCase() === normalizedName.toLowerCase() &&
+            e.deletedAt === undefined
+        );
 
         if (activeDuplicate) {
           throw new Error("Exercise with this name already exists");
@@ -128,15 +124,19 @@ export const updateExercise = mutation({
       throw new Error("Cannot update a deleted exercise");
     }
 
-    // Check for duplicate (excluding current exercise)
-    const existing = await ctx.db
+    // Check for duplicate (excluding current exercise) - case-insensitive
+    const allUserExercises = await ctx.db
       .query("exercises")
-      .withIndex("by_user_name", (q) =>
-        q.eq("userId", identity.subject).eq("name", normalizedName)
-      )
-      .first();
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
 
-    if (existing && existing._id !== args.id) {
+    const existing = allUserExercises.find(
+      (e) =>
+        e._id !== args.id &&
+        e.name.toLowerCase() === normalizedName.toLowerCase()
+    );
+
+    if (existing) {
       throw new Error("Exercise with this name already exists");
     }
 

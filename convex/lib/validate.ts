@@ -57,11 +57,11 @@ export function validateUnit(
 
 /**
  * Validate and normalize exercise name.
- * Trims whitespace and converts to uppercase for consistency.
+ * Trims whitespace and preserves original casing.
  * Rejects names shorter than 2 or longer than 100 characters.
  *
  * @param name - Exercise name
- * @returns Normalized name (trimmed and uppercase)
+ * @returns Normalized name (trimmed, original casing preserved)
  * @throws Error if validation fails
  */
 export function validateExerciseName(name: string): string {
@@ -75,7 +75,7 @@ export function validateExerciseName(name: string): string {
     throw new Error("Exercise name must be 2-100 characters");
   }
 
-  return trimmed.toUpperCase();
+  return trimmed;
 }
 
 /**
