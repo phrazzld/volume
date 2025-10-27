@@ -149,7 +149,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             <form onSubmit={form.handleSubmit(onSubmit)}>
               {/* Last Set Indicator */}
               {lastSet && (
-                <div className="mb-4 p-3 bg-muted border rounded-md flex items-center justify-between">
+                <div className="mb-4 p-3 bg-muted border rounded-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium">Last:</span>{" "}
                     {exercises.find((e) => e._id === selectedExerciseId)?.name}{" "}
@@ -167,7 +167,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                       form.setValue("weight", lastSet.weight ?? undefined);
                       focusElement(repsInputRef);
                     }}
-                    className="ml-2"
+                    className="sm:ml-2"
                   >
                     Use
                   </Button>
