@@ -70,32 +70,37 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
      */
 
     /**
-     * Robust focus helper for mobile Safari compatibility
-     * Uses double requestAnimationFrame to ensure:
-     * - All React re-renders complete before focusing
-     * - Element is stable in the DOM
-     * - iOS Safari security model is respected
+     * Autofocus pattern using Radix Select's onOpenChange event
      *
-     * Research: setTimeout can fail on mobile due to:
-     * 1. React re-render race conditions
-     * 2. iOS focus security restrictions
-     * 3. Virtual keyboard animation conflicts
+     * Why this approach?
+     * - Event-driven: Focus triggered when dropdown animation completes
+     * - Reliable: onOpenChange(false) fires after Radix closes dropdown
+     * - Simple: Single RAF for browser render cycle, not timing hacks
      *
-     * Double RAF is the most reliable pattern for mobile focus.
+     * Focus flow:
+     * 1. User selects exercise → dropdown closes → onOpenChange(false) fires
+     * 2. Single RAF waits for React render cycle (DOM updates)
+     * 3. Focus reps input → user types reps → Enter → focus weight → Enter → submit
+     *
+     * Why single RAF vs double RAF?
+     * - onOpenChange guarantees dropdown animation complete
+     * - Only need to wait for React render, not Radix animation
+     * - Simpler, more maintainable pattern
+     *
+     * Reference: Radix UI Select guarantees onOpenChange fires after animation
+     * https://www.radix-ui.com/primitives/docs/components/select#onOpenChange
      */
     const focusElement = (ref: React.RefObject<HTMLInputElement | null>) => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // Defensive checks before focusing
-          if (ref.current && document.contains(ref.current)) {
-            try {
-              ref.current.focus();
-            } catch (e) {
-              // Fail silently if focus is not possible
-              console.warn("Focus failed:", e);
-            }
+        // Defensive checks before focusing
+        if (ref.current && document.contains(ref.current)) {
+          try {
+            ref.current.focus();
+          } catch (e) {
+            // Fail silently if focus is not possible
+            console.warn("Focus failed:", e);
           }
-        });
+        }
       });
     };
 
@@ -115,13 +120,6 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         focusElement(repsInputRef);
       },
     }));
-
-    // Auto-focus flow: exercise selected → focus reps input
-    useEffect(() => {
-      if (selectedExerciseId) {
-        focusElement(repsInputRef);
-      }
-    }, [selectedExerciseId]);
 
     // Handle Enter key in reps input - focus weight or submit
     const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -192,6 +190,12 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                             field.onChange("");
                           } else {
                             field.onChange(value);
+                          }
+                        }}
+                        onOpenChange={(open) => {
+                          // When dropdown closes and exercise is selected, focus reps input
+                          if (!open && field.value) {
+                            focusElement(repsInputRef);
                           }
                         }}
                         disabled={form.formState.isSubmitting}
