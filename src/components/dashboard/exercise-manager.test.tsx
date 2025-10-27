@@ -94,8 +94,9 @@ describe("ExerciseManager", () => {
     it("renders exercise list with correct data", () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      expect(screen.getByText("Bench Press")).toBeInTheDocument();
-      expect(screen.getByText("Squats")).toBeInTheDocument();
+      // Both desktop and mobile layouts render, so use getAllByText
+      expect(screen.getAllByText("Bench Press")[0]).toBeInTheDocument();
+      expect(screen.getAllByText("Squats")[0]).toBeInTheDocument();
     });
 
     it("displays exercise count in title", () => {
@@ -128,7 +129,7 @@ describe("ExerciseManager", () => {
       fireEvent.click(editButtons[0]);
 
       // Input should appear with current name
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       expect(input).toBeInTheDocument();
     });
 
@@ -138,10 +139,10 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       fireEvent.change(input, { target: { value: "Incline Bench Press" } });
 
-      const saveButton = screen.getByTitle("Save");
+      const saveButton = screen.getAllByTitle("Save")[0];
       fireEvent.click(saveButton);
 
       await waitFor(() => {
@@ -159,7 +160,7 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       fireEvent.change(input, { target: { value: "Updated Name" } });
       fireEvent.keyDown(input, { key: "Enter" });
 
@@ -177,7 +178,7 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const cancelButton = screen.getByTitle("Cancel");
+      const cancelButton = screen.getAllByTitle("Cancel")[0];
       fireEvent.click(cancelButton);
 
       // Input should be gone
@@ -191,7 +192,7 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       fireEvent.keyDown(input, { key: "Escape" });
 
       expect(screen.queryByDisplayValue("Bench Press")).not.toBeInTheDocument();
@@ -204,10 +205,10 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       fireEvent.change(input, { target: { value: "   " } });
 
-      const saveButton = screen.getByTitle("Save");
+      const saveButton = screen.getAllByTitle("Save")[0];
       fireEvent.click(saveButton);
 
       await waitFor(() => {
@@ -221,10 +222,10 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       fireEvent.change(input, { target: { value: "  Spaced Name  " } });
 
-      const saveButton = screen.getByTitle("Save");
+      const saveButton = screen.getAllByTitle("Save")[0];
       fireEvent.click(saveButton);
 
       await waitFor(() => {
@@ -306,7 +307,7 @@ describe("ExerciseManager", () => {
 
       // Check AlertDialog shows set count
       await waitFor(() => {
-        expect(screen.getByText(/2 sets/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/2 sets/i)[0]).toBeInTheDocument();
       });
     });
 
@@ -338,10 +339,10 @@ describe("ExerciseManager", () => {
       const editButtons = screen.getAllByTitle("Edit exercise name");
       fireEvent.click(editButtons[0]);
 
-      const input = screen.getByDisplayValue("Bench Press");
+      const input = screen.getAllByDisplayValue("Bench Press")[0];
       fireEvent.change(input, { target: { value: "Updated" } });
 
-      const saveButton = screen.getByTitle("Save");
+      const saveButton = screen.getAllByTitle("Save")[0];
       fireEvent.click(saveButton);
 
       await waitFor(() => {
