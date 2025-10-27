@@ -101,14 +101,14 @@ export default function SettingsPage() {
                 className={getUnitButtonClasses(unit === "lbs")}
                 type="button"
               >
-                LBS
+                lbs
               </button>
               <button
                 onClick={() => setUnit("kg")}
                 className={getUnitButtonClasses(unit === "kg")}
                 type="button"
               >
-                KG
+                kg
               </button>
             </div>
           </div>

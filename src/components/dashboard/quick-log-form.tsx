@@ -212,7 +212,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                             </SelectItem>
                           ))}
                           <SelectItem value="CREATE_NEW">
-                            + CREATE NEW
+                            + Create New
                           </SelectItem>
                         </SelectContent>
                       </Select>
