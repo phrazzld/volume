@@ -901,6 +901,158 @@ const nextConfig: NextConfig = {
 
 ---
 
+### 26. [Mobile UX] Swipe Gestures for Quick Actions
+
+**Perspectives**: user-experience-advocate, product-visionary
+**Severity**: **LOW**
+**Source**: Mobile UX enhancement brainstorm (2025-10-26)
+
+**Current UX**: Delete/repeat actions require tapping small buttons on set cards.
+
+**Enhanced Experience**:
+
+- Swipe left on set card → reveal delete button (iOS Mail pattern)
+- Swipe right on set card → quick repeat (log same set again)
+- Haptic feedback on swipe threshold
+
+**Implementation**:
+
+- Library: `react-swipeable` or `framer-motion` drag gestures
+- Add swipe handlers to SetCard component
+- Animate reveal of action buttons on swipe
+- Threshold detection (swipe must exceed 50% card width)
+
+**Trade-offs**:
+
+- ✅ Faster actions for mobile power users
+- ✅ Reduces screen clutter (hide buttons until swipe)
+- ❌ Adds gesture complexity (accidental swipes)
+- ❌ Not discoverable (users may not find feature)
+
+**Effort**: 4h (gesture detection + animation + testing)
+**Priority**: **LOW** - Defer until user feedback requests it
+
+---
+
+### 27. [Mobile UX] Pull-to-Refresh on History Page
+
+**Perspectives**: user-experience-advocate, product-visionary
+**Severity**: **LOW**
+**Source**: Mobile UX enhancement brainstorm (2025-10-26)
+
+**Current UX**: History page refreshes automatically via Convex real-time, but no manual refresh option.
+
+**Enhanced Experience**:
+
+- Pull down on history page → spinner animation → refetch data
+- Native mobile app pattern (familiar to users)
+- Useful if user suspects stale data
+
+**Implementation**:
+
+- Library: `react-pull-to-refresh` or custom touch event handlers
+- Add pull gesture detection to history page container
+- Trigger Convex query refresh on pull complete
+- Show loading spinner during refresh
+
+**Trade-offs**:
+
+- ✅ Familiar mobile pattern (feels native)
+- ✅ User control over refresh (even though auto-refresh exists)
+- ❌ Not needed if real-time sync works (already have this)
+- ❌ Adds library dependency
+
+**Effort**: 2h (library integration + testing)
+**Priority**: **VERY LOW** - Convex real-time sync makes this redundant
+
+---
+
+### 28. [Mobile UX] Haptic Feedback for Actions
+
+**Perspectives**: user-experience-advocate, product-visionary
+**Severity**: **LOW**
+**Source**: Mobile UX enhancement brainstorm (2025-10-26)
+
+**Current UX**: Visual-only feedback on button press (scale/opacity).
+
+**Enhanced Experience**:
+
+- Light haptic on button press (success actions)
+- Heavy haptic on destructive actions (delete)
+- Celebration haptic pattern on PR achievement (triple pulse)
+
+**Implementation**:
+
+- Use Vibration API: `navigator.vibrate([duration])`
+- Add to button onClick handlers
+- Pattern library: light (20ms), medium (40ms), heavy (60ms), celebration ([20, 50, 20, 100])
+
+**Trade-offs**:
+
+- ✅ Native app feel (tactile feedback)
+- ✅ Accessibility benefit (non-visual confirmation)
+- ❌ Not all devices support vibration
+- ❌ Users may find it annoying (need settings toggle)
+- ❌ Battery drain on excessive use
+
+**Effort**: 1h (API integration + pattern design)
+**Priority**: **LOW** - Polish feature, not core value
+
+**Recommendation**: Only implement if building "settings" page with haptic toggle
+
+---
+
+### 29. [Performance] Core Web Vitals Monitoring
+
+**Perspectives**: performance-pathfinder, user-experience-advocate
+**Severity**: **LOW**
+**Source**: Mobile UX enhancement brainstorm (2025-10-26)
+
+**Current State**: No performance monitoring in production. Don't know if users experience lag/jank.
+
+**Monitoring Goals**:
+
+- LCP (Largest Contentful Paint) < 2.5s
+- FID (First Input Delay) < 100ms
+- CLS (Cumulative Layout Shift) < 0.1
+- INP (Interaction to Next Paint) < 200ms
+
+**Implementation Options**:
+
+1. **Vercel Analytics** (built-in, free tier)
+   - Automatic CWV tracking
+   - Real user metrics (RUM)
+   - Minimal setup (enable in vercel.json)
+2. **web-vitals library** (custom implementation)
+   - Install: `pnpm add web-vitals`
+   - Send metrics to custom backend/log aggregator
+   - Full control over data
+
+**Integration**:
+
+```typescript
+// src/app/layout.tsx
+import { onCLS, onFID, onLCP } from "web-vitals";
+
+onCLS(console.log);
+onFID(console.log);
+onLCP(console.log);
+```
+
+**Trade-offs**:
+
+- ✅ Data-driven performance optimization (know what to fix)
+- ✅ Catch regressions before users complain
+- ❌ Adds client-side JavaScript (ironic performance cost)
+- ❌ Requires analytics infrastructure
+
+**Effort**: 1-2h (Vercel Analytics) or 4h (custom web-vitals)
+**Priority**: **LOW** - Defer until production traffic exists
+
+**Decision Point**: Implement when daily active users > 100
+
+---
+
 ### 22. [Performance] Missing React.memo on Table Rows
 
 **File**: `src/components/dashboard/grouped-set-history.tsx:106-162`
