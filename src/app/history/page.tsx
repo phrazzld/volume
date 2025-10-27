@@ -7,6 +7,7 @@ import { api } from "../../../convex/_generated/api";
 import { ChronologicalGroupedSetHistory } from "@/components/dashboard/chronological-grouped-set-history";
 import { groupSetsByDay } from "@/lib/dashboard-utils";
 import { PageLayout } from "@/components/layout/page-layout";
+import { Button } from "@/components/ui/button";
 import { Id } from "../../../convex/_generated/dataModel";
 
 const PAGINATION_PAGE_SIZE = 25;
@@ -96,13 +97,13 @@ export default function HistoryPage() {
       {/* Load More button */}
       {status === "CanLoadMore" && (
         <div className="flex justify-center">
-          <button
+          <Button
             onClick={() => loadMore(PAGINATION_PAGE_SIZE)}
-            className="px-6 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:opacity-90 transition-opacity"
+            size="touch"
             type="button"
           >
             Load More
-          </button>
+          </Button>
         </div>
       )}
 
