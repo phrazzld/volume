@@ -113,9 +113,13 @@ export function formatTimeAgo(
 ): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
 
-  // Less than 60 seconds
+  // Less than 60 seconds (including future timestamps)
   if (seconds < 60) {
-    return format === "terminal" ? `${seconds} SEC AGO` : "JUST NOW";
+    if (format === "terminal") {
+      // Clamp negative values to 0 for future timestamps
+      return `${Math.max(0, seconds)} SEC AGO`;
+    }
+    return "JUST NOW";
   }
 
   // Less than 60 minutes
@@ -133,11 +137,11 @@ export function formatTimeAgo(
   // 24 hours or more
   if (format === "compact") {
     // Compact format: switch to absolute time (HH:MM in 24-hour format)
-    return new Date(timestamp).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+    // Use UTC time components to avoid timezone conversion
+    const date = new Date(timestamp);
+    const hours = date.getUTCHours().toString().padStart(2, "0");
+    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
   }
 
   // Terminal format: show days
