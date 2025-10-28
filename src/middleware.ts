@@ -36,7 +36,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     img-src 'self' https: data: blob:;
     font-src 'self' data:;
     worker-src 'self' blob:;
-    connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://curious-salamander-943.convex.cloud wss://curious-salamander-943.convex.cloud;
+    connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://*.convex.cloud wss://*.convex.cloud;
     frame-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com https://vercel.live;
     object-src 'none';
     base-uri 'self';
@@ -44,7 +44,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
-  `.replace(/\s{2,}/g, " ").trim();
+  `
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
   // Create response with security headers
   const response = NextResponse.next();
