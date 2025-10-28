@@ -25,52 +25,52 @@ export function getTodayRange(): { start: number; end: number } {
 }
 
 /**
- * Format timestamp as time only (HH:MM in 24-hour format)
+ * Format timestamp as time only (12-hour format with am/pm)
  *
  * @param timestamp - Unix timestamp in milliseconds
- * @returns Formatted time string (e.g., "14:30")
+ * @returns Formatted time string (e.g., "2:30 PM")
  *
  * @example
- * formatTime(1697734800000) // => "14:30"
+ * formatTime(1697734800000) // => "2:30 PM"
  */
 export function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString("en-US", {
-    hour: "2-digit",
+    hour: "numeric",
     minute: "2-digit",
-    hour12: false,
+    hour12: true,
   });
 }
 
 /**
- * Format timestamp as date + time
+ * Format timestamp as date + time (12-hour format)
  *
  * @param timestamp - Unix timestamp in milliseconds
- * @returns Formatted date/time string (e.g., "Oct 19, 14:30")
+ * @returns Formatted date/time string (e.g., "Oct 19, 2:30 PM")
  *
  * @example
- * formatDateTime(1697734800000) // => "Oct 19, 14:30"
+ * formatDateTime(1697734800000) // => "Oct 19, 2:30 PM"
  */
 export function formatDateTime(timestamp: number): string {
   return new Date(timestamp).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
+    hour: "numeric",
     minute: "2-digit",
-    hour12: false,
+    hour12: true,
   });
 }
 
 /**
  * Format timestamp intelligently:
- * - Today's timestamps: show time only ("14:30")
- * - Older timestamps: show date + time ("Oct 19, 14:30")
+ * - Today's timestamps: show time only ("2:30 PM")
+ * - Older timestamps: show date + time ("Oct 19, 2:30 PM")
  *
  * @param timestamp - Unix timestamp in milliseconds
  * @returns Formatted string appropriate for recency
  *
  * @example
- * formatTimestamp(todayTimestamp) // => "14:30"
- * formatTimestamp(yesterdayTimestamp) // => "Oct 19, 14:30"
+ * formatTimestamp(todayTimestamp) // => "2:30 PM"
+ * formatTimestamp(yesterdayTimestamp) // => "Oct 19, 2:30 PM"
  */
 export function formatTimestamp(timestamp: number): string {
   const { start, end } = getTodayRange();
