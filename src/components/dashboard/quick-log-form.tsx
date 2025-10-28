@@ -236,6 +236,11 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                                       onSelect={() => {
                                         field.onChange(exercise._id);
                                         setComboboxOpen(false);
+                                        // Focus reps input after popover closes (50ms ensures DOM updates)
+                                        setTimeout(
+                                          () => focusElement(repsInputRef),
+                                          50
+                                        );
                                       }}
                                     >
                                       <Check
