@@ -284,51 +284,56 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
                       onSubmit={editForm.handleSubmit((values) =>
                         handleSaveEdit(exercise._id, values)
                       )}
+                      className="space-y-3"
                     >
-                      <div className="flex items-center gap-2">
-                        <FormField
-                          control={editForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem className="flex-1">
-                              <FormControl>
-                                <Input
-                                  {...field}
-                                  type="text"
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      editForm.handleSubmit((values) =>
-                                        handleSaveEdit(exercise._id, values)
-                                      )();
-                                    }
-                                    if (e.key === "Escape") {
-                                      e.preventDefault();
-                                      handleCancelEdit();
-                                    }
-                                  }}
-                                  autoFocus
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <button
-                          type="submit"
-                          className="p-2 hover:opacity-80"
-                          title="Save"
-                        >
-                          <Check className="h-5 w-5" />
-                        </button>
-                        <button
+                      <FormField
+                        control={editForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="text"
+                                className="h-11 text-base"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    editForm.handleSubmit((values) =>
+                                      handleSaveEdit(exercise._id, values)
+                                    )();
+                                  }
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                autoFocus
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button type="submit" size="touch" className="w-full">
+                          <Check className="mr-2 h-4 w-4" />
+                          Save
+                        </Button>
+                        <Button
                           type="button"
+                          size="touch"
+                          variant="outline"
                           onClick={handleCancelEdit}
-                          className="p-2 text-muted-foreground hover:opacity-80"
-                          title="Cancel"
+                          className="w-full"
                         >
-                          <X className="h-5 w-5" />
-                        </button>
+                          <X className="mr-2 h-4 w-4" />
+                          Cancel
+                        </Button>
+                      </div>
+                      {/* Show metadata during edit for context */}
+                      <div className="text-xs text-muted-foreground">
+                        {createdDate} • {setCount} sets
                       </div>
                     </form>
                   </Form>
