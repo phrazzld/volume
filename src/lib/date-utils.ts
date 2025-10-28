@@ -78,3 +78,69 @@ export function formatTimestamp(timestamp: number): string {
 
   return isToday ? formatTime(timestamp) : formatDateTime(timestamp);
 }
+
+/**
+ * Format style for relative time display
+ * - "terminal": Uppercase verbose format ("5 MIN AGO", "2 HR AGO")
+ * - "compact": Lowercase terse format ("5M AGO", "3H AGO"), switches to HH:MM after 24h
+ */
+export type TimeFormat = "terminal" | "compact";
+
+/**
+ * Format timestamp as relative time ("X ago") with configurable style.
+ *
+ * @param timestamp - Unix timestamp in milliseconds
+ * @param format - Display format: "terminal" (default, uppercase) or "compact" (lowercase)
+ * @returns Relative time string
+ *
+ * @example
+ * // Terminal format (uppercase, verbose)
+ * formatTimeAgo(Date.now() - 45000, "terminal") // => "45 SEC AGO"
+ * formatTimeAgo(Date.now() - 300000, "terminal") // => "5 MIN AGO"
+ * formatTimeAgo(Date.now() - 7200000, "terminal") // => "2 HR AGO"
+ * formatTimeAgo(Date.now() - 172800000, "terminal") // => "2 DAYS AGO"
+ *
+ * @example
+ * // Compact format (lowercase, terse, switches to HH:MM after 24h)
+ * formatTimeAgo(Date.now() - 30000, "compact") // => "JUST NOW"
+ * formatTimeAgo(Date.now() - 300000, "compact") // => "5M AGO"
+ * formatTimeAgo(Date.now() - 7200000, "compact") // => "2H AGO"
+ * formatTimeAgo(Date.now() - 172800000, "compact") // => "14:30" (absolute time)
+ */
+export function formatTimeAgo(
+  timestamp: number,
+  format: TimeFormat = "terminal"
+): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+  // Less than 60 seconds
+  if (seconds < 60) {
+    return format === "terminal" ? `${seconds} SEC AGO` : "JUST NOW";
+  }
+
+  // Less than 60 minutes
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return format === "terminal" ? `${minutes} MIN AGO` : `${minutes}M AGO`;
+  }
+
+  // Less than 24 hours
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return format === "terminal" ? `${hours} HR AGO` : `${hours}H AGO`;
+  }
+
+  // 24 hours or more
+  if (format === "compact") {
+    // Compact format: switch to absolute time (HH:MM in 24-hour format)
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }
+
+  // Terminal format: show days
+  const days = Math.floor(hours / 24);
+  return `${days} DAY${days === 1 ? "" : "S"} AGO`;
+}

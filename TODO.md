@@ -1,208 +1,456 @@
-# TODO: Mobile UX Improvements
+# TODO: Code Quality Refactoring - DRY & Module Boundaries
 
-**Initiative**: World-class mobile experience for Volume workout tracker
-**Status**: Phase 1-4 Complete | Phase 5-6 Remaining
-**Progress**: 17/22 tasks complete (77%)
+## Context
 
----
+**Source**: TASK.md - 4 code quality issues identified by multi-agent audit
+**Priority**: HIGH - Technical debt accumulation, change amplification risk
+**Goal**: Eliminate duplication, improve module boundaries, document magic numbers
 
-## Phase 1: Critical Fixes ✅ COMPLETE
+### Issues to Address
 
-### Design System Foundation
+1. **Time Formatting Duplication** (CRITICAL) - 3 implementations across codebase
+2. **Dashboard-utils Temporal Decomposition** (HIGH) - 7 unrelated functions in one file
+3. **Magic Numbers Without Documentation** (MEDIUM) - Hardcoded values lacking context
+4. ~~Critical Business Logic Untested~~ - **DONE** (632 lines of tests exist)
 
-- [x] **Create mobile design token system** (75aa090)
-  - File: `src/lib/design-tokens/mobile.ts`
-  - Tokens: TOUCH_TARGETS (44px min), SPACING, TYPOGRAPHY, INTERACTION
-  - Pattern: Tailwind classes as documentation, not runtime imports
+**Strategy**: Test-safe refactoring with module boundaries prioritized over execution order
 
-- [x] **Add touch-optimized size variants to Button** (3fee654)
-  - File: `src/components/ui/button.tsx`
-  - New sizes: `touch` (h-11/44px), `comfortable` (h-12/48px)
-  - Added visual touch feedback (active:scale-95, active:opacity-90)
+**Key Patterns**:
 
-- [x] **Update Input with mobile-first height** (955502c)
-  - File: `src/components/ui/input.tsx`
-  - Changed h-9 → h-11 (44px)
-  - Enhanced focus ring: ring-2 with ring-offset-2
-
-- [x] **Update Select for mobile touch targets** (e35dd07)
-  - File: `src/components/ui/select.tsx`
-  - SelectTrigger: h-11, enhanced focus ring
-  - SelectItem: py-3 (48px touch target)
-
-- [x] **Add responsive spacing to FormItem** (2219d57)
-  - File: `src/components/ui/form.tsx`
-  - Changed space-y-2 → space-y-2 sm:space-y-3
+- Follow existing test conventions (vi.useFakeTimers, comprehensive edge cases)
+- Maintain backward compatibility during migration
+- Domain-driven module organization (not timeline-based)
 
 ---
 
-## Phase 2: Autofocus & Keyboard Flow ✅ COMPLETE
+## Implementation Tasks
 
-- [x] **Fix autofocus using Radix onOpenChange** (8048c99)
-  - File: `src/components/dashboard/quick-log-form.tsx`
-  - Event-driven pattern (no RAF timing hacks)
-  - Comprehensive JSDoc documentation
+### Phase 1: Extract Time Formatting Utility (Issue #12)
 
-- [x] **Verify focus rings on all inputs** (verification only)
-  - All components inherit proper focus rings from Phase 1
-  - WCAG 2.4.7 compliance maintained
+**Impact**: Eliminates 3 implementations → 1 source of truth
+**Files**: useLastSet.ts, set-card.tsx, date-utils.ts (extend existing)
+**Tests**: Comprehensive coverage required before migration
 
----
+- [ ] **Add formatTimeAgo utility to date-utils.ts**
 
-## Phase 3: Typography ✅ COMPLETE
+  ```
+  Files: src/lib/date-utils.ts:82-120 (after formatTimestamp)
+  Approach: Two formats - "terminal" (uppercase) and "compact" (lowercase → HH:MM)
+  Success: Function compiles, exports TimeFormat type
+  Test: Unit tests validate all time ranges and format branches
+  Module: Pure function, no side effects, single responsibility (relative time)
+  Time: 30min
+  ```
 
-- [x] **Remove uppercase text violations** (2592625)
-  - "+ CREATE NEW" → "+ Create New"
-  - "LBS"/"KG" → "lbs"/"kg"
-  - Audit confirmed: only intentional uppercase remains (PR celebrations)
+  Implementation:
+  - Type: `export type TimeFormat = "terminal" | "compact";`
+  - Signature: `formatTimeAgo(timestamp: number, format: TimeFormat = "terminal"): string`
+  - Terminal format: "5 SEC AGO" | "3 MIN AGO" | "2 HR AGO" | "5 DAYS AGO"
+  - Compact format: "JUST NOW" | "5M AGO" | "3H AGO" | HH:MM (>24h)
+  - JSDoc with examples for both formats
 
----
+- [ ] **Add comprehensive test suite for formatTimeAgo**
 
-## Phase 4: Responsive Components ✅ COMPLETE
+  ```
+  Files: src/lib/date-utils.test.ts:110-250 (new describe block)
+  Approach: Follow existing vi.useFakeTimers pattern from getTodayRange tests
+  Success: >95% coverage, all edge cases validated
+  Test: Tests ARE the spec for this function
+  Module: Validates pure function in isolation
+  Time: 45min
+  ```
 
-### Responsive Layouts
+  Test cases:
+  - Terminal format: <60s, <60m, <24h, >24h (with singular/plural days)
+  - Compact format: <60s (JUST NOW), <60m, <24h, >24h (HH:MM absolute time)
+  - Edge cases: 0s, exactly 60s, exactly 60m, exactly 24h
+  - Default format is "terminal" when omitted
+  - Boundary precision (59s ≠ 60s, 59m ≠ 60m, 23h ≠ 24h)
 
-- [x] **Add responsive layout to DailyStatsCard** (ef58c04)
-  - File: `src/components/dashboard/daily-stats-card.tsx`
-  - Desktop: Table | Mobile: Cards
-  - No horizontal scroll on 320px
+- [ ] **Migrate useLastSet.ts to use shared utility**
 
-- [x] **Add responsive layout to ExerciseManager** (aed7c73)
-  - File: `src/components/dashboard/exercise-manager.tsx`
-  - Desktop: Table | Mobile: Cards with inline editing
-  - Preserved full functionality in both layouts
+  ```
+  Files: src/hooks/useLastSet.ts:1,20-29
+  Approach: Import formatTimeAgo, delete inline implementation
+  Success: Hook uses shared utility, existing tests pass unchanged
+  Test: pnpm test useLastSet.test.ts
+  Module: Hook delegates to utility layer (separation of concerns)
+  Time: 10min
+  ```
 
-### Mobile Layout Fixes
+  Changes:
+  - Line 1: Add `formatTimeAgo` to imports from @/lib/date-utils
+  - Lines 20-29: Delete inline formatTimeAgo function
+  - Return object: Use imported function (terminal format matches existing)
 
-- [x] **Fix Last Set indicator layout** (637934b)
-  - File: `src/components/dashboard/quick-log-form.tsx`
-  - Mobile: Vertical stack | Desktop: Horizontal
+- [ ] **Migrate set-card.tsx to use shared utility**
 
-- [x] **Standardize Load More button** (475751e)
-  - File: `src/app/history/page.tsx`
-  - Replaced custom styling with `<Button size="touch">`
+  ```
+  Files: src/components/dashboard/set-card.tsx:1,51-65,92
+  Approach: Import formatTimeAgo with "compact" format
+  Success: Component uses shared utility, visual behavior unchanged
+  Test: Manual QA - timestamp display matches previous behavior
+  Module: Component delegates formatting to utility
+  Time: 10min
+  ```
 
-### Design Decisions
-
-- **DEFERRED**: ResponsiveTable component creation
-  - Rationale: YAGNI - only 2 consumers, inline classes simpler
-  - Used responsive Tailwind utilities instead
-  - Can extract if 3rd consumer emerges
-
----
-
-## Phase 5: Testing & Validation 🔲 TODO
-
-### Automated Testing
-
-- [ ] **Set up Playwright for visual regression**
-  - Install: `pnpm add -D @playwright/test`
-  - Configure mobile viewports (375x667, 390x844, 414x896)
-  - File: `playwright.config.ts`
-
-- [ ] **Create baseline screenshots**
-  - File: `tests/visual/mobile-components.spec.ts`
-  - Components: QuickLogForm, DailyStatsCard, ExerciseManager, Select dropdown
-  - Baseline directory: `tests/visual/screenshots/baseline/`
-
-- [ ] **Create touch target validation test**
-  - File: `tests/mobile/touch-targets.spec.ts`
-  - Assert all interactive elements >= 44px height/width
-  - Test on mobile viewport (375px)
-
-### Device Testing
-
-- [ ] **Manual QA on physical iOS device**
-  - Autofocus reliability (exercise → reps)
-  - Keyboard flow (exercise → reps → weight → submit)
-  - No zoom on input focus (16px text)
-  - Touch target comfort
-
-- [ ] **Manual QA on physical Android device**
-  - Same flow as iOS
-  - Numeric keyboard for reps/weight inputs
-  - Test Chrome + Samsung Internet
+  Changes:
+  - Line 1: Add `formatTimeAgo` to imports from @/lib/date-utils
+  - Lines 51-65: Delete inline formatTime function
+  - Line 92: Replace with `formatTimeAgo(set.performedAt, "compact")`
+  - Note: Compact format produces "JUST NOW" (was "Just now") - verify UX consistency
 
 ---
 
-## Phase 6: Documentation 🔲 TODO
+### Phase 2: Split dashboard-utils.ts by Domain (Issue #8)
 
-- [ ] **Create design system usage guide**
-  - File: `src/lib/design-tokens/README.md`
-  - When to use touch/comfortable/large sizes
-  - Component examples and patterns
-  - Mobile-first philosophy
+**Impact**: Clear module boundaries, improved discoverability, prevents god object
+**Current State**: 323 lines, 7 functions, 632 lines of tests (GOOD NEWS: already tested!)
+**Strategy**: Split with tests intact, update imports across ~15 call sites
 
-- [ ] **Update CLAUDE.md with mobile UX patterns**
-  - Mobile UX Standards section (44px minimum)
-  - Autofocus pattern (Radix onOpenChange)
-  - Reference design token system
+- [ ] **Create weight-utils.ts module**
+
+  ```
+  Files: src/lib/weight-utils.ts (NEW), src/lib/weight-utils.test.ts (NEW)
+  Approach: Extract convertWeight + normalizeWeightUnit + LBS_PER_KG constant
+  Success: Module exports clean API, tests migrated and passing
+  Test: Move convertWeight tests from dashboard-utils.test.ts
+  Module: Single domain (weight unit conversion), deep module (simple interface)
+  Time: 30min
+  ```
+
+  Functions to extract:
+  - `convertWeight(weight, fromUnit, toUnit)` - lines 12-31
+  - `normalizeWeightUnit(unit?)` - lines 39-41 (currently private, make public)
+  - Constant: `LBS_PER_KG = 2.20462` with JSDoc (see Issue #10)
+
+  Tests to migrate:
+  - Lines 13-38 from dashboard-utils.test.ts → weight-utils.test.ts
+
+- [ ] **Create stats-calculator.ts module**
+
+  ```
+  Files: src/lib/stats-calculator.ts (NEW), src/lib/stats-calculator.test.ts (NEW)
+  Approach: Extract calculateDailyStats + calculateDailyStatsByExercise
+  Success: Module exports stats interfaces, tests migrated
+  Test: Move calculateDailyStats* tests from dashboard-utils.test.ts
+  Module: Single domain (workout statistics aggregation)
+  Time: 30min
+  ```
+
+  Functions to extract:
+  - `calculateDailyStats(sets, targetUnit)` - lines 67-92
+  - `calculateDailyStatsByExercise(sets, exercises, targetUnit)` - lines 171-222
+  - Interfaces: `DailyStats`, `ExerciseStats`
+
+  Dependencies: Import convertWeight, normalizeWeightUnit from weight-utils
+
+  Tests to migrate:
+  - Lines 40-150 from dashboard-utils.test.ts → stats-calculator.test.ts
+
+- [ ] **Create date-formatters.ts module**
+
+  ```
+  Files: src/lib/date-formatters.ts (NEW), src/lib/date-formatters.test.ts (NEW)
+  Approach: Extract groupSetsByDay + formatDateGroup
+  Success: Module exports grouping utilities, tests migrated
+  Test: Move groupSetsByDay + formatDateGroup tests
+  Module: Single domain (date grouping and display formatting)
+  Time: 30min
+  ```
+
+  Functions to extract:
+  - `groupSetsByDay(sets)` - lines 101-125
+  - `formatDateGroup(dateString)` - lines 137-159
+
+  Tests to migrate:
+  - Lines 200-350 from dashboard-utils.test.ts → date-formatters.test.ts
+
+- [ ] **Create exercise-sorting.ts module**
+
+  ```
+  Files: src/lib/exercise-sorting.ts (NEW), src/lib/exercise-sorting.test.ts (NEW)
+  Approach: Extract sortExercisesByRecency
+  Success: Module exports sorting utility, tests migrated
+  Test: Move sortExercisesByRecency tests
+  Module: Single domain (exercise ordering logic)
+  Time: 20min
+  ```
+
+  Functions to extract:
+  - `sortExercisesByRecency(exercises, sets)` - lines 232-256
+
+  Tests to migrate:
+  - Lines 400-500 from dashboard-utils.test.ts → exercise-sorting.test.ts
+
+- [ ] **Create exercise-grouping.ts module**
+
+  ```
+  Files: src/lib/exercise-grouping.ts (NEW), src/lib/exercise-grouping.test.ts (NEW)
+  Approach: Extract groupSetsByExercise
+  Success: Module exports grouping utility with ExerciseGroup interface
+  Test: Move groupSetsByExercise tests
+  Module: Single domain (exercise-level aggregation for session views)
+  Time: 20min
+  ```
+
+  Functions to extract:
+  - `groupSetsByExercise(sets, targetUnit)` - lines 275-322
+  - Interface: `ExerciseGroup`
+
+  Dependencies: Import convertWeight, normalizeWeightUnit from weight-utils
+
+  Tests to migrate:
+  - Lines 550-632 from dashboard-utils.test.ts → exercise-grouping.test.ts
+
+- [ ] **Delete dashboard-utils.ts and update imports**
+
+  ```
+  Files: dashboard-utils.ts (DELETE), ~15 call sites across components
+  Approach: Use ast-grep to find all imports, update to new modules
+  Success: All imports updated, pnpm typecheck passes, all tests green
+  Test: pnpm test && pnpm typecheck
+  Module: Clean module boundaries enforced, no god object
+  Time: 45min
+  ```
+
+  Find all imports:
+
+  ```bash
+  ast-grep --lang typescript -p 'import { $$$ } from "@/lib/dashboard-utils"'
+  ```
+
+  Update strategy:
+  - Most call sites use 1-2 functions → import from specific module
+  - If site uses 3+ functions → may indicate coupling (note for future refactor)
+
+---
+
+### Phase 3: Document Magic Numbers (Issue #10)
+
+**Impact**: Self-documenting code, confident future changes
+**Files**: dashboard-utils.ts, undo-toast.tsx, quick-log-form.tsx
+
+- [ ] **Extract LBS_PER_KG constant in weight-utils.ts**
+
+  ```
+  Files: src/lib/weight-utils.ts (during Phase 2 creation)
+  Approach: Extract to module-level constant with comprehensive JSDoc
+  Success: Constant replaces hardcoded 2.20462 in convertWeight
+  Test: Existing tests validate accuracy
+  Module: Named constant documents conversion factor
+  Time: 5min (part of weight-utils creation)
+  ```
+
+  Implementation:
+
+  ```typescript
+  /**
+   * Official conversion factor: 1 kilogram = 2.20462 pounds
+   *
+   * Rounded to 5 decimal places for UI display accuracy.
+   * Source: International System of Units (SI)
+   *
+   * @example
+   * 100 kg × 2.20462 = 220.462 lbs
+   * 220 lbs ÷ 2.20462 = 99.79 kg
+   */
+  export const LBS_PER_KG = 2.20462;
+  ```
+
+- [ ] **Extract UNDO_TOAST_DURATION_MS constant**
+
+  ```
+  Files: src/components/dashboard/undo-toast.tsx:13-16
+  Approach: Module-level constant with rationale comment
+  Success: Named constant replaces 3000 magic number
+  Test: Manual QA - toast dismisses after 3s
+  Module: Self-documenting timing constant
+  Time: 5min
+  ```
+
+  Implementation:
+
+  ```typescript
+  /**
+   * Duration to display undo toast before auto-dismissing.
+   * 3 seconds provides sufficient time to notice and react,
+   * following industry standard for non-critical notifications.
+   */
+  const UNDO_TOAST_DURATION_MS = 3000;
+
+  // Line 16:
+  const timer = setTimeout(onDismiss, UNDO_TOAST_DURATION_MS);
+  ```
+
+- [ ] **Extract FOCUS_DELAY_MS constant in quick-log-form.tsx**
+
+  ```
+  Files: src/components/dashboard/quick-log-form.tsx:239-243
+  Approach: Module-level constant with rationale
+  Success: Named constant replaces 50 magic number
+  Test: Manual QA - focus works after exercise selection
+  Module: Documents timing requirement
+  Time: 5min
+  ```
+
+  Implementation:
+
+  ```typescript
+  /**
+   * Delay to ensure DOM updates complete before focusing input.
+   * 50ms allows Radix Popover close animation to finish and
+   * React to update the DOM with the selected exercise.
+   *
+   * Note: Could use requestAnimationFrame instead, but fixed
+   * delay is more predictable and less complex.
+   */
+  const FOCUS_DELAY_MS = 50;
+
+  // Line 240:
+  setTimeout(() => focusElement(repsInputRef), FOCUS_DELAY_MS);
+  ```
+
+- [ ] **Document setTimeout calls in Dashboard.tsx**
+
+  ```
+  Files: src/components/dashboard/Dashboard.tsx:110,197
+  Approach: Add explanatory comments (no constants needed - zero-delay pattern)
+  Success: Code intent is clear to future maintainers
+  Test: No functional change, comments improve clarity
+  Module: Self-documenting code
+  Time: 5min
+  ```
+
+  Line 110:
+
+  ```typescript
+  // Zero-delay setTimeout ensures scroll happens AFTER React finishes
+  // rendering the newly logged set in the history section
+  setTimeout(() => {
+    historyRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  });
+  ```
+
+  Line 197:
+
+  ```typescript
+  // Zero-delay setTimeout waits for React to render the new exercise
+  // in the dropdown before auto-selecting it
+  setTimeout(() => {
+    formRef.current?.repeatSet({
+      exerciseId,
+      // ... dummy set for auto-selection
+    });
+  });
+  ```
 
 ---
 
 ## Success Criteria
 
-### Implementation (Phase 1-4) ✅ COMPLETE
+**Phase 1 - Time Formatting**:
 
-- ✅ All touch targets >= 44px
-- ✅ Autofocus works reliably (event-driven, no timing hacks)
-- ✅ No uppercase text (except intentional celebrations)
-- ✅ Button/Input mobile-optimized variants
-- ✅ SelectItem 48px touch targets
-- ✅ Form spacing responsive
-- ✅ Visual focus indicators (WCAG 2.4.7)
-- ✅ Tables → cards on mobile (DailyStatsCard, ExerciseManager)
-- ✅ Design token system centralized
+- ✅ Single `formatTimeAgo` function in date-utils.ts
+- ✅ Two call sites migrated (useLastSet, set-card)
+- ✅ Comprehensive test coverage (>95%)
+- ✅ No visual regressions in time display
 
-### Testing & Validation (Phase 5) 🔲 TODO
+**Phase 2 - Module Boundaries**:
 
-- [ ] Visual regression baseline captured
-- [ ] Touch target tests automated
-- [ ] Manual QA on iOS device
-- [ ] Manual QA on Android device
+- ✅ 5 new domain-specific modules created
+- ✅ All 632 lines of tests migrated and passing
+- ✅ ~15 import sites updated successfully
+- ✅ dashboard-utils.ts deleted
+- ✅ `pnpm test && pnpm typecheck` passes
 
-### Documentation (Phase 6) 🔲 TODO
+**Phase 3 - Magic Numbers**:
 
-- [ ] Design system guide created
-- [ ] CLAUDE.md updated with patterns
+- ✅ 4 magic numbers extracted/documented
+- ✅ Code intent clear to future maintainers
+- ✅ No functional changes
 
-### User Experience Goals
+**Overall**:
 
-- Rapid set logging on mobile (no mis-taps)
-- Natural keyboard flow (exercise → reps → weight → submit)
-- No iOS zoom-in on input focus
-- Consistent visual experience (mobile/desktop)
+- ✅ Zero regressions (all existing tests pass)
+- ✅ Improved discoverability (domain-driven organization)
+- ✅ Change amplification eliminated (DRY principle)
+- ✅ Module boundaries enforce single responsibility
 
 ---
 
-## Key Decisions
+## Effort Estimates
 
-**Design Tokens as Documentation**
+**Phase 1** (Time Formatting): ~1.5h
 
-- Tailwind requires string literals (JIT compiler)
-- Design tokens serve as reference, not runtime imports
-- JSDoc comments link hardcoded classes to tokens
+- Implementation: 30min
+- Tests: 45min
+- Migration: 20min
 
-**YAGNI Over Abstraction**
+**Phase 2** (Module Split): ~3h
 
-- Skipped ResponsiveTable component (only 2 consumers)
-- Inline responsive classes simpler and more maintainable
-- Can refactor if pattern repeats (3+ consumers)
+- 5 module extractions: 2h
+- Import updates: 45min
+- Validation: 15min
 
-**Event-Driven Autofocus**
+**Phase 3** (Magic Numbers): ~30min
 
-- Radix `onOpenChange` guarantees dropdown closed
-- Single RAF for React render cycle
-- Eliminated timing hacks and race conditions
+- 4 constant extractions: 20min
+- Documentation: 10min
 
-**Mobile-First Responsive**
-
-- Base styles for mobile, override for desktop
-- `hidden md:block` for tables, `md:hidden` for cards
-- Preserves functionality in both layouts
+**Total**: ~5 hours (vs BACKLOG estimate of 4.5h - close match!)
 
 ---
 
-**Last Updated**: 2025-10-27
-**Branch**: feature/mobile-ux-improvements
-**Commits**: 8 total (Phase 1-4 complete)
+## Sequencing Notes
+
+**Why this order?**
+
+1. **Time formatting first** - Smallest, independent, high-value quick win
+2. **Module split second** - Tests already exist (safe refactor), enables future work
+3. **Magic numbers last** - Quick cleanup pass, some done during module split
+
+**Parallelization opportunities**: None - each phase builds on previous
+
+**Risk mitigation**: Comprehensive test suite exists (632 lines), making refactor low-risk
+
+---
+
+## Design Iteration Checkpoints
+
+**After Phase 1**:
+
+- Review if "terminal" vs "compact" naming is intuitive
+- Consider lowercase format option if UX feedback prefers mixed case
+
+**After Phase 2**:
+
+- Review module boundaries: Are they intuitive? Easy to discover?
+- Check import patterns: If components import 3+ modules, consider facade pattern
+- Identify any functions that don't fit cleanly (candidates for future refactor)
+
+**After Phase 3**:
+
+- Audit for remaining magic numbers (search for bare numeric literals)
+- Consider extracting common timing patterns to shared constants module
+
+---
+
+## Future Opportunities
+
+**Not in scope, but noted**:
+
+- Consider facade pattern if call sites import 3+ split modules
+- Extract common timing patterns (RAF delays, animation durations) to timing-constants.ts
+- Internationalization of formatTimeAgo (i18n-ready architecture)
+- Performance: Memoize formatDateGroup for repeated calls with same input
+
+**Module Value Test** (after refactor):
+For each new module, verify: **Value = Functionality - Interface Complexity**
+
+- ✅ Weight-utils: 2 functions, clear responsibility → Deep module
+- ✅ Stats-calculator: 2 functions, clear responsibility → Deep module
+- ❌ If any module feels shallow (interface ≈ implementation), reconsider abstraction
