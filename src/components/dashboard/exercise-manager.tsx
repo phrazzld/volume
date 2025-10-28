@@ -2,29 +2,13 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "@/components/ui/table";
+import { SettingsList } from "@/components/ui/settings-list";
+import { SettingsListItem } from "@/components/ui/settings-list-item";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,18 +18,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
 import { Exercise, Set } from "@/types/domain";
-
-// Validation schema for exercise name edit
-const exerciseEditSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-});
-
-type ExerciseEditFormValues = z.infer<typeof exerciseEditSchema>;
 
 interface ExerciseManagerProps {
   exercises: Exercise[];
@@ -54,18 +30,12 @@ interface ExerciseManagerProps {
 
 export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
   const [editingId, setEditingId] = useState<Id<"exercises"> | null>(null);
+  const [editValue, setEditValue] = useState("");
   const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(
     null
   );
   const updateExercise = useMutation(api.exercises.updateExercise);
   const deleteExercise = useMutation(api.exercises.deleteExercise);
-
-  const editForm = useForm<ExerciseEditFormValues>({
-    resolver: zodResolver(exerciseEditSchema),
-    defaultValues: {
-      name: "",
-    },
-  });
 
   // Calculate set count per exercise
   const setCountByExercise = sets.reduce(
@@ -78,22 +48,25 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
 
   const handleStartEdit = (exercise: Exercise) => {
     setEditingId(exercise._id);
-    editForm.reset({ name: exercise.name });
+    setEditValue(exercise.name);
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    editForm.reset({ name: "" });
+    setEditValue("");
   };
 
-  const handleSaveEdit = async (
-    exerciseId: Id<"exercises">,
-    values: ExerciseEditFormValues
-  ) => {
+  const handleSaveEdit = async (exerciseId: Id<"exercises">) => {
+    const trimmed = editValue.trim();
+    if (!trimmed) {
+      toast.error("Exercise name cannot be empty");
+      return;
+    }
+
     try {
-      await updateExercise({ id: exerciseId, name: values.name.trim() });
+      await updateExercise({ id: exerciseId, name: trimmed });
       setEditingId(null);
-      editForm.reset({ name: "" });
+      setEditValue("");
       toast.success("Exercise updated");
     } catch (error) {
       handleMutationError(error, "Update Exercise");
@@ -117,180 +90,114 @@ export function ExerciseManager({ exercises, sets }: ExerciseManagerProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Exercise Registry ({exercises.length})</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-20">ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead className="w-28">Created</TableHead>
-              <TableHead className="w-16">Sets</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {exercises.map((exercise) => {
-              const isEditing = editingId === exercise._id;
-              const setCount = setCountByExercise[exercise._id] || 0;
-              const shortId = exercise._id.slice(0, 6);
-              const createdDate = new Date(
-                exercise.createdAt
-              ).toLocaleDateString("en-US", {
-                month: "2-digit",
-                day: "2-digit",
-                year: "2-digit",
-              });
+    <>
+      <SettingsList>
+        {exercises.map((exercise) => {
+          const isEditing = editingId === exercise._id;
+          const setCount = setCountByExercise[exercise._id] || 0;
+          const createdDate = new Date(exercise.createdAt).toLocaleDateString(
+            "en-US",
+            {
+              month: "2-digit",
+              day: "2-digit",
+              year: "2-digit",
+            }
+          );
 
-              return (
-                <TableRow key={exercise._id}>
-                  {/* ID */}
-                  <TableCell className="text-muted-foreground">
-                    {shortId}
-                  </TableCell>
-
-                  {/* NAME (editable inline) */}
-                  <TableCell>
-                    {isEditing ? (
-                      <Form {...editForm}>
-                        <form
-                          onSubmit={editForm.handleSubmit((values) =>
-                            handleSaveEdit(exercise._id, values)
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <FormField
-                              control={editForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem className="flex-1">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="text"
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                          e.preventDefault();
-                                          editForm.handleSubmit((values) =>
-                                            handleSaveEdit(exercise._id, values)
-                                          )();
-                                        }
-                                        if (e.key === "Escape") {
-                                          e.preventDefault();
-                                          handleCancelEdit();
-                                        }
-                                      }}
-                                      className="flex-1"
-                                      autoFocus
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <button
-                              type="submit"
-                              className="p-2 hover:opacity-80"
-                              title="Save"
-                            >
-                              <Check className="h-5 w-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleCancelEdit}
-                              className="p-2 text-muted-foreground hover:opacity-80"
-                              title="Cancel"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          </div>
-                        </form>
-                      </Form>
-                    ) : (
-                      <span className="font-medium">{exercise.name}</span>
-                    )}
-                  </TableCell>
-
-                  {/* CREATED */}
-                  <TableCell className="text-muted-foreground">
-                    {createdDate}
-                  </TableCell>
-
-                  {/* SETS */}
-                  <TableCell>{setCount}</TableCell>
-
-                  {/* ACTIONS */}
-                  <TableCell>
-                    {!isEditing ? (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleStartEdit(exercise)}
-                          className="p-2 hover:opacity-80 transition-opacity"
-                          title="Edit exercise name"
-                        >
-                          <Pencil className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(exercise)}
-                          className="p-2 text-destructive hover:opacity-80 transition-opacity"
-                          title="Delete exercise"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="h-6"></div> // Spacer during edit
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog
-          open={!!exerciseToDelete}
-          onOpenChange={(open) => !open && setExerciseToDelete(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
-              <AlertDialogDescription>
-                {exerciseToDelete && (
+          return (
+            <SettingsListItem
+              key={exercise._id}
+              title={
+                isEditing ? (
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={() => handleSaveEdit(exercise._id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSaveEdit(exercise._id);
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        handleCancelEdit();
+                      }
+                    }}
+                    autoFocus
+                    className="h-8 text-sm -my-1"
+                  />
+                ) : (
+                  exercise.name
+                )
+              }
+              subtitle={`${createdDate} • ${setCount} sets`}
+              actions={
+                !isEditing && (
                   <>
-                    {setCountByExercise[exerciseToDelete._id] > 0 ? (
-                      <>
-                        Delete &quot;{exerciseToDelete.name}&quot;? This
-                        exercise has {setCountByExercise[exerciseToDelete._id]}{" "}
-                        set
-                        {setCountByExercise[exerciseToDelete._id] === 1
-                          ? ""
-                          : "s"}
-                        . Deleting will remove it from your exercise list.
-                      </>
-                    ) : (
-                      <>
-                        Delete &quot;{exerciseToDelete.name}&quot;? This cannot
-                        be undone.
-                      </>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleStartEdit(exercise)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDeleteClick(exercise)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
                   </>
-                )}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete}>
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </CardContent>
-    </Card>
+                )
+              }
+            />
+          );
+        })}
+      </SettingsList>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!exerciseToDelete}
+        onOpenChange={(open) => !open && setExerciseToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
+            <AlertDialogDescription>
+              {exerciseToDelete && (
+                <>
+                  {setCountByExercise[exerciseToDelete._id] > 0 ? (
+                    <>
+                      Delete &quot;{exerciseToDelete.name}&quot;? This exercise
+                      has {setCountByExercise[exerciseToDelete._id]} set
+                      {setCountByExercise[exerciseToDelete._id] === 1
+                        ? ""
+                        : "s"}
+                      . Deleting will remove it from your exercise list.
+                    </>
+                  ) : (
+                    <>
+                      Delete &quot;{exerciseToDelete.name}&quot;? This cannot be
+                      undone.
+                    </>
+                  )}
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

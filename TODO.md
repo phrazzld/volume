@@ -1,484 +1,208 @@
-# TODO: Dashboard UX Redesign
+# TODO: Mobile UX Improvements
 
-## Progress Summary
-
-**Status:** Phase 4 Partially Complete ✅ | Phase 5 Next (Mobile Optimization)
-
-- ✅ **Phase 1:** Information Architecture (Navigation restructure, Exercises page)
-- ✅ **Phase 2.1:** Hero Stats Card (Big numbers, icons, visual hierarchy)
-- ✅ **Phase 2.2:** Quick Log Form Review (Already optimized)
-- ✅ **Phase 2.3:** Exercise Grouping (Group sets by exercise, not just time)
-- ✅ **Phase 3:** Visual Design System (Colors, typography, spacing, shadows)
-- ✅ **Phase 4:** Motivational Elements (PRs ✅, Streaks ✅ | Insights ⏸️ deferred)
-- ⏳ **Phase 5:** Mobile Optimization (Bottom sheet, touch targets)
-
-**Previous Work:**
-
-- ✅ shadcn/ui migration complete (PR #15)
-- ✅ 150 tests passing, TypeScript clean
-- ✅ React-hook-form + zod validation throughout
+**Initiative**: World-class mobile experience for Volume workout tracker
+**Status**: Phase 1-4 Complete | Phase 5-6 Remaining
+**Progress**: 17/22 tasks complete (77%)
 
 ---
 
-## Context & Patterns
+## Phase 1: Critical Fixes ✅ COMPLETE
 
-### Current Tech Stack
+### Design System Foundation
 
-- **UI Components:** shadcn/ui (Radix primitives + Tailwind)
-- **Forms:** react-hook-form + zod validation
-- **State:** Convex (useQuery/useMutation)
-- **Icons:** lucide-react
-- **Testing:** vitest + @testing-library/react
-- **Styling:** Tailwind CSS (utility-first)
+- [x] **Create mobile design token system** (75aa090)
+  - File: `src/lib/design-tokens/mobile.ts`
+  - Tokens: TOUCH_TARGETS (44px min), SPACING, TYPOGRAPHY, INTERACTION
+  - Pattern: Tailwind classes as documentation, not runtime imports
 
-### Codebase Patterns
+- [x] **Add touch-optimized size variants to Button** (3fee654)
+  - File: `src/components/ui/button.tsx`
+  - New sizes: `touch` (h-11/44px), `comfortable` (h-12/48px)
+  - Added visual touch feedback (active:scale-95, active:opacity-90)
 
-```typescript
-// Data fetching
-const data = useQuery(api.module.functionName, { args });
+- [x] **Update Input with mobile-first height** (955502c)
+  - File: `src/components/ui/input.tsx`
+  - Changed h-9 → h-11 (44px)
+  - Enhanced focus ring: ring-2 with ring-offset-2
 
-// Mutations
-const mutate = useMutation(api.module.functionName);
-await mutate({ args });
+- [x] **Update Select for mobile touch targets** (e35dd07)
+  - File: `src/components/ui/select.tsx`
+  - SelectTrigger: h-11, enhanced focus ring
+  - SelectItem: py-3 (48px touch target)
 
-// Forms
-const form = useForm<FormValues>({
-  resolver: zodResolver(schema),
-  defaultValues: { ... }
-});
-
-// Error handling
-import { handleMutationError } from "@/lib/error-handler";
-try {
-  await mutation();
-} catch (error) {
-  handleMutationError(error, "Context");
-}
-```
-
-### Design Principles
-
-From brainstorming session:
-
-1. **User-facing language** - "Today" not "Dashboard", "Exercises" not "Manage"
-2. **Visual hierarchy** - Hero stats > actions > details
-3. **Data density** - Show value, hide noise (collapsible breakdowns)
-4. **Motivational** - Celebrate achievements (PRs, streaks)
-5. **Mobile-first** - Touch targets, keyboard behavior, bottom sheets
+- [x] **Add responsive spacing to FormItem** (2219d57)
+  - File: `src/components/ui/form.tsx`
+  - Changed space-y-2 → space-y-2 sm:space-y-3
 
 ---
 
-## Phase 2.3: Exercise Grouping (HIGH IMPACT)
+## Phase 2: Autofocus & Keyboard Flow ✅ COMPLETE
 
-**Goal:** Restructure set history to group by exercise, not just chronological order.
+- [x] **Fix autofocus using Radix onOpenChange** (8048c99)
+  - File: `src/components/dashboard/quick-log-form.tsx`
+  - Event-driven pattern (no RAF timing hacks)
+  - Comprehensive JSDoc documentation
 
-**Current State:**
-
-```
-Today (15 sets)
-├─ 5:30 PM - Squats - 12 reps @ 315 lbs
-├─ 5:33 PM - Squats - 10 reps @ 315 lbs
-├─ 5:35 PM - Bench Press - 8 reps @ 225 lbs
-├─ 5:38 PM - Squats - 10 reps @ 315 lbs  ← Hard to scan
-└─ ...
-```
-
-**Target State:**
-
-```
-Today (3 exercises, 15 sets)
-
-▾ Squats • 5 sets • 3,500 lbs
-  ├─ 12 × 315 lbs  5:30 PM  [↻][×]
-  ├─ 10 × 315 lbs  5:33 PM  [↻][×]
-  ├─ 10 × 315 lbs  5:38 PM  [↻][×]
-  ├─ 8  × 315 lbs  5:40 PM  [↻][×]
-  └─ 8  × 315 lbs  5:42 PM  [↻][×]
-
-▾ Bench Press • 5 sets • 4,500 lbs
-  └─ ...
-
-▾ Barbell Rows • 5 sets • 4,450 lbs
-  └─ ...
-```
-
-### Implementation Tasks
-
-- [x] **2.3.1: Create exercise grouping utility** (1h)
-  - File: `src/lib/dashboard-utils.ts`
-  - Function: `groupSetsByExercise(sets: Set[]) => ExerciseGroup[]`
-  - Returns: Array of `{ exerciseId, sets[], totalVolume, totalReps }`
-  - Sort: By most recently performed (first set in group)
-
-- [x] **2.3.2: Create ExerciseSetGroup component** (2h)
-  - File: `src/components/dashboard/exercise-set-group.tsx`
-  - Props: `{ exercise, sets, onRepeat, onDelete, preferredUnit }`
-  - Features:
-    - Collapsible (expanded by default)
-    - Shows aggregate stats in header (N sets • X volume)
-    - Compact set list (no "Exercise" column needed)
-    - Actions: Repeat, Delete (same as current)
-
-- [x] **2.3.3: Update GroupedSetHistory component** (1h)
-  - File: `src/components/dashboard/grouped-set-history.tsx`
-  - Replace chronological table with exercise groups
-  - Remove "Exercise" column (redundant)
-  - Preserve time formatting, actions
-
-- [x] **2.3.4: Update Dashboard.tsx** (30m)
-  - File: `src/components/dashboard/Dashboard.tsx`
-  - Pass `groupSetsByExercise(todaysSets)` to GroupedSetHistory
-  - Update component title to "Today's Workout"
-
-**Success Criteria:**
-
-- ✓ Sets grouped by exercise, not just time
-- ✓ Exercise groups collapsible (all expanded by default)
-- ✓ Aggregate stats visible (N sets, X volume)
-- ✓ Repeat and Delete actions still work
-- ✓ Time formatting preserved
-- ✓ Mobile responsive
-- ✓ TypeScript clean, tests pass
-
-**Effort:** 4-5 hours
-**Risk:** Medium (data restructuring, visual changes)
+- [x] **Verify focus rings on all inputs** (verification only)
+  - All components inherit proper focus rings from Phase 1
+  - WCAG 2.4.7 compliance maintained
 
 ---
 
-## Phase 3: Visual Design System (POLISH)
+## Phase 3: Typography ✅ COMPLETE
 
-**Goal:** Define cohesive color palette, typography scale, and spacing rhythm.
-
-### 3.1: Color System (1h)
-
-**Current:** Generic gray, minimal color usage
-**Target:** Purposeful color for hierarchy and emotion
-
-- [x] **Define color tokens** in `tailwind.config.ts`
-
-```typescript
-// Add to theme.extend.colors
-colors: {
-  // Primary: Action & Energy (blue/cyan)
-  primary: {
-    DEFAULT: 'hsl(210, 100%, 50%)',  // Vibrant blue
-    hover: 'hsl(210, 100%, 45%)',
-    active: 'hsl(210, 100%, 40%)',
-  },
-
-  // Success: Achievement (bright green)
-  success: {
-    DEFAULT: 'hsl(142, 76%, 36%)',
-    light: 'hsl(142, 76%, 90%)',
-  },
-
-  // Accent: Attention (amber/orange)
-  accent: {
-    DEFAULT: 'hsl(38, 92%, 50%)',
-    light: 'hsl(38, 92%, 90%)',
-  },
-}
-```
-
-- [x] **Apply colors strategically**
-  - Log Set button: `bg-primary hover:bg-primary-hover` ✓ (shadcn Button default)
-  - PR badges: `bg-success text-success-foreground` (Phase 4)
-  - Insights/tips: `border-accent bg-accent-light` (Phase 4)
-  - Keep most UI neutral (don't overuse color) ✓
-
-### 3.2: Typography Scale (30m)
-
-- [x] **Define text sizes** in `tailwind.config.ts` or use built-in scale ✓
-
-```typescript
-// Usage guide - Using Tailwind's built-in scale (no custom config needed)
-Hero numbers:  text-4xl (48px) font-bold      // Daily volume, PR stats
-Section titles: text-xl (20px) font-semibold  // Card titles
-Body text:      text-base (16px)              // Form labels, table data
-Meta text:      text-sm (14px)                // Timestamps, hints
-Tiny text:      text-xs (12px)                // Footnotes
-```
-
-- [x] **Apply to key components**
-  - DailyStatsCard hero numbers: Increase to `text-4xl` ✓
-  - Card titles: Ensure `text-xl font-semibold` ✓
-  - Timestamps: `text-sm text-muted-foreground` ✓
-
-### 3.3: Spacing Rhythm (30m)
-
-**Current:** Inconsistent spacing
-**Target:** 8px base unit throughout
-
-- [x] **Audit spacing** in key components
-  - Card padding: `p-6` (24px) ✓ Already consistent (shadcn default)
-  - Section gaps: `space-y-8` (32px) → PageLayout needs update (currently `space-y-4`)
-  - Form field gaps: `gap-4` (16px) ✓ Already consistent
-  - Inline element gaps: `gap-2` (8px) → Mixed (`gap-1` to `gap-6`), acceptable variation
-
-  ```
-  Audit findings:
-  - PageLayout spacing: space-y-4 (16px) → should be space-y-8 (32px)
-  - Card components: p-6 already standard ✓
-  - Form grids: gap-4 already standard ✓
-  - Inline gaps: Contextual variation (gap-1 for icons, gap-2 for buttons, gap-3+ for sections)
-  ```
-
-- [x] **Update PageLayout** spacing
-  - File: `src/components/layout/page-layout.tsx`
-  - Standardize page content spacing ✓
-
-### 3.4: Visual Depth (30m)
-
-- [x] **Add subtle shadows** to cards
-  - Update Card component or use `shadow-sm` utility ✓
-  - Hover states: `hover:shadow-md transition-shadow` ✓
-  - Elevate important actions (Log Set button) ✓
-
-**Success Criteria:**
-
-- ✓ Consistent color usage (primary, success, accent)
-- ✓ Clear typography hierarchy (4xl → xl → base → sm → xs)
-- ✓ 8px base spacing rhythm
-- ✓ Subtle depth via shadows
-- ✓ Visual changes enhance, don't distract
-
-**Effort:** 2-3 hours
-**Risk:** Low (mostly styling tweaks)
+- [x] **Remove uppercase text violations** (2592625)
+  - "+ CREATE NEW" → "+ Create New"
+  - "LBS"/"KG" → "lbs"/"kg"
+  - Audit confirmed: only intentional uppercase remains (PR celebrations)
 
 ---
 
-## Phase 4: Motivational Elements (ENGAGEMENT)
+## Phase 4: Responsive Components ✅ COMPLETE
 
-**Goal:** Add gamification and feedback to encourage consistent use.
+### Responsive Layouts
 
-### 4.1: PR Detection (2h) ✅
+- [x] **Add responsive layout to DailyStatsCard** (ef58c04)
+  - File: `src/components/dashboard/daily-stats-card.tsx`
+  - Desktop: Table | Mobile: Cards
+  - No horizontal scroll on 320px
 
-- [x] **Create PR detection utility** ✓
-  - File: `src/lib/pr-detection.ts`
-  - Function: `checkForPR(set, previousSets) => PRType | null`
-  - Types: `'weight' | 'reps' | 'volume' | null`
-  - Logic: Compare current set against all previous for same exercise
+- [x] **Add responsive layout to ExerciseManager** (aed7c73)
+  - File: `src/components/dashboard/exercise-manager.tsx`
+  - Desktop: Table | Mobile: Cards with inline editing
+  - Preserved full functionality in both layouts
 
-- [x] **Create PR celebration component** ✓
-  - File: `src/components/dashboard/pr-celebration.tsx`
-  - Shows: "🎉 NEW PR! Squats: 315 × 12 (previous: 315 × 10)"
-  - Auto-dismiss after 5 seconds
-  - Uses Sonner toast with 🏆 icon
+### Mobile Layout Fixes
 
-- [x] **Integrate PR detection** ✓
-  - Check after each set logged (useQuickLogForm hook)
-  - Show celebration toast (showPRCelebration)
-  - Add PR badge in set history (🏆 Trophy icon in ExerciseSetGroup)
+- [x] **Fix Last Set indicator layout** (637934b)
+  - File: `src/components/dashboard/quick-log-form.tsx`
+  - Mobile: Vertical stack | Desktop: Horizontal
 
-### 4.2: Streak Counter (1h) ✅
+- [x] **Standardize Load More button** (475751e)
+  - File: `src/app/history/page.tsx`
+  - Replaced custom styling with `<Button size="touch">`
 
-- [x] **Create streak calculation utility** ✓
-  - File: `src/lib/streak-calculator.ts`
-  - Query all sets, group by day
-  - Calculate consecutive days with sets logged
-  - Handle timezone properly (using date-fns)
+### Design Decisions
 
-- [x] **Display streak in DailyStatsCard** ✓
-  - Component: DailyStatsCard
-  - Format: "🔥 X Day Streak"
-  - Celebrate milestones (7, 30, 100 days)
-  - Highlighted background for 7+ day streaks
-
-### 4.3: Contextual Insights ⏸️ **DEFERRED TO BACKLOG**
-
-**Reason:** Feature work beyond aesthetic overhaul scope. Branch focus is UI/UX polish.
-
-~~Create insights generator (see BACKLOG.md for details)~~
-
-### 4.4: Progress Indicators ⏸️ **DEFERRED TO BACKLOG**
-
-**Reason:** Feature work beyond aesthetic overhaul scope. Branch focus is UI/UX polish.
-
-~~Add progress vs. goals (see BACKLOG.md for details)~~
-
-**Success Criteria:**
-
-- ✅ PR detection works accurately
-- ✅ PR celebration shown (toast + badge)
-- ✅ Streak counter accurate and visible
-- ⏸️ Insights helpful, not annoying (max 1-2) - DEFERRED
-- ⏸️ Users feel encouraged, not pressured - DEFERRED
-
-**Effort:** 3 hours (completed: PR detection + streak)
-**Risk:** Low (core gamification features working)
+- **DEFERRED**: ResponsiveTable component creation
+  - Rationale: YAGNI - only 2 consumers, inline classes simpler
+  - Used responsive Tailwind utilities instead
+  - Can extract if 3rd consumer emerges
 
 ---
 
-## Phase 5: Mobile Optimization (CRITICAL UX)
+## Phase 5: Testing & Validation 🔲 TODO
 
-**Goal:** Optimize for gym usage (primary use case is mobile).
+### Automated Testing
 
-### 5.1: Bottom Sheet Quick Log (3h)
+- [ ] **Set up Playwright for visual regression**
+  - Install: `pnpm add -D @playwright/test`
+  - Configure mobile viewports (375x667, 390x844, 414x896)
+  - File: `playwright.config.ts`
 
-**Current:** Inline form on page
-**Target:** Floating action button → slide-up drawer
+- [ ] **Create baseline screenshots**
+  - File: `tests/visual/mobile-components.spec.ts`
+  - Components: QuickLogForm, DailyStatsCard, ExerciseManager, Select dropdown
+  - Baseline directory: `tests/visual/screenshots/baseline/`
 
-- [ ] **Add floating action button** (FAB)
-  - File: `src/components/dashboard/floating-action-button.tsx`
-  - Position: `fixed bottom-20 right-4` (above bottom nav)
-  - Icon: Plus or Dumbbell
-  - Shows: Only on mobile (hidden md:hidden)
+- [ ] **Create touch target validation test**
+  - File: `tests/mobile/touch-targets.spec.ts`
+  - Assert all interactive elements >= 44px height/width
+  - Test on mobile viewport (375px)
 
-- [ ] **Create bottom sheet drawer**
-  - Library: `vaul` (shadcn-compatible) or custom
-  - Slides up from bottom when FAB clicked
-  - Contains QuickLogForm
-  - Dismissible via swipe or backdrop click
-  - Keyboard-aware (adjusts for virtual keyboard)
+### Device Testing
 
-- [ ] **Alternative: Keep inline form, optimize spacing**
-  - Simpler approach if bottom sheet is overkill
-  - Ensure form always visible, not buried below hero stats
+- [ ] **Manual QA on physical iOS device**
+  - Autofocus reliability (exercise → reps)
+  - Keyboard flow (exercise → reps → weight → submit)
+  - No zoom on input focus (16px text)
+  - Touch target comfort
 
-### 5.2: Touch Target Sizing (1h)
-
-**WCAG Guideline:** Min 44×44px for touch targets
-
-- [ ] **Audit interactive elements**
-  - Buttons: Ensure `h-11` (44px) minimum
-  - Form inputs: Already 46px, good
-  - Icon buttons: Add padding if needed
-  - Table actions (Repeat, Delete): Increase size
-
-- [ ] **Add touch-friendly spacing**
-  - Increase gaps between buttons in action columns
-  - Ensure no accidental taps
-
-### 5.3: Keyboard Behavior (1h)
-
-- [ ] **Auto-advance on number inputs**
-  - After entering reps → auto-focus weight (already done via Enter)
-  - Consider auto-advance on valid input (e.g., 2 digits)
-
-- [ ] **Numeric keyboard optimization**
-  - Ensure `inputMode="numeric"` on all number fields (already done)
-  - Test on iOS Safari (primary platform)
-
-### 5.4: Performance on Low-End Devices (1h)
-
-- [ ] **Test on throttled connection**
-  - Ensure loading states visible
-  - Optimistic UI updates feel instant
-
-- [ ] **Reduce animation complexity** if needed
-  - Simplify confetti or other animations
-  - Ensure 60fps scrolling
-
-**Success Criteria:**
-
-- ✓ FAB or optimized inline form (mobile-friendly)
-- ✓ All touch targets ≥44px
-- ✓ Keyboard auto-advances smoothly
-- ✓ No accidental taps/clicks
-- ✓ Fast, responsive on mobile
-- ✓ iOS Safari tested and working
-
-**Effort:** 4-5 hours
-**Risk:** Medium (platform-specific bugs, UX testing needed)
+- [ ] **Manual QA on physical Android device**
+  - Same flow as iOS
+  - Numeric keyboard for reps/weight inputs
+  - Test Chrome + Samsung Internet
 
 ---
 
-## Quick Wins (< 30 min each)
+## Phase 6: Documentation 🔲 TODO
 
-These can be done anytime for immediate polish:
+- [ ] **Create design system usage guide**
+  - File: `src/lib/design-tokens/README.md`
+  - When to use touch/comfortable/large sizes
+  - Component examples and patterns
+  - Mobile-first philosophy
 
-- [x] Add primary color to "Log Set" button ✓ (Phase 3 - Button default variant)
-- [x] Increase hero stat font size to `text-4xl` ✓ (Phase 3 - Typography)
-- [x] Add subtle card shadows (`shadow-sm`) ✓ (Phase 3 - Visual Depth)
-- [x] Round volume numbers (12,450 → 12.4K) ✓
-- [x] Add loading spinner to "Log Set" button ✓
-- [ ] Improve empty state illustrations
-- [x] Add hover states to exercise groups ✓ (Phase 3 - Card hover:shadow-md)
-- [x] Smooth scroll to latest set after logging ✓
-
----
-
-## Testing Checklist
-
-After each phase:
-
-- [x] TypeScript: `pnpm typecheck` passes ✓
-- [x] Linting: `pnpm lint` passes ✓ (No warnings or errors)
-- [x] Tests: `pnpm test --run` all passing ✓ (157/157)
-- [ ] Manual QA: Desktop Chrome (primary dev browser)
-- [ ] Manual QA: Mobile iOS Safari (primary user platform)
-- [ ] Manual QA: Dark mode toggle still works
-- [ ] Manual QA: All happy paths work (log set, create exercise, delete)
+- [ ] **Update CLAUDE.md with mobile UX patterns**
+  - Mobile UX Standards section (44px minimum)
+  - Autofocus pattern (Radix onOpenChange)
+  - Reference design token system
 
 ---
 
-## Commit Strategy
+## Success Criteria
 
-**Commit after each completed task** for easy rollback:
+### Implementation (Phase 1-4) ✅ COMPLETE
 
-```bash
-# Phase 2.3
-git commit -m "feat(ui): add exercise grouping utility"
-git commit -m "feat(ui): create ExerciseSetGroup component"
-git commit -m "feat(ui): restructure set history by exercise"
+- ✅ All touch targets >= 44px
+- ✅ Autofocus works reliably (event-driven, no timing hacks)
+- ✅ No uppercase text (except intentional celebrations)
+- ✅ Button/Input mobile-optimized variants
+- ✅ SelectItem 48px touch targets
+- ✅ Form spacing responsive
+- ✅ Visual focus indicators (WCAG 2.4.7)
+- ✅ Tables → cards on mobile (DailyStatsCard, ExerciseManager)
+- ✅ Design token system centralized
 
-# Phase 3
-git commit -m "style: define color system (primary, success, accent)"
-git commit -m "style: apply typography scale"
-git commit -m "style: standardize spacing rhythm"
+### Testing & Validation (Phase 5) 🔲 TODO
 
-# Phase 4
-git commit -m "feat(gamification): add PR detection"
-git commit -m "feat(gamification): add streak counter"
-git commit -m "feat(gamification): add contextual insights"
+- [ ] Visual regression baseline captured
+- [ ] Touch target tests automated
+- [ ] Manual QA on iOS device
+- [ ] Manual QA on Android device
 
-# Phase 5
-git commit -m "feat(mobile): add floating action button"
-git commit -m "feat(mobile): optimize touch targets"
-git commit -m "feat(mobile): improve keyboard behavior"
-```
+### Documentation (Phase 6) 🔲 TODO
 
----
+- [ ] Design system guide created
+- [ ] CLAUDE.md updated with patterns
 
-## Future Considerations (Post-Redesign)
+### User Experience Goals
 
-These ideas came up during brainstorming but are out of scope for current work:
-
-- **Routine templates** - Pre-built workout structures
-- **Rest timer** - Auto-start after logging set
-- **Plate calculator** - Show barbell loading
-- **Exercise search/filter** - For users with 50+ exercises
-- **Analytics page** - Charts, trends, progress over time
-- **Social features** - Share PRs, leaderboards
-- **Offline mode** - IndexedDB + background sync
-
-See `BACKLOG.md` for full roadmap.
+- Rapid set logging on mobile (no mis-taps)
+- Natural keyboard flow (exercise → reps → weight → submit)
+- No iOS zoom-in on input focus
+- Consistent visual experience (mobile/desktop)
 
 ---
 
-## Resources
+## Key Decisions
 
-**Design Inspiration:**
+**Design Tokens as Documentation**
 
-- Strong app (market leader, comprehensive)
-- Hevy app (social-first, community routines)
-- Strava (athlete-focused, data-driven)
-- Linear (clean, modern, purposeful color)
+- Tailwind requires string literals (JIT compiler)
+- Design tokens serve as reference, not runtime imports
+- JSDoc comments link hardcoded classes to tokens
 
-**shadcn/ui Docs:**
+**YAGNI Over Abstraction**
 
-- Components: https://ui.shadcn.com/docs/components
-- Themes: https://ui.shadcn.com/themes
-- Icons (lucide): https://lucide.dev/icons
+- Skipped ResponsiveTable component (only 2 consumers)
+- Inline responsive classes simpler and more maintainable
+- Can refactor if pattern repeats (3+ consumers)
 
-**Best Practices:**
+**Event-Driven Autofocus**
 
-- WCAG 2.1 AA accessibility
-- Mobile-first design
-- Progressive enhancement
-- Semantic HTML
+- Radix `onOpenChange` guarantees dropdown closed
+- Single RAF for React render cycle
+- Eliminated timing hacks and race conditions
+
+**Mobile-First Responsive**
+
+- Base styles for mobile, override for desktop
+- `hidden md:block` for tables, `md:hidden` for cards
+- Preserves functionality in both layouts
 
 ---
 
-**Last Updated:** 2025-10-17
-**Current Branch:** `feature/shadcn-migration` (will merge to master after Phase 2.3 + Phase 3)
+**Last Updated**: 2025-10-27
+**Branch**: feature/mobile-ux-improvements
+**Commits**: 8 total (Phase 1-4 complete)

@@ -13,12 +13,19 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import {
   Form,
   FormField,
@@ -33,6 +40,7 @@ import { Exercise, Set } from "@/types/domain";
 import { useQuickLogForm, QuickLogFormValues } from "@/hooks/useQuickLogForm";
 import { useLastSet } from "@/hooks/useLastSet";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuickLogFormProps {
   exercises: Exercise[];
@@ -46,6 +54,7 @@ export interface QuickLogFormHandle {
 const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   function QuickLogForm({ exercises, onSetLogged }, ref) {
     const [showInlineCreator, setShowInlineCreator] = useState(false);
+    const [comboboxOpen, setComboboxOpen] = useState(false);
     const repsInputRef = useRef<HTMLInputElement>(null);
     const weightInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,32 +79,37 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
      */
 
     /**
-     * Robust focus helper for mobile Safari compatibility
-     * Uses double requestAnimationFrame to ensure:
-     * - All React re-renders complete before focusing
-     * - Element is stable in the DOM
-     * - iOS Safari security model is respected
+     * Autofocus pattern using Radix Select's onOpenChange event
      *
-     * Research: setTimeout can fail on mobile due to:
-     * 1. React re-render race conditions
-     * 2. iOS focus security restrictions
-     * 3. Virtual keyboard animation conflicts
+     * Why this approach?
+     * - Event-driven: Focus triggered when dropdown animation completes
+     * - Reliable: onOpenChange(false) fires after Radix closes dropdown
+     * - Simple: Single RAF for browser render cycle, not timing hacks
      *
-     * Double RAF is the most reliable pattern for mobile focus.
+     * Focus flow:
+     * 1. User selects exercise → dropdown closes → onOpenChange(false) fires
+     * 2. Single RAF waits for React render cycle (DOM updates)
+     * 3. Focus reps input → user types reps → Enter → focus weight → Enter → submit
+     *
+     * Why single RAF vs double RAF?
+     * - onOpenChange guarantees dropdown animation complete
+     * - Only need to wait for React render, not Radix animation
+     * - Simpler, more maintainable pattern
+     *
+     * Reference: Radix UI Select guarantees onOpenChange fires after animation
+     * https://www.radix-ui.com/primitives/docs/components/select#onOpenChange
      */
     const focusElement = (ref: React.RefObject<HTMLInputElement | null>) => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // Defensive checks before focusing
-          if (ref.current && document.contains(ref.current)) {
-            try {
-              ref.current.focus();
-            } catch (e) {
-              // Fail silently if focus is not possible
-              console.warn("Focus failed:", e);
-            }
+        // Defensive checks before focusing
+        if (ref.current && document.contains(ref.current)) {
+          try {
+            ref.current.focus();
+          } catch (e) {
+            // Fail silently if focus is not possible
+            console.warn("Focus failed:", e);
           }
-        });
+        }
       });
     };
 
@@ -115,13 +129,6 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
         focusElement(repsInputRef);
       },
     }));
-
-    // Auto-focus flow: exercise selected → focus reps input
-    useEffect(() => {
-      if (selectedExerciseId) {
-        focusElement(repsInputRef);
-      }
-    }, [selectedExerciseId]);
 
     // Handle Enter key in reps input - focus weight or submit
     const handleRepsKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -151,7 +158,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
             <form onSubmit={form.handleSubmit(onSubmit)}>
               {/* Last Set Indicator */}
               {lastSet && (
-                <div className="mb-4 p-3 bg-muted border rounded-md flex items-center justify-between">
+                <div className="mb-4 p-3 bg-muted border rounded-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium">Last:</span>{" "}
                     {exercises.find((e) => e._id === selectedExerciseId)?.name}{" "}
@@ -169,7 +176,7 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                       form.setValue("weight", lastSet.weight ?? undefined);
                       focusElement(repsInputRef);
                     }}
-                    className="ml-2"
+                    className="sm:ml-2"
                   >
                     Use
                   </Button>
@@ -177,44 +184,96 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-2 md:items-end">
-                {/* Exercise Selector */}
+                {/* Exercise Selector - Combobox with search */}
                 <FormField
                   control={form.control}
                   name="exerciseId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Exercise *</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={(value) => {
-                          if (value === "CREATE_NEW") {
-                            setShowInlineCreator(true);
-                            field.onChange("");
-                          } else {
-                            field.onChange(value);
-                          }
-                        }}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-[46px]">
-                            <SelectValue placeholder="Select..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {exercises.map((exercise) => (
-                            <SelectItem key={exercise._id} value={exercise._id}>
-                              {exercise.name}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="CREATE_NEW">
-                            + CREATE NEW
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const selectedExercise = exercises.find(
+                      (ex) => ex._id === field.value
+                    );
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Exercise *</FormLabel>
+                        <Popover
+                          open={comboboxOpen}
+                          onOpenChange={(open) => {
+                            setComboboxOpen(open);
+                            // When combobox closes and exercise is selected, focus reps input
+                            if (!open && field.value) {
+                              focusElement(repsInputRef);
+                            }
+                          }}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={comboboxOpen}
+                                className={cn(
+                                  "w-full h-[46px] justify-between font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                                disabled={form.formState.isSubmitting}
+                              >
+                                {selectedExercise?.name || "Select..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              <CommandInput placeholder="Type to search..." />
+                              <CommandList>
+                                <CommandEmpty>No exercises found.</CommandEmpty>
+                                <CommandGroup>
+                                  {exercises.map((exercise) => (
+                                    <CommandItem
+                                      key={exercise._id}
+                                      value={exercise.name}
+                                      onSelect={() => {
+                                        field.onChange(exercise._id);
+                                        setComboboxOpen(false);
+                                        // Focus reps input after popover closes (50ms ensures DOM updates)
+                                        setTimeout(
+                                          () => focusElement(repsInputRef),
+                                          50
+                                        );
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          field.value === exercise._id
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      {exercise.name}
+                                    </CommandItem>
+                                  ))}
+                                  <CommandItem
+                                    value="CREATE_NEW"
+                                    onSelect={() => {
+                                      setShowInlineCreator(true);
+                                      setComboboxOpen(false);
+                                      field.onChange("");
+                                    }}
+                                    className="border-t"
+                                  >
+                                    + Create New
+                                  </CommandItem>
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 {/* Reps Input */}

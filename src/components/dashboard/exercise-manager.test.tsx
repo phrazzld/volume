@@ -40,15 +40,15 @@ describe("ExerciseManager", () => {
       _id: "ex1abc123" as Id<"exercises">,
       userId: "user1",
       name: "Bench Press",
-      createdAt: new Date("2025-10-01").getTime(),
-      _creationTime: new Date("2025-10-01").getTime(),
+      createdAt: new Date("2025-10-01T12:00:00").getTime(),
+      _creationTime: new Date("2025-10-01T12:00:00").getTime(),
     },
     {
       _id: "ex2def456" as Id<"exercises">,
       userId: "user1",
       name: "Squats",
-      createdAt: new Date("2025-10-05").getTime(),
-      _creationTime: new Date("2025-10-05").getTime(),
+      createdAt: new Date("2025-10-05T12:00:00").getTime(),
+      _creationTime: new Date("2025-10-05T12:00:00").getTime(),
     },
   ];
 
@@ -98,25 +98,21 @@ describe("ExerciseManager", () => {
       expect(screen.getByText("Squats")).toBeInTheDocument();
     });
 
-    it("displays exercise count in title", () => {
+    it("shows set count per exercise in subtitle", () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      expect(screen.getByText(/Exercise Registry \(2\)/)).toBeInTheDocument();
+      // Bench Press has 2 sets - check in subtitle format
+      expect(screen.getByText(/2 sets/)).toBeInTheDocument();
+      // Squats has 0 sets
+      expect(screen.getByText(/0 sets/)).toBeInTheDocument();
     });
 
-    it("shows set count per exercise", () => {
+    it("displays creation dates in subtitle", () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      // Bench Press has 2 sets
-      const rows = screen.getAllByText("2");
-      expect(rows.length).toBeGreaterThan(0);
-    });
-
-    it("displays short IDs", () => {
-      render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
-
-      expect(screen.getByText("ex1abc")).toBeInTheDocument();
-      expect(screen.getByText("ex2def")).toBeInTheDocument();
+      // Check that dates are rendered (format: MM/DD/YY)
+      expect(screen.getByText(/10\/01\/25/)).toBeInTheDocument();
+      expect(screen.getByText(/10\/05\/25/)).toBeInTheDocument();
     });
   });
 
@@ -124,7 +120,7 @@ describe("ExerciseManager", () => {
     it("enters edit mode when edit button clicked", () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       // Input should appear with current name
@@ -132,17 +128,15 @@ describe("ExerciseManager", () => {
       expect(input).toBeInTheDocument();
     });
 
-    it("saves updated exercise name on save button click", async () => {
+    it("saves updated exercise name on blur", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       const input = screen.getByDisplayValue("Bench Press");
       fireEvent.change(input, { target: { value: "Incline Bench Press" } });
-
-      const saveButton = screen.getByTitle("Save");
-      fireEvent.click(saveButton);
+      fireEvent.blur(input);
 
       await waitFor(() => {
         expect(mockUpdateExercise).toHaveBeenCalledWith({
@@ -156,7 +150,7 @@ describe("ExerciseManager", () => {
     it("saves on Enter key press", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       const input = screen.getByDisplayValue("Bench Press");
@@ -171,24 +165,10 @@ describe("ExerciseManager", () => {
       });
     });
 
-    it("cancels edit on cancel button click", () => {
-      render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
-
-      const editButtons = screen.getAllByTitle("Edit exercise name");
-      fireEvent.click(editButtons[0]);
-
-      const cancelButton = screen.getByTitle("Cancel");
-      fireEvent.click(cancelButton);
-
-      // Input should be gone
-      expect(screen.queryByDisplayValue("Bench Press")).not.toBeInTheDocument();
-      expect(mockUpdateExercise).not.toHaveBeenCalled();
-    });
-
     it("cancels edit on Escape key press", () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       const input = screen.getByDisplayValue("Bench Press");
@@ -201,31 +181,30 @@ describe("ExerciseManager", () => {
     it("does not save if name is empty", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       const input = screen.getByDisplayValue("Bench Press");
       fireEvent.change(input, { target: { value: "   " } });
-
-      const saveButton = screen.getByTitle("Save");
-      fireEvent.click(saveButton);
+      fireEvent.blur(input);
 
       await waitFor(() => {
         expect(mockUpdateExercise).not.toHaveBeenCalled();
+        expect(toast.error).toHaveBeenCalledWith(
+          "Exercise name cannot be empty"
+        );
       });
     });
 
     it("trims whitespace from exercise name", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       const input = screen.getByDisplayValue("Bench Press");
       fireEvent.change(input, { target: { value: "  Spaced Name  " } });
-
-      const saveButton = screen.getByTitle("Save");
-      fireEvent.click(saveButton);
+      fireEvent.blur(input);
 
       await waitFor(() => {
         expect(mockUpdateExercise).toHaveBeenCalledWith({
@@ -237,18 +216,10 @@ describe("ExerciseManager", () => {
   });
 
   describe("delete exercise", () => {
-    beforeEach(() => {
-      // Mock window.confirm
-      vi.stubGlobal(
-        "confirm",
-        vi.fn(() => true)
-      );
-    });
-
     it("shows confirmation dialog before deleting", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const deleteButtons = screen.getAllByTitle("Delete exercise");
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]);
 
       // AlertDialog should be visible
@@ -260,7 +231,7 @@ describe("ExerciseManager", () => {
     it("deletes exercise when confirmed", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const deleteButtons = screen.getAllByTitle("Delete exercise");
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]);
 
       // Wait for AlertDialog to appear and click Delete
@@ -282,7 +253,7 @@ describe("ExerciseManager", () => {
     it("does not delete if cancelled", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const deleteButtons = screen.getAllByTitle("Delete exercise");
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]);
 
       // Wait for AlertDialog and click Cancel
@@ -301,27 +272,28 @@ describe("ExerciseManager", () => {
     it("shows set count in confirmation for exercises with sets", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const deleteButtons = screen.getAllByTitle("Delete exercise");
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]); // Bench Press has 2 sets
 
       // Check AlertDialog shows set count
       await waitFor(() => {
-        expect(screen.getByText(/2 sets/i)).toBeInTheDocument();
+        const dialog = screen.getByRole("alertdialog");
+        expect(dialog.textContent).toMatch(/2 set/i);
       });
     });
 
     it("shows different message for exercises without sets", async () => {
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const deleteButtons = screen.getAllByTitle("Delete exercise");
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[1]); // Squats has 0 sets
 
       // Check AlertDialog shows warning message
       await waitFor(() => {
         const dialog = screen.getByRole("alertdialog");
         expect(dialog).toBeInTheDocument();
-        // Should NOT show "X sets" for exercise with no sets
-        expect(dialog.textContent).not.toMatch(/\d+\s+sets/i);
+        // Should show "cannot be undone" for exercises with no sets
+        expect(dialog.textContent).toMatch(/cannot be undone/i);
       });
     });
   });
@@ -335,14 +307,12 @@ describe("ExerciseManager", () => {
 
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const editButtons = screen.getAllByTitle("Edit exercise name");
+      const editButtons = screen.getAllByRole("button", { name: "Edit" });
       fireEvent.click(editButtons[0]);
 
       const input = screen.getByDisplayValue("Bench Press");
       fireEvent.change(input, { target: { value: "Updated" } });
-
-      const saveButton = screen.getByTitle("Save");
-      fireEvent.click(saveButton);
+      fireEvent.blur(input);
 
       await waitFor(() => {
         expect(handleMutationError).toHaveBeenCalledWith(
@@ -360,7 +330,7 @@ describe("ExerciseManager", () => {
 
       render(<ExerciseManager exercises={mockExercises} sets={mockSets} />);
 
-      const deleteButtons = screen.getAllByTitle("Delete exercise");
+      const deleteButtons = screen.getAllByRole("button", { name: "Delete" });
       fireEvent.click(deleteButtons[0]);
 
       // Wait for AlertDialog and click Delete

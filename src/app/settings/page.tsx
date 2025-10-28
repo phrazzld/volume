@@ -5,19 +5,13 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ExerciseManager } from "@/components/dashboard/exercise-manager";
 import { InlineExerciseCreator } from "@/components/dashboard/inline-exercise-creator";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { SettingsSection } from "@/components/ui/settings-section";
+import { SettingsList } from "@/components/ui/settings-list";
+import { SettingsListItem } from "@/components/ui/settings-list-item";
 import { Button } from "@/components/ui/button";
-import { useWeightUnit, WeightUnit } from "@/contexts/WeightUnitContext";
+import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Plus } from "lucide-react";
-
-// Helper to generate unit button classes
-const getUnitButtonClasses = (isActive: boolean) =>
-  `px-4 py-2 text-sm transition-colors border rounded ${
-    isActive
-      ? "bg-primary text-primary-foreground border-primary"
-      : "bg-background border-border hover:bg-muted"
-  }`;
 
 export default function SettingsPage() {
   const [showCreator, setShowCreator] = useState(false);
@@ -35,13 +29,13 @@ export default function SettingsPage() {
   if (exercises === undefined || sets === undefined) {
     return (
       <PageLayout title="Settings">
-        <div className="animate-pulse space-y-3">
+        <div className="animate-pulse space-y-8">
           {[1, 2].map((i) => (
-            <div key={i} className="border rounded-md p-4">
-              <div className="h-6 bg-muted w-1/3 mb-3 rounded" />
-              <div className="space-y-2">
-                <div className="h-4 bg-muted w-full rounded" />
-                <div className="h-4 bg-muted w-5/6 rounded" />
+            <div key={i} className="space-y-4">
+              <div className="h-4 bg-muted w-32 rounded" />
+              <div className="border rounded-xl p-4 space-y-3">
+                <div className="h-10 bg-muted rounded" />
+                <div className="h-10 bg-muted rounded" />
               </div>
             </div>
           ))}
@@ -53,67 +47,60 @@ export default function SettingsPage() {
   return (
     <PageLayout title="Settings">
       {/* Exercise Management Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Exercise Management</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Create Exercise Section */}
+      <SettingsSection title="EXERCISE MANAGEMENT">
+        <SettingsList>
+          {/* Add Exercise Action */}
           {!showCreator ? (
-            <Button
+            <SettingsListItem
+              title="Add Exercise"
+              icon={<Plus className="w-5 h-5" />}
               onClick={() => setShowCreator(true)}
-              className="w-full mb-4"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Exercise
-            </Button>
+            />
           ) : (
-            <div className="mb-4">
+            <div className="p-4">
               <InlineExerciseCreator
                 onCreated={() => setShowCreator(false)}
                 onCancel={() => setShowCreator(false)}
               />
             </div>
           )}
+        </SettingsList>
+      </SettingsSection>
 
-          {/* Exercise List */}
+      {/* Exercise Registry Section */}
+      {exercises.length > 0 && (
+        <SettingsSection title={`EXERCISE REGISTRY (${exercises.length})`}>
           <ExerciseManager exercises={exercises} sets={sets} />
-        </CardContent>
-      </Card>
+        </SettingsSection>
+      )}
 
       {/* Preferences Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Preferences</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Weight Unit Toggle */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium mb-1">Weight Unit</h3>
-              <p className="text-xs text-muted-foreground">
-                Default unit for logging weights
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setUnit("lbs")}
-                className={getUnitButtonClasses(unit === "lbs")}
-                type="button"
-              >
-                LBS
-              </button>
-              <button
-                onClick={() => setUnit("kg")}
-                className={getUnitButtonClasses(unit === "kg")}
-                type="button"
-              >
-                KG
-              </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <SettingsSection title="PREFERENCES">
+        <SettingsList>
+          <SettingsListItem
+            title="Weight Unit"
+            subtitle="Default unit for logging weights"
+            actions={
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={unit === "lbs" ? "default" : "outline"}
+                  onClick={() => setUnit("lbs")}
+                >
+                  lbs
+                </Button>
+                <Button
+                  size="sm"
+                  variant={unit === "kg" ? "default" : "outline"}
+                  onClick={() => setUnit("kg")}
+                >
+                  kg
+                </Button>
+              </div>
+            }
+          />
+        </SettingsList>
+      </SettingsSection>
     </PageLayout>
   );
 }
