@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useWeightUnit } from "@/contexts/WeightUnitContext";
 import { Exercise, Set } from "@/types/domain";
 import { ExerciseSetGroup } from "./exercise-set-group";
-import { groupSetsByExercise } from "@/lib/dashboard-utils";
+import { groupSetsByExercise } from "@/lib/exercise-grouping";
 
 interface DayGroup {
   date: string;

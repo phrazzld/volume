@@ -17,10 +17,8 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { LAYOUT } from "@/lib/layout-constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  groupSetsByExercise,
-  sortExercisesByRecency,
-} from "@/lib/dashboard-utils";
+import { groupSetsByExercise } from "@/lib/exercise-grouping";
+import { sortExercisesByRecency } from "@/lib/exercise-sorting";
 import { getTodayRange } from "@/lib/date-utils";
 import type { Exercise, Set } from "@/types/domain";
 

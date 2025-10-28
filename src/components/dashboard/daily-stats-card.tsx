@@ -9,7 +9,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { ExerciseStats } from "@/lib/dashboard-utils";
+import { ExerciseStats } from "@/lib/stats-calculator";
 import { Dumbbell } from "lucide-react";
 
 interface DailyStatsCardProps {
