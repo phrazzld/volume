@@ -9,11 +9,18 @@ interface UndoToastProps {
   onDismiss: () => void;
 }
 
+/**
+ * Duration to display undo toast before auto-dismissing.
+ * 3 seconds provides sufficient time to notice and react,
+ * following industry standard for non-critical notifications.
+ */
+const UNDO_TOAST_DURATION_MS = 3000;
+
 export function UndoToast({ visible, onUndo, onDismiss }: UndoToastProps) {
   // Auto-dismiss after 3 seconds
   useEffect(() => {
     if (visible) {
-      const timer = setTimeout(onDismiss, 3000);
+      const timer = setTimeout(onDismiss, UNDO_TOAST_DURATION_MS);
       return () => clearTimeout(timer);
     }
   }, [visible, onDismiss]);
