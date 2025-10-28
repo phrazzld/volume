@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Set } from "@/types/domain";
+import { formatTimeAgo } from "@/lib/date-utils";
 
 /**
  * Hook to find the last set logged for a given exercise
@@ -16,17 +17,6 @@ export function useLastSet(exerciseId: string | null) {
     if (exerciseSets.length === 0) return null;
     return exerciseSets[0]; // Already sorted by performedAt desc
   }, [exerciseId, allSets]);
-
-  const formatTimeAgo = (timestamp: number) => {
-    const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return `${seconds} SEC AGO`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} MIN AGO`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} HR AGO`;
-    const days = Math.floor(hours / 24);
-    return `${days} DAY${days === 1 ? "" : "S"} AGO`;
-  };
 
   return { lastSet, formatTimeAgo };
 }
