@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getTodayRange } from "./date-utils";
+import { getTodayRange, formatTimeAgo } from "./date-utils";
 
 describe("date-utils", () => {
   describe("getTodayRange", () => {
@@ -103,6 +103,177 @@ describe("date-utils", () => {
       // Should still be the same day
       expect(startDate.getDate()).toBe(endDate.getDate());
       expect(start).toBeLessThan(end);
+    });
+  });
+
+  describe("formatTimeAgo", () => {
+    beforeEach(() => {
+      // Set a fixed time for testing: 2025-10-07 14:30:00 UTC
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2025-10-07T14:30:00Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe("terminal format (default)", () => {
+      it("formats seconds ago", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 5000)).toBe("5 SEC AGO");
+        expect(formatTimeAgo(now - 30000)).toBe("30 SEC AGO");
+        expect(formatTimeAgo(now - 59000)).toBe("59 SEC AGO");
+      });
+
+      it("formats 0 seconds as '0 SEC AGO'", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now)).toBe("0 SEC AGO");
+      });
+
+      it("formats minutes ago", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 60000)).toBe("1 MIN AGO");
+        expect(formatTimeAgo(now - 300000)).toBe("5 MIN AGO");
+        expect(formatTimeAgo(now - 1800000)).toBe("30 MIN AGO");
+        expect(formatTimeAgo(now - 3540000)).toBe("59 MIN AGO");
+      });
+
+      it("formats hours ago", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 3600000)).toBe("1 HR AGO");
+        expect(formatTimeAgo(now - 7200000)).toBe("2 HR AGO");
+        expect(formatTimeAgo(now - 43200000)).toBe("12 HR AGO");
+        expect(formatTimeAgo(now - 82800000)).toBe("23 HR AGO");
+      });
+
+      it("formats days ago with singular/plural", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 86400000)).toBe("1 DAY AGO");
+        expect(formatTimeAgo(now - 172800000)).toBe("2 DAYS AGO");
+        expect(formatTimeAgo(now - 604800000)).toBe("7 DAYS AGO");
+        expect(formatTimeAgo(now - 2592000000)).toBe("30 DAYS AGO");
+      });
+
+      it("handles boundary at 60 seconds", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 59999)).toBe("59 SEC AGO");
+        expect(formatTimeAgo(now - 60000)).toBe("1 MIN AGO");
+      });
+
+      it("handles boundary at 60 minutes", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 3599999)).toBe("59 MIN AGO");
+        expect(formatTimeAgo(now - 3600000)).toBe("1 HR AGO");
+      });
+
+      it("handles boundary at 24 hours", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 86399999)).toBe("23 HR AGO");
+        expect(formatTimeAgo(now - 86400000)).toBe("1 DAY AGO");
+      });
+
+      it("defaults to terminal format when format not specified", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 300000)).toBe("5 MIN AGO");
+      });
+    });
+
+    describe("compact format", () => {
+      it("formats recent time as 'JUST NOW'", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now, "compact")).toBe("JUST NOW");
+        expect(formatTimeAgo(now - 5000, "compact")).toBe("JUST NOW");
+        expect(formatTimeAgo(now - 30000, "compact")).toBe("JUST NOW");
+        expect(formatTimeAgo(now - 59000, "compact")).toBe("JUST NOW");
+      });
+
+      it("formats minutes ago in compact style", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 60000, "compact")).toBe("1M AGO");
+        expect(formatTimeAgo(now - 300000, "compact")).toBe("5M AGO");
+        expect(formatTimeAgo(now - 1800000, "compact")).toBe("30M AGO");
+        expect(formatTimeAgo(now - 3540000, "compact")).toBe("59M AGO");
+      });
+
+      it("formats hours ago in compact style", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 3600000, "compact")).toBe("1H AGO");
+        expect(formatTimeAgo(now - 7200000, "compact")).toBe("2H AGO");
+        expect(formatTimeAgo(now - 43200000, "compact")).toBe("12H AGO");
+        expect(formatTimeAgo(now - 82800000, "compact")).toBe("23H AGO");
+      });
+
+      it("switches to HH:MM format after 24 hours", () => {
+        const now = Date.now();
+        const yesterday = now - 86400000; // Exactly 24 hours ago: 14:30
+
+        const result = formatTimeAgo(yesterday, "compact");
+        // Should be HH:MM format in 24-hour time
+        expect(result).toMatch(/^\d{2}:\d{2}$/);
+        expect(result).toBe("14:30");
+      });
+
+      it("shows HH:MM for older timestamps", () => {
+        const now = Date.now();
+        const twoDaysAgo = now - 172800000; // 2 days ago: 14:30
+        const weekAgo = now - 604800000; // 7 days ago: 14:30
+
+        expect(formatTimeAgo(twoDaysAgo, "compact")).toBe("14:30");
+        expect(formatTimeAgo(weekAgo, "compact")).toBe("14:30");
+      });
+
+      it("handles boundary at 60 seconds (switches to 1M AGO)", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 59999, "compact")).toBe("JUST NOW");
+        expect(formatTimeAgo(now - 60000, "compact")).toBe("1M AGO");
+      });
+
+      it("handles boundary at 60 minutes (switches to 1H AGO)", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 3599999, "compact")).toBe("59M AGO");
+        expect(formatTimeAgo(now - 3600000, "compact")).toBe("1H AGO");
+      });
+
+      it("handles boundary at 24 hours (switches to HH:MM)", () => {
+        const now = Date.now();
+        expect(formatTimeAgo(now - 86399999, "compact")).toBe("23H AGO");
+        expect(formatTimeAgo(now - 86400000, "compact")).toBe("14:30");
+      });
+    });
+
+    describe("edge cases", () => {
+      it("handles future timestamps as 0 SEC AGO / JUST NOW", () => {
+        const now = Date.now();
+        const future = now + 5000;
+
+        // Negative seconds become 0 due to Math.floor
+        expect(formatTimeAgo(future, "terminal")).toBe("0 SEC AGO");
+        expect(formatTimeAgo(future, "compact")).toBe("JUST NOW");
+      });
+
+      it("maintains precision at time boundaries", () => {
+        const now = Date.now();
+
+        // Just under 1 minute
+        expect(formatTimeAgo(now - 59999, "terminal")).toBe("59 SEC AGO");
+
+        // Exactly 1 minute
+        expect(formatTimeAgo(now - 60000, "terminal")).toBe("1 MIN AGO");
+
+        // Just under 1 hour
+        expect(formatTimeAgo(now - 3599999, "terminal")).toBe("59 MIN AGO");
+
+        // Exactly 1 hour
+        expect(formatTimeAgo(now - 3600000, "terminal")).toBe("1 HR AGO");
+      });
+
+      it("formats very old timestamps correctly", () => {
+        const now = Date.now();
+        const oneYearAgo = now - 31536000000; // 365 days
+
+        expect(formatTimeAgo(oneYearAgo, "terminal")).toBe("365 DAYS AGO");
+        expect(formatTimeAgo(oneYearAgo, "compact")).toBe("14:30");
+      });
     });
   });
 });
