@@ -47,7 +47,7 @@
   Time: 5min
   ```
 
-- [ ] Remove NEXT_PUBLIC_CONVEX_URL from preview environment
+- [x] Remove NEXT_PUBLIC_CONVEX_URL from preview environment
 
   ```
   Approach: Let Convex CLI auto-inject URL during build
