@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePaginatedQuery, useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { ChronologicalGroupedSetHistory } from "@/components/dashboard/chronological-grouped-set-history";
-import { groupSetsByDay } from "@/lib/dashboard-utils";
+import { groupSetsByDay } from "@/lib/date-formatters";
 import { PageLayout } from "@/components/layout/page-layout";
 import { Button } from "@/components/ui/button";
 import { Id } from "../../../convex/_generated/dataModel";

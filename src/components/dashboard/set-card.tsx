@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { handleMutationError } from "@/lib/error-handler";
+import { formatTimeAgo } from "@/lib/date-utils";
 import { Exercise, Set } from "@/types/domain";
 
 interface SetCardProps {
@@ -48,22 +49,6 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
     }
   };
 
-  const formatTime = (timestamp: number) => {
-    const now = Date.now();
-    const diffMs = now - timestamp;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-
-    return new Date(timestamp).toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
-
   return (
     <div
       className={`
@@ -89,7 +74,7 @@ export function SetCard({ set, exercise, onRepeat, onDelete }: SetCardProps) {
             )}
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {formatTime(set.performedAt)}
+            {formatTimeAgo(set.performedAt, "compact")}
           </p>
         </div>
 

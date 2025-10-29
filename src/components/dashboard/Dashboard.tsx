@@ -17,10 +17,8 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { LAYOUT } from "@/lib/layout-constants";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  groupSetsByExercise,
-  sortExercisesByRecency,
-} from "@/lib/dashboard-utils";
+import { groupSetsByExercise } from "@/lib/exercise-grouping";
+import { sortExercisesByRecency } from "@/lib/exercise-sorting";
 import { getTodayRange } from "@/lib/date-utils";
 import type { Exercise, Set } from "@/types/domain";
 
@@ -106,13 +104,14 @@ export function Dashboard() {
     setLastLoggedSetId(setId);
     setUndoToastVisible(true);
 
-    // Smooth scroll to history section to show the newly logged set
+    // 100ms delay ensures React finishes rendering the newly logged set
+    // in the history section before scrolling to it
     setTimeout(() => {
       historyRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "nearest",
       });
-    }, 100); // Small delay to ensure DOM has updated
+    }, 100);
   };
 
   // Handle undo - delete the last logged set
@@ -192,8 +191,8 @@ export function Dashboard() {
 
   // Handle first exercise created - auto-select it and focus form
   const handleFirstExerciseCreated = (exerciseId: Id<"exercises">) => {
-    // The exercise will appear in the list on next render
-    // Auto-select it by calling repeatSet with a dummy set
+    // 100ms delay waits for React to render the new exercise in the dropdown
+    // before auto-selecting it via repeatSet with a dummy set
     setTimeout(() => {
       formRef.current?.repeatSet({
         _id: "" as Id<"sets">,

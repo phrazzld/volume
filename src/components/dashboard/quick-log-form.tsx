@@ -51,6 +51,16 @@ export interface QuickLogFormHandle {
   repeatSet: (set: Set) => void;
 }
 
+/**
+ * Delay to ensure DOM updates complete before focusing input.
+ * 50ms allows Radix Popover close animation to finish and
+ * React to update the DOM with the selected exercise.
+ *
+ * Note: Could use requestAnimationFrame instead, but fixed
+ * delay is more predictable and less complex.
+ */
+const FOCUS_DELAY_MS = 50;
+
 const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
   function QuickLogForm({ exercises, onSetLogged }, ref) {
     const [showInlineCreator, setShowInlineCreator] = useState(false);
@@ -236,10 +246,10 @@ const QuickLogFormComponent = forwardRef<QuickLogFormHandle, QuickLogFormProps>(
                                       onSelect={() => {
                                         field.onChange(exercise._id);
                                         setComboboxOpen(false);
-                                        // Focus reps input after popover closes (50ms ensures DOM updates)
+                                        // Focus reps input after popover closes
                                         setTimeout(
                                           () => focusElement(repsInputRef),
-                                          50
+                                          FOCUS_DELAY_MS
                                         );
                                       }}
                                     >
