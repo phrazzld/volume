@@ -6,7 +6,8 @@ set -e
 
 BACKUP_DIR="$HOME/convex-migration-backup-$(date +%Y%m%d-%H%M%S)"
 DEV_EXPORT="$BACKUP_DIR/dev-deployment-export.zip"
-PROD_DEPLOYMENT="prod:whimsical-marten-631"
+DEV_DEPLOYMENT="curious-salamander-943"
+PROD_DEPLOYMENT="whimsical-marten-631"
 
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║  CONVEX DATA MIGRATION: Dev → Production                  ║"
@@ -21,12 +22,12 @@ echo ""
 
 # Step 2: Export from dev deployment
 echo "📤 Exporting data from dev deployment..."
-echo "   Source: dev:curious-salamander-943"
+echo "   Source: $DEV_DEPLOYMENT"
 echo "   Output: $DEV_EXPORT"
 echo ""
 
 npx convex export \
-  --deployment-name "dev:curious-salamander-943" \
+  --deployment-name "$DEV_DEPLOYMENT" \
   --path "$DEV_EXPORT" \
   --include-file-storage
 
