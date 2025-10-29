@@ -1,3 +1,348 @@
+# TODO: Critical Infrastructure Fixes
+
+## Context: Convex Deployment Misconfiguration Recovery
+
+**Incident**: 2025-10-29 - Production data appeared lost due to misconfigured Vercel environment variables. Root cause: Explicit `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` overriding Convex CLI's auto-configuration.
+
+**Status**: Data successfully migrated from dev→prod (11 exercises, 188 sets). Now need to fix environment configuration to prevent recurrence.
+
+**Architecture**: Convex deploy key should be sole source of truth. When `npx convex deploy` runs with deploy key, it automatically sets correct deployment URL. Explicit env vars override this and cause mismatch.
+
+**Key Files**:
+
+- Vercel environment variables (production, preview)
+- `.env.example:10-58` - Documentation
+- `scripts/migrate-dev-to-prod.sh` - Recovery script (already run)
+
+**Reference**:
+
+- Ultrathink review findings
+- Current prod deployment: `whimsical-marten-631`
+- Current dev deployment: `curious-salamander-943`
+
+---
+
+## Phase 0: Environment Configuration Fix (CRITICAL)
+
+### Test Environment Cleanup (Preview First)
+
+- [x] Remove CONVEX_DEPLOYMENT from preview environment
+
+  ```
+  Approach: Test configuration fix in preview before touching production
+
+  Implementation:
+  - Run: vercel env rm CONVEX_DEPLOYMENT preview --yes
+  - Verify removal: vercel env ls preview | grep CONVEX_DEPLOYMENT (should return nothing)
+  - Keep: CONVEX_DEPLOY_KEY=preview:phaedrus:volume|<key>
+  - Remove: CONVEX_DEPLOYMENT=dev:curious-salamander-943
+
+  Success criteria:
+  - Only CONVEX_DEPLOY_KEY remains in preview environment
+  - NEXT_PUBLIC_CONVEX_URL removed (Convex will auto-set during build)
+  - Environment list shows clean configuration
+
+  Why: Preview is safe test environment - failures don't impact production users
+
+  Time: 5min
+  ```
+
+- [ ] Remove NEXT_PUBLIC_CONVEX_URL from preview environment
+
+  ```
+  Approach: Let Convex CLI auto-inject URL during build
+
+  Implementation:
+  - Run: vercel env rm NEXT_PUBLIC_CONVEX_URL preview --yes
+  - Verify: vercel env ls preview (should only show CONVEX_DEPLOY_KEY + Clerk vars)
+
+  Success criteria:
+  - NEXT_PUBLIC_CONVEX_URL not in preview env vars
+  - Convex deploy key is sole deployment configuration
+
+  Rationale: Deploy key tells Convex which deployment to use, CLI auto-sets URL
+
+  Time: 2min
+  ```
+
+- [ ] Trigger preview deployment and verify configuration
+
+  ```
+  Files: Any file (make trivial change to trigger deploy)
+  Approach: Test that cleaned environment works correctly
+
+  Implementation:
+  - Make trivial change (add comment to README.md)
+  - Push to feature branch: git push origin feature/analytics-ai-insights
+  - Wait for Vercel preview deploy to complete
+  - Get preview URL from Vercel dashboard
+
+  Verification steps:
+  1. Check build logs for Convex deploy output
+  2. Verify build succeeded without errors
+  3. Inspect deployed env vars: vercel inspect <preview-url> --scope moomooskycow
+  4. Confirm NEXT_PUBLIC_CONVEX_URL was auto-set by Convex
+  5. Check deployment name matches preview deploy key
+
+  Success criteria:
+  - Build completes successfully
+  - Convex deploys to ephemeral preview deployment
+  - App connects to correct preview database
+  - No environment variable conflicts in logs
+
+  Time: 15min (plus deploy wait)
+  ```
+
+- [ ] Verify preview site functionality
+
+  ```
+  Approach: Manual QA to confirm preview deployment works end-to-end
+
+  Test checklist:
+  1. Load preview URL - site renders without errors
+  2. Sign in with Clerk - authentication works
+  3. Navigate to exercises page - data loads
+  4. Check browser console - no Convex connection errors
+  5. Inspect network tab - verify Convex URL matches preview deployment
+  6. Log a test set - mutation succeeds
+  7. Verify test data appears in preview Convex dashboard
+
+  Success criteria:
+  - All core functionality works in preview
+  - Convex queries/mutations succeed
+  - No environment-related errors
+  - Data writes to correct preview deployment
+
+  Debugging:
+  - If site fails: Check browser console for Convex URL
+  - If wrong deployment: Verify deploy key in build logs
+  - If auth fails: Check Clerk env vars still present
+
+  Time: 10min
+  ```
+
+### Production Environment Fix
+
+- [ ] Remove CONVEX_DEPLOYMENT from production environment
+
+  ```
+  Approach: Apply verified fix to production (preview test passed)
+
+  Implementation:
+  - Run: vercel env rm CONVEX_DEPLOYMENT production --yes
+  - Verify: vercel env ls production | grep CONVEX_DEPLOYMENT (should be empty)
+
+  Success criteria:
+  - CONVEX_DEPLOYMENT no longer in production env vars
+  - Only CONVEX_DEPLOY_KEY remains for deployment configuration
+
+  Safety: Already tested in preview, low risk
+
+  Time: 2min
+  ```
+
+- [ ] Remove NEXT_PUBLIC_CONVEX_URL from production environment
+
+  ```
+  Approach: Remove hardcoded URL, let Convex CLI auto-configure
+
+  Implementation:
+  - Run: vercel env rm NEXT_PUBLIC_CONVEX_URL production --yes
+  - Verify: vercel env ls production (clean list)
+
+  Expected production env vars after cleanup:
+  - CONVEX_DEPLOY_KEY=prod:whimsical-marten-631|<key>
+  - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<key>
+  - CLERK_SECRET_KEY=<key>
+  - CLERK_JWT_ISSUER_DOMAIN=<domain>
+
+  Success criteria:
+  - Production env vars match intended architecture
+  - Only deploy key controls deployment target
+
+  Time: 2min
+  ```
+
+- [ ] Trigger production deployment and monitor
+
+  ```
+  Approach: Deploy to production with corrected configuration
+
+  Implementation:
+  - Option A (empty commit): git commit --allow-empty -m "chore: trigger redeploy with fixed env vars"
+  - Option B (merge PR): Merge current PR if ready
+  - Push to master: git push origin master
+  - Monitor Vercel dashboard for deployment progress
+
+  Real-time monitoring:
+  1. Watch build logs for Convex deploy output
+  2. Verify "Deploying to prod:whimsical-marten-631" in logs
+  3. Check for environment variable warnings
+  4. Wait for deployment to complete
+
+  Success criteria:
+  - Build completes without errors
+  - Convex deploys functions to prod deployment
+  - NEXT_PUBLIC_CONVEX_URL auto-set to whimsical-marten-631.convex.cloud
+  - No configuration warnings in logs
+
+  Time: 5min (plus deploy wait)
+  ```
+
+### Production Verification
+
+- [ ] Verify production site connects to correct deployment
+
+  ```
+  Approach: Comprehensive verification that production works correctly
+
+  Verification checklist:
+  1. Load https://volume.fitness - site renders
+  2. Sign in - authentication works
+  3. Check exercises page - see all 11 migrated exercises
+  4. Check history - see all 188 migrated sets
+  5. Log a new test set - mutation succeeds
+  6. Verify in Convex dashboard: New set appears in whimsical-marten-631
+
+  Technical verification:
+  - Browser console: Check Convex WebSocket connection URL
+  - Expected: wss://whimsical-marten-631.convex.cloud
+  - Network tab: Verify all Convex requests go to prod deployment
+  - Convex dashboard: Check recent queries/mutations
+
+  Success criteria:
+  - All 199 documents visible (11 exercises + 188 sets)
+  - New sets write to production deployment
+  - No errors in browser console
+  - Convex URL matches production deployment
+
+  Rollback plan (if failed):
+  - Re-add CONVEX_DEPLOYMENT via: vercel env add CONVEX_DEPLOYMENT production
+  - Re-add NEXT_PUBLIC_CONVEX_URL via: vercel env add NEXT_PUBLIC_CONVEX_URL production
+  - Trigger new deploy
+
+  Time: 15min
+  ```
+
+- [ ] Verify production bundle contains correct Convex URL
+
+  ```
+  Approach: Inspect built JavaScript to confirm Convex URL baked into bundle
+
+  Implementation:
+  - View page source: https://volume.fitness
+  - Find script tag: <script src="/_next/static/chunks/[hash].js">
+  - Search bundle source for "convex.cloud"
+  - Confirm URL is: https://whimsical-marten-631.convex.cloud
+
+  Alternative method (CLI):
+  curl -sL https://volume.fitness | grep -o 'https://[^"]*convex.cloud'
+
+  Success criteria:
+  - Bundle contains production Convex URL
+  - No references to dev deployment (curious-salamander-943)
+  - URL matches CONVEX_DEPLOY_KEY target
+
+  Why: Confirms Convex CLI auto-injection worked during build
+
+  Time: 5min
+  ```
+
+### Documentation Updates
+
+- [ ] Update .env.example with incident learnings
+
+  ````
+  Files: .env.example:1-58
+  Approach: Document correct architecture to prevent future misconfigurations
+
+  Implementation:
+  - Add section: "=== CRITICAL: 2025-10-29 Incident ==="
+  - Explain what went wrong (explicit vars overriding deploy key)
+  - Document correct configuration (deploy key only)
+  - Add warning: "NEVER set CONVEX_DEPLOYMENT in Vercel"
+  - Add warning: "NEVER set NEXT_PUBLIC_CONVEX_URL in Vercel"
+  - Explain why: Deploy key is source of truth, CLI auto-configures
+
+  Template:
+  ```bash
+  # === CRITICAL: Deployment Configuration (Incident 2025-10-29) ===
+  #
+  # VERCEL ENVIRONMENTS (Production & Preview):
+  # ✅ DO: Set only CONVEX_DEPLOY_KEY
+  # ❌ DON'T: Set CONVEX_DEPLOYMENT (causes misconfiguration)
+  # ❌ DON'T: Set NEXT_PUBLIC_CONVEX_URL (Convex auto-sets during build)
+  #
+  # HOW IT WORKS:
+  # 1. vercel.json runs: npx convex deploy --cmd 'pnpm run build'
+  # 2. Convex CLI reads CONVEX_DEPLOY_KEY
+  # 3. CLI deploys functions to key's target deployment
+  # 4. CLI injects NEXT_PUBLIC_CONVEX_URL automatically
+  # 5. App connects to correct deployment
+  #
+  # WHAT WENT WRONG (2025-10-29):
+  # - CONVEX_DEPLOYMENT pointed to dev (curious-salamander-943)
+  # - CONVEX_DEPLOY_KEY pointed to prod (whimsical-marten-631)
+  # - Functions deployed to prod, app connected to dev
+  # - Result: Empty database appearance (data safe in dev)
+  # - Fix: Remove explicit vars, let deploy key control everything
+  ````
+
+  Success criteria:
+  - Future developers understand correct configuration
+  - Clear warnings prevent repeat of incident
+  - Architecture documented for posterity
+
+  Time: 20min
+
+  ```
+
+  ```
+
+- [ ] Add deployment verification command to README.md
+
+  ````
+  Files: README.md or new DEPLOYMENT.md
+  Approach: Document how to verify correct deployment configuration
+
+  Implementation:
+  - Add section: "## Verifying Deployment Configuration"
+  - Provide command to check env vars:
+    ```bash
+    # Check production env vars
+    vercel env ls production | grep CONVEX
+
+    # Should show ONLY:
+    # CONVEX_DEPLOY_KEY    Encrypted    Production
+
+    # Should NOT show:
+    # CONVEX_DEPLOYMENT
+    # NEXT_PUBLIC_CONVEX_URL
+  ````
+
+  - Add command to verify deployed site:
+
+    ```bash
+    # Check which Convex deployment site uses
+    curl -sL https://volume.fitness | grep -o 'https://[^"]*convex.cloud'
+
+    # Should output:
+    # https://whimsical-marten-631.convex.cloud
+    ```
+
+  Success criteria:
+  - Runnable verification commands documented
+  - Easy to check configuration correctness
+  - Can be added to CI in future
+
+  Time: 15min
+
+  ```
+
+  ```
+
+---
+
 # TODO: Workout Analytics & AI Insights
 
 ## Context
