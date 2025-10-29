@@ -5,6 +5,7 @@ import {
   calculateLongestStreak,
   calculateTotalWorkouts,
 } from "./lib/streak-calculator";
+import { checkForPR, PRType } from "./lib/pr-detection";
 
 /**
  * Analytics queries for workout metrics
@@ -266,5 +267,110 @@ export const getStreakStats = query({
       longestStreak,
       totalWorkouts,
     };
+  },
+});
+
+export interface RecentPR {
+  setId: string;
+  exerciseId: string;
+  exerciseName: string;
+  prType: PRType;
+  currentValue: number;
+  previousValue: number;
+  improvement: number;
+  performedAt: number;
+  reps: number;
+  weight?: number;
+}
+
+/**
+ * Get recent personal records
+ *
+ * Returns all PRs achieved in the last N days, including exercise names
+ * and improvement details for celebration.
+ *
+ * @param days - Number of days to look back (e.g., 7, 30)
+ * @returns Array of recent PRs sorted by date descending
+ *
+ * @example
+ * ```typescript
+ * // Get PRs from last 30 days
+ * const prs = await ctx.query(api.analytics.getRecentPRs, { days: 30 });
+ * ```
+ */
+export const getRecentPRs = query({
+  args: {
+    days: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    // Calculate cutoff date
+    const cutoffDate = Date.now() - args.days * 24 * 60 * 60 * 1000;
+
+    // Query all user's sets (we need all for PR comparison)
+    const allSets = await ctx.db
+      .query("sets")
+      .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    // Query sets from the target period
+    const recentSets = allSets.filter((s) => s.performedAt >= cutoffDate);
+
+    // Fetch all exercises for name lookup
+    const exercises = await ctx.db
+      .query("exercises")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    const exerciseMap = new Map(exercises.map((ex) => [ex._id, ex.name]));
+
+    // Group all sets by exercise for PR detection
+    const setsByExercise = new Map<string, typeof allSets>();
+    for (const set of allSets) {
+      const exerciseSets = setsByExercise.get(set.exerciseId) || [];
+      exerciseSets.push(set);
+      setsByExercise.set(set.exerciseId, exerciseSets);
+    }
+
+    // Check each recent set for PRs
+    const prs: RecentPR[] = [];
+
+    for (const currentSet of recentSets) {
+      const exerciseSets = setsByExercise.get(currentSet.exerciseId) || [];
+
+      // Get all sets before this one for PR comparison
+      const previousSets = exerciseSets.filter(
+        (s) => s.performedAt < currentSet.performedAt
+      );
+
+      const prResult = checkForPR(currentSet, previousSets);
+
+      if (prResult) {
+        const exerciseName = exerciseMap.get(currentSet.exerciseId);
+        if (!exerciseName) continue; // Skip if exercise not found
+
+        prs.push({
+          setId: currentSet._id,
+          exerciseId: currentSet.exerciseId,
+          exerciseName,
+          prType: prResult.type,
+          currentValue: prResult.currentValue,
+          previousValue: prResult.previousValue,
+          improvement: prResult.currentValue - prResult.previousValue,
+          performedAt: currentSet.performedAt,
+          reps: currentSet.reps,
+          weight: currentSet.weight,
+        });
+      }
+    }
+
+    // Sort by date descending (most recent first)
+    prs.sort((a, b) => b.performedAt - a.performedAt);
+
+    return prs;
   },
 });
