@@ -1,5 +1,10 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import {
+  calculateCurrentStreak,
+  calculateLongestStreak,
+  calculateTotalWorkouts,
+} from "./lib/streak-calculator";
 
 /**
  * Analytics queries for workout metrics
@@ -210,5 +215,56 @@ export const getWorkoutFrequency = query({
     }
 
     return result;
+  },
+});
+
+export interface StreakStats {
+  currentStreak: number;
+  longestStreak: number;
+  totalWorkouts: number;
+}
+
+/**
+ * Get streak statistics
+ *
+ * Calculates current streak, longest streak ever achieved, and total
+ * number of unique workout days.
+ *
+ * @returns Streak statistics
+ *
+ * @example
+ * ```typescript
+ * const stats = await ctx.query(api.analytics.getStreakStats, {});
+ * // { currentStreak: 7, longestStreak: 30, totalWorkouts: 156 }
+ * ```
+ */
+export const getStreakStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalWorkouts: 0,
+      };
+    }
+
+    // Fetch all user's sets for streak calculation
+    const sets = await ctx.db
+      .query("sets")
+      .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    // Calculate all streak metrics
+    const currentStreak = calculateCurrentStreak(sets);
+    const longestStreak = calculateLongestStreak(sets);
+    const totalWorkouts = calculateTotalWorkouts(sets);
+
+    return {
+      currentStreak,
+      longestStreak,
+      totalWorkouts,
+    };
   },
 });
