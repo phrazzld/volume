@@ -123,3 +123,92 @@ export const getVolumeByExercise = query({
     return result;
   },
 });
+
+export interface WorkoutFrequency {
+  date: string; // YYYY-MM-DD format
+  setCount: number;
+  totalVolume: number;
+}
+
+/**
+ * Get workout frequency data for heatmap visualization
+ *
+ * Returns daily workout activity for the last N days, including zero-count days
+ * to create a continuous date range suitable for calendar heatmap rendering.
+ *
+ * @param days - Number of days to include (e.g., 365 for full year)
+ * @returns Array of daily workout data with continuous date range
+ *
+ * @example
+ * ```typescript
+ * // Get last year for GitHub-style heatmap
+ * const frequency = await ctx.query(api.analytics.getWorkoutFrequency, {
+ *   days: 365,
+ * });
+ * ```
+ */
+export const getWorkoutFrequency = query({
+  args: {
+    days: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    // Calculate start date (N days ago from today)
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - args.days);
+    startDate.setHours(0, 0, 0, 0);
+
+    // Query sets from start date onwards
+    const sets = await ctx.db
+      .query("sets")
+      .withIndex("by_user_performed", (q) => q.eq("userId", identity.subject))
+      .filter((q) => q.gte(q.field("performedAt"), startDate.getTime()))
+      .collect();
+
+    // Group sets by calendar day
+    const dailyData = new Map<
+      string,
+      { setCount: number; totalVolume: number }
+    >();
+
+    for (const set of sets) {
+      const setDate = new Date(set.performedAt);
+      const dayKey = setDate.toISOString().split("T")[0]; // YYYY-MM-DD
+
+      const current = dailyData.get(dayKey) || { setCount: 0, totalVolume: 0 };
+      const volume = set.reps * (set.weight || 0);
+
+      dailyData.set(dayKey, {
+        setCount: current.setCount + 1,
+        totalVolume: current.totalVolume + volume,
+      });
+    }
+
+    // Fill gaps with zero days to create continuous range
+    const result: WorkoutFrequency[] = [];
+    const currentDate = new Date(startDate);
+    const endDate = new Date(now);
+    endDate.setHours(0, 0, 0, 0);
+
+    while (currentDate <= endDate) {
+      const dayKey = currentDate.toISOString().split("T")[0];
+      const data = dailyData.get(dayKey) || { setCount: 0, totalVolume: 0 };
+
+      result.push({
+        date: dayKey,
+        setCount: data.setCount,
+        totalVolume: data.totalVolume,
+      });
+
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return result;
+  },
+});
