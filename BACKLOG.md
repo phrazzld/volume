@@ -55,6 +55,36 @@ describe("handleMutationError", () => {
 
 ---
 
+### 8.5. [Testing] DST Transition Edge Case Coverage
+
+**File**: `src/lib/date-utils.test.ts`
+**Source**: PR #20 review feedback (Claude AI, 2025-10-29)
+**Priority**: **LOW** - Deferred to future PR
+**Effort**: 30 minutes
+
+**Missing Test Case**: Daylight saving time transitions where clocks "spring forward" or "fall back"
+
+Test scenario:
+
+```typescript
+it("handles DST transition correctly", () => {
+  // March 10, 2024 2:00 AM → 3:00 AM (DST starts)
+  vi.setSystemTime(new Date("2024-03-10T07:00:00Z")); // 2:00 AM EST
+  const { start, end } = getTodayRange();
+  // Verify range is still valid despite ambiguous/non-existent times
+  expect(end - start).toBeGreaterThan(0);
+
+  // Verify formatTimeAgo handles ambiguous times
+  const timestamp = new Date("2024-03-10T06:30:00Z").getTime();
+  expect(() => formatTimeAgo(timestamp, "compact")).not.toThrow();
+});
+```
+
+**Value**: Edge case coverage, prevents DST bugs in time formatting
+**Risk**: **VERY LOW** - JavaScript Date API handles DST automatically in most cases
+
+---
+
 ### 9. [Testing] E2E Test Infrastructure with Playwright
 
 **Context**: Post-MVP enhancement for regression prevention
@@ -904,6 +934,25 @@ onLCP(console.log);
 
 **Effort**: 15m (add limit) → 4-6h (full pagination)
 **Priority**: **LOW** - Defer until user data grows
+
+---
+
+### 23.5. [Performance] Note: Repeated Sorting in exercise-grouping
+
+**File**: `src/lib/exercise-grouping.ts:63-66`
+**Source**: PR #20 review feedback (Claude AI, 2025-10-29)
+**Priority**: **VERY LOW** - No action needed
+**Effort**: 1-2 hours if ever needed
+
+**Current Implementation**: Sorts sets within each exercise group (O(n log n) per group).
+
+**Performance**: For typical workout volumes (<100 sets), this is imperceptible. Modern JavaScript sorting is highly optimized.
+
+**Benchmark Need**: Only optimize if performance profiling shows >50ms spent in this function.
+
+**Potential Optimization** (if ever needed): Maintain pre-sorted order during grouping loop to eliminate the separate sorting step.
+
+**Decision**: No change required. This is a note for future reference only.
 
 ---
 

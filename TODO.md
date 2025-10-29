@@ -31,28 +31,25 @@
 
 ---
 
-## PR #20 Review Feedback
+## PR #20 Review Feedback ✅
 
 **Source**: Claude AI + Codex bot reviews (2025-10-29)
+**Completed**: 2025-10-29 (1 commit, all 241 tests passing)
 
-- [ ] **Fix UTC timezone bug in formatTimeAgo compact format** (MERGE-BLOCKING, P1)
-  - File: `src/lib/date-utils.ts:142-143`
-  - Change `getUTCHours()`/`getUTCMinutes()` to `getHours()`/`getMinutes()`
-  - Add test case for timezone correctness
+- ✅ **Fix UTC timezone bug in formatTimeAgo compact format** (MERGE-BLOCKING, P1)
+  - Changed `getUTCHours()`/`getUTCMinutes()` to `getHours()`/`getMinutes()`
+  - Added timezone-independent test assertions
+  - Fixed regression where non-UTC users saw wrong times for sets >24h old
   - Flagged by: Claude AI + Codex bot (cross-validated)
-  - Impact: Non-UTC users see wrong times for sets >24h old
-  - Effort: 10 minutes
 
-- [ ] **Fix JSDoc for compact format (says lowercase, is uppercase)**
-  - File: `src/lib/date-utils.ts:85`
-  - Update JSDoc to say "Uppercase terse format" instead of "Lowercase"
-  - Effort: 2 minutes
+- ✅ **Fix JSDoc for compact format (was incorrect)**
+  - Updated from "Lowercase terse format" to "Uppercase terse format"
+  - Now matches actual implementation ('JUST NOW', '5M AGO')
 
-- [ ] **Add null safety check in groupSetsByExercise**
-  - File: `src/lib/exercise-grouping.ts:33`
-  - Add defensive check: `if (!set.exerciseId) return;`
-  - Add test case for malformed set data
-  - Effort: 10 minutes
+- ✅ **Add null safety check in groupSetsByExercise**
+  - Added defensive check: `if (!set.exerciseId) return;`
+  - Added test case for malformed set data
+  - Prevents potential runtime errors from malformed Convex data
 
 ---
 
