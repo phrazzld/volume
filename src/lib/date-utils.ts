@@ -82,7 +82,7 @@ export function formatTimestamp(timestamp: number): string {
 /**
  * Format style for relative time display
  * - "terminal": Uppercase verbose format ("5 MIN AGO", "2 HR AGO")
- * - "compact": Lowercase terse format ("5M AGO", "3H AGO"), switches to HH:MM after 24h
+ * - "compact": Uppercase terse format ("5M AGO", "3H AGO"), switches to HH:MM after 24h
  */
 export type TimeFormat = "terminal" | "compact";
 
@@ -90,7 +90,7 @@ export type TimeFormat = "terminal" | "compact";
  * Format timestamp as relative time ("X ago") with configurable style.
  *
  * @param timestamp - Unix timestamp in milliseconds
- * @param format - Display format: "terminal" (default, uppercase) or "compact" (lowercase)
+ * @param format - Display format: "terminal" (default, uppercase) or "compact" (uppercase terse)
  * @returns Relative time string
  *
  * @example
@@ -101,7 +101,7 @@ export type TimeFormat = "terminal" | "compact";
  * formatTimeAgo(Date.now() - 172800000, "terminal") // => "2 DAYS AGO"
  *
  * @example
- * // Compact format (lowercase, terse, switches to HH:MM after 24h)
+ * // Compact format (uppercase terse, switches to HH:MM after 24h)
  * formatTimeAgo(Date.now() - 30000, "compact") // => "JUST NOW"
  * formatTimeAgo(Date.now() - 300000, "compact") // => "5M AGO"
  * formatTimeAgo(Date.now() - 7200000, "compact") // => "2H AGO"
@@ -137,10 +137,10 @@ export function formatTimeAgo(
   // 24 hours or more
   if (format === "compact") {
     // Compact format: switch to absolute time (HH:MM in 24-hour format)
-    // Use UTC time components to avoid timezone conversion
+    // Use local time components to match user's timezone
     const date = new Date(timestamp);
-    const hours = date.getUTCHours().toString().padStart(2, "0");
-    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   }
 

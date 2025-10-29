@@ -30,6 +30,9 @@ export function groupSetsByExercise(
   const groupsMap = new Map<Id<"exercises">, ExerciseGroup>();
 
   sets.forEach((set) => {
+    // Skip malformed sets without an exerciseId
+    if (!set.exerciseId) return;
+
     if (!groupsMap.has(set.exerciseId)) {
       groupsMap.set(set.exerciseId, {
         exerciseId: set.exerciseId,

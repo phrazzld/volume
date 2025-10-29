@@ -205,21 +205,51 @@ describe("date-utils", () => {
 
       it("switches to HH:MM format after 24 hours", () => {
         const now = Date.now();
-        const yesterday = now - 86400000; // Exactly 24 hours ago: 14:30
+        const yesterday = now - 86400000; // Exactly 24 hours ago
 
         const result = formatTimeAgo(yesterday, "compact");
-        // Should be HH:MM format in 24-hour time
+        // Should be HH:MM format in 24-hour time (local timezone)
         expect(result).toMatch(/^\d{2}:\d{2}$/);
-        expect(result).toBe("14:30");
+
+        // Calculate expected local time
+        const date = new Date(yesterday);
+        const expected = `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
+        expect(result).toBe(expected);
       });
 
       it("shows HH:MM for older timestamps", () => {
         const now = Date.now();
-        const twoDaysAgo = now - 172800000; // 2 days ago: 14:30
-        const weekAgo = now - 604800000; // 7 days ago: 14:30
+        const twoDaysAgo = now - 172800000; // 2 days ago
+        const weekAgo = now - 604800000; // 7 days ago
 
-        expect(formatTimeAgo(twoDaysAgo, "compact")).toBe("14:30");
-        expect(formatTimeAgo(weekAgo, "compact")).toBe("14:30");
+        // Calculate expected local times
+        const expected2Days = `${new Date(twoDaysAgo).getHours().toString().padStart(2, "0")}:${new Date(twoDaysAgo).getMinutes().toString().padStart(2, "0")}`;
+        const expectedWeek = `${new Date(weekAgo).getHours().toString().padStart(2, "0")}:${new Date(weekAgo).getMinutes().toString().padStart(2, "0")}`;
+
+        expect(formatTimeAgo(twoDaysAgo, "compact")).toBe(expected2Days);
+        expect(formatTimeAgo(weekAgo, "compact")).toBe(expectedWeek);
+      });
+
+      it("uses local time not UTC for HH:MM format", () => {
+        // Create a timestamp >24h ago to trigger HH:MM format
+        // Fake now is Oct 7 14:30 UTC, so use Oct 5 19:30 UTC (>24h ago)
+        const timestamp = new Date("2025-10-05T19:30:00Z").getTime();
+        const result = formatTimeAgo(timestamp, "compact");
+
+        // Should match local time, not UTC
+        const expectedHours = new Date(timestamp)
+          .getHours()
+          .toString()
+          .padStart(2, "0");
+        const expectedMinutes = new Date(timestamp)
+          .getMinutes()
+          .toString()
+          .padStart(2, "0");
+        const expected = `${expectedHours}:${expectedMinutes}`;
+
+        expect(result).toBe(expected);
+        // In a timezone like PST (UTC-8), 19:30 UTC = 11:30 PST
+        // The test validates it shows local time, not "19:30" UTC
       });
 
       it("handles boundary at 60 seconds (switches to 1M AGO)", () => {
@@ -237,7 +267,11 @@ describe("date-utils", () => {
       it("handles boundary at 24 hours (switches to HH:MM)", () => {
         const now = Date.now();
         expect(formatTimeAgo(now - 86399999, "compact")).toBe("23H AGO");
-        expect(formatTimeAgo(now - 86400000, "compact")).toBe("14:30");
+
+        // Calculate expected local time for exactly 24h ago
+        const yesterday = now - 86400000;
+        const expected = `${new Date(yesterday).getHours().toString().padStart(2, "0")}:${new Date(yesterday).getMinutes().toString().padStart(2, "0")}`;
+        expect(formatTimeAgo(yesterday, "compact")).toBe(expected);
       });
     });
 
@@ -272,7 +306,10 @@ describe("date-utils", () => {
         const oneYearAgo = now - 31536000000; // 365 days
 
         expect(formatTimeAgo(oneYearAgo, "terminal")).toBe("365 DAYS AGO");
-        expect(formatTimeAgo(oneYearAgo, "compact")).toBe("14:30");
+
+        // Calculate expected local time
+        const expected = `${new Date(oneYearAgo).getHours().toString().padStart(2, "0")}:${new Date(oneYearAgo).getMinutes().toString().padStart(2, "0")}`;
+        expect(formatTimeAgo(oneYearAgo, "compact")).toBe(expected);
       });
     });
   });

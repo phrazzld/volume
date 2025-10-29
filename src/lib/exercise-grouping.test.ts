@@ -214,5 +214,42 @@ describe("exercise-grouping", () => {
       const groups = groupSetsByExercise(sets);
       expect(groups[0].mostRecentSetTime).toBe(now);
     });
+
+    it("skips malformed sets without exerciseId", () => {
+      const now = Date.now();
+      const sets: Set[] = [
+        {
+          _id: "set1" as Id<"sets">,
+          userId: "user1",
+          exerciseId: "ex1" as Id<"exercises">,
+          reps: 10,
+          performedAt: now,
+          _creationTime: now,
+        },
+        {
+          _id: "set2" as Id<"sets">,
+          userId: "user1",
+          exerciseId: undefined as unknown as Id<"exercises">, // Malformed data
+          reps: 5,
+          performedAt: now,
+          _creationTime: now,
+        },
+        {
+          _id: "set3" as Id<"sets">,
+          userId: "user1",
+          exerciseId: "ex1" as Id<"exercises">,
+          reps: 8,
+          performedAt: now,
+          _creationTime: now,
+        },
+      ];
+
+      const groups = groupSetsByExercise(sets);
+      // Should only include the 2 valid sets, skip the malformed one
+      expect(groups).toHaveLength(1);
+      expect(groups[0].exerciseId).toBe("ex1");
+      expect(groups[0].sets).toHaveLength(2);
+      expect(groups[0].totalReps).toBe(18); // 10 + 8, not 10 + 5 + 8
+    });
   });
 });
