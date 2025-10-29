@@ -1,186 +1,475 @@
-### 12. [Maintainability] Time Formatting Duplication - 3 Implementations ⚠️ **CRITICAL DUPLICATION**
+# TASK: Workout Analytics & AI Insights
 
-**Files**: `quick-log-form.tsx:88-96`, `grouped-set-history.tsx:46-63`, `set-card.tsx:37-51`
-**Perspectives**: maintainability-maven, complexity-archaeologist, architecture-guardian
-**Severity**: **HIGH** - **Cross-validated by 3 agents**
-**Violations**: DRY, Change Amplification
+## Executive Summary
 
-**Issue**: Same time formatting logic implemented 3 different ways:
+Add comprehensive analytics dashboard to Volume app, combining quantitative metrics (PRs, volume, frequency, streaks) with GPT-5-powered qualitative analysis. Users get data-driven performance tracking plus technical insights on trends, plateaus, and optimization opportunities. Success measured by user engagement with analytics tab and perceived value of AI insights.
 
-- `quick-log-form.tsx`: "5 MIN AGO", "2 HR AGO"
-- `grouped-set-history.tsx`: "JUST NOW", "5M AGO", "3H AGO" → switches to "HH:MM"
-- `set-card.tsx`: "Just now", "5m ago" → switches to `toLocaleTimeString()`
+**Solution**: New `/analytics` tab with 4 metric cards + trend charts + AI-generated weekly technical reports. Leverages existing PR detection system, adds Convex analytics queries, integrates GPT-5 mini for cost-effective qualitative analysis (~$0.002/report).
 
-**Impact**: Inconsistent UX, must update 3 places to change time formatting, testing requires 3x effort.
+**User Value**: Balanced motivation (celebrating PRs, streaks) + performance optimization (volume trends, plateau detection, recovery analysis). Transforms raw workout logs into actionable training intelligence.
 
-**Test**: "If we want to show 'yesterday' for dates 24-48h ago, how many files change?" → **3 locations**
+## User Context
 
-**Fix**: Extract to shared utility:
+**Who**: Strength training enthusiasts tracking progressive overload across exercises
+**Problems Being Solved**:
 
-```typescript
-// NEW: src/lib/time-utils.ts (extend existing file)
-export type TimeFormat = "terminal" | "compact";
+- Cannot see progress patterns across weeks/months (volume trends, consistency)
+- Miss PR achievements that deserve celebration
+- Don't know when plateaus occur or how to adjust training
+- Lack narrative understanding of their training journey
 
-export function formatTimeAgo(
-  timestamp: number,
-  format: TimeFormat = "terminal"
-): string {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+**Measurable Benefits**:
 
-  if (seconds < 60) {
-    return format === "terminal" ? `${seconds} SEC AGO` : "JUST NOW";
-  }
+- Visual proof of progress → increased motivation and retention
+- Early plateau detection → optimize training before stalling
+- Consistency tracking (heatmap/streaks) → habit reinforcement
+- AI technical analysis → expert-level insights without coach cost
 
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) {
-    return format === "terminal" ? `${minutes} MIN AGO` : `${minutes}M AGO`;
-  }
+## Requirements
 
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return format === "terminal" ? `${hours} HR AGO` : `${hours}H AGO`;
-  }
+### Functional Requirements
 
-  // Older than 24h: show absolute time
-  if (format === "compact") {
-    return new Date(timestamp).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  }
+**Core Metrics (Quantitative)**:
 
-  const days = Math.floor(hours / 24);
-  return `${days} DAY${days === 1 ? "" : "S"} AGO`;
-}
+1. **Personal Records (PRs)**
+   - Leverage existing `src/lib/pr-detection.ts` system
+   - Display: max weight, max reps, max volume per exercise
+   - Show recent PRs (last 7/30 days) with celebration UI
+   - Track estimated 1RM using Epley formula: `weight * (1 + reps/30)`
 
-// Update call sites:
-// quick-log-form.tsx: formatTimeAgo(lastSet.performedAt, 'terminal')
-// grouped-set-history.tsx: formatTimeAgo(set.performedAt, 'compact')
-// set-card.tsx: formatTimeAgo(set.performedAt, 'compact')
-```
+2. **Volume Tracking**
+   - Total volume per exercise over time (sets × reps × weight)
+   - Weekly/monthly volume aggregation
+   - Muscle group distribution (if categorization added later)
+   - Visualize with line/bar charts (Recharts)
 
-**Effort**: 1h (extract + update 3 call sites + add tests)
-**Impact**: **HIGH** - Single source of truth, consistent UX, enables internationalization
+3. **Workout Frequency**
+   - GitHub-style contribution graph (365-day heatmap)
+   - Show days with workouts vs. rest days
+   - Intensity coloring based on total sets/volume per day
+   - Use `react-activity-calendar` library
 
----
+4. **Streaks & Milestones**
+   - Current streak: consecutive weeks hitting frequency goal (e.g., 3x/week)
+   - Total workouts logged (lifetime counter)
+   - Weekly workout count vs. goal
+   - Longest streak achieved
 
-### 8. [Complexity] Dashboard-utils.ts Temporal Decomposition - 7 Unrelated Functions
+**AI-Powered Insights (Qualitative)**:
 
-**File**: `src/lib/dashboard-utils.ts:1-253`
-**Perspectives**: complexity-archaeologist, architecture-guardian
-**Severity**: **HIGH**
-**Violations**: Ousterhout - Decompose by Functionality, Not Timeline
+1. **Weekly Technical Reports**
+   - Generated via GPT-5 mini API ($0.25 input / $2 output per 1M tokens)
+   - Automated: Convex scheduled function runs weekly (Sunday night)
+   - Analysis includes:
+     - Volume trends and changes from previous week
+     - PR achievements with context
+     - Plateau detection (exercises with <5% volume increase over 4 weeks)
+     - Recovery patterns (rest days, volume distribution)
+     - Optimization suggestions (progressive overload, deload timing)
+   - Tone: Technical, data-driven, actionable (not motivational fluff)
+   - Length: 200-400 words per report
 
-**Issue**: 253-line file with 7 unrelated functions grouped by "used in dashboard":
+2. **On-Demand Analysis**
+   - Button in analytics UI to generate fresh report immediately
+   - Same analysis depth as weekly reports
+   - Useful when user wants current insights mid-week
 
-1. `convertWeight` (unit conversion)
-2. `normalizeWeightUnit` (validation)
-3. `calculateDailyStats` (statistics aggregation)
-4. `calculateDailyStatsByExercise` (per-exercise stats)
-5. `groupSetsByDay` (data grouping)
-6. `formatDateGroup` (date formatting)
-7. `sortExercisesByRecency` (sorting algorithm)
+3. **Report Storage & Display**
+   - Store reports in Convex `aiReports` table (reportId, userId, generatedAt, content, weekStartDate)
+   - Display latest report as card widget on analytics page
+   - Archive of past reports (view history)
 
-**Cohesion Test**: "What does dashboard-utils do?" → "It converts weights AND calculates stats AND formats dates AND sorts exercises AND..." → **7 distinct responsibilities**
+### Non-Functional Requirements
 
-**Impact**: Discoverability, change amplification, unfocused responsibility. Becoming a **dumping ground**.
+**Performance**:
 
-**Fix**: Split by domain concern:
+- Analytics queries must complete <500ms (use Convex indexes)
+- Charts render without blocking UI (lazy load if needed)
+- AI report generation: <10s (async, show loading state)
 
-```typescript
-// NEW: src/lib/weight-utils.ts
-export { convertWeight, normalizeWeightUnit, getDisplayUnit };
+**Security**:
 
-// NEW: src/lib/stats-calculator.ts
-export { calculateDailyStats, calculateDailyStatsByExercise };
+- All analytics queries verify userId ownership (no IDOR vulnerabilities)
+- OpenAI API key stored in Convex environment variables
+- Rate limit AI generation: max 5 on-demand reports per day per user
 
-// NEW: src/lib/date-formatters.ts
-export { groupSetsByDay, formatDateGroup };
+**Reliability**:
 
-// NEW: src/lib/exercise-sorting.ts
-export { sortExercisesByRecency };
-```
+- Graceful degradation if AI API fails (show cached report or error message)
+- Charts handle empty data states (new users with <7 days of logs)
+- Scheduled cron job includes retry logic for AI generation failures
 
-**Effort**: 3h (split module + update ~15 imports + test)
-**Impact**: **HIGH** - Clear domain boundaries, easier to extend, prevents god object
+**Maintainability**:
 
----
+- Model-agnostic architecture (easy to swap GPT-5 for Claude/Gemini later)
+- Analytics calculations isolated in Convex functions (testable)
+- AI prompt templates version-controlled and documented
 
-### 9. [Testing] Critical Business Logic Untested - dashboard-utils.ts ⚠️ **253 LINES, 0 TESTS**
+## Architecture Decision
 
-**File**: `src/lib/dashboard-utils.ts`
-**Perspectives**: maintainability-maven, complexity-archaeologist
-**Severity**: **HIGH** - **Cross-validated by 2 agents**
+### Selected Approach: Hybrid Quantitative + AI Insights Dashboard
 
-**Current State**: 253 lines of complex calculations, mathematical operations, edge cases - **ZERO tests**.
+**Rationale**:
 
-**Developer Impact**:
+- **User Value**: Balances immediate visual feedback (charts, PRs) with deep insights (AI analysis)
+- **Simplicity**: Leverages existing data model and PR detection system - no schema changes needed
+- **Explicitness**: Clear separation between computed analytics (Convex) and AI generation (OpenAI)
+- **Cost-Effective**: GPT-5 mini provides excellent analysis at ~$0.002 per weekly report (400 tokens input, 800 tokens output)
 
-- Afraid to refactor (no safety net)
-- Bugs in volume/stats calculations could corrupt user data
-- Can't verify weight conversion accuracy (critical for fitness app: `2.20462` magic number)
-- Edge cases undocumented
+### Module Boundaries
 
-**Fix**: Add comprehensive test suite:
+#### 1. Analytics Computation Module (`convex/analytics.ts`)
 
-```typescript
-// NEW: src/lib/dashboard-utils.test.ts
-describe("convertWeight", () => {
-  it("converts lbs to kg accurately", () => {
-    expect(convertWeight(220, "lbs", "kg")).toBeCloseTo(99.79, 2);
-  });
-  it("converts kg to lbs accurately", () => {
-    expect(convertWeight(100, "kg", "lbs")).toBeCloseTo(220.46, 2);
-  });
-  it("handles edge cases", () => {
-    expect(convertWeight(0, "lbs", "kg")).toBe(0);
-  });
-});
+**Interface**: Simple query functions accepting userId, time ranges
+**Responsibility**: Aggregate workout data into metrics (volume, PRs, streaks)
+**Hidden Complexity**:
 
-describe("calculateDailyStats", () => {
-  it("filters to today only");
-  it("correctly sums total volume across mixed units");
-  it("handles sets without weight");
-  it("returns null for empty input");
-});
+- Multi-exercise volume calculations
+- Streak logic (consecutive weeks with N workouts)
+- PR comparisons across time periods
+- Date range filtering and grouping
 
-describe("groupSetsByDay", () => {
-  it("groups sets by calendar day");
-  it("sorts newest first");
-  it("handles timezone edge cases");
-});
-```
-
-**Effort**: 4h (comprehensive test suite)
-**Benefit**: **CRITICAL** - Prevents data corruption bugs, enables confident refactoring
-
----
-
-### 10. [Code Quality] Magic Numbers Without Documentation
-
-**Files**: `Dashboard.tsx:156`, `quick-log-form.tsx:89,119`, `dashboard-utils.ts:16,23`
-**Perspectives**: maintainability-maven, complexity-archaeologist
-**Severity**: **MEDIUM**
-
-**Issue**: Hardcoded numbers with no context:
-
-- `setTimeout(..., 100)` - Why 100ms? React render? Random?
-- `2.20462` - Weight conversion factor, no documentation
-
-**Impact**: New developers confused, afraid to change timing, can't verify accuracy.
-
-**Fix**: Extract to named constants with documentation:
+**Key Functions**:
 
 ```typescript
-// React needs one render cycle to update DOM before focusing
-const REACT_RENDER_DELAY_MS = 100;
-
-// Official conversion factor: 1 kg = 2.20462 lbs (rounded to 5 decimals for UI)
-const LBS_PER_KG = 2.20462;
+getVolumeByExercise(userId, startDate, endDate) → { exerciseId, totalVolume }[]
+getWorkoutFrequency(userId, days) → { date, workoutCount, totalSets }[]
+getCurrentStreak(userId, weeklyGoal) → { currentStreak, longestStreak, weeksToGoal }
+getRecentPRs(userId, days) → PRRecord[]
 ```
 
-**Effort**: 10m
-**Benefit**: **MEDIUM** - Self-documenting code, confident future changes
+#### 2. Visualization Module (`src/components/analytics/`)
 
----
+**Interface**: React components accepting simple data props
+**Responsibility**: Render charts, heatmaps, metric cards
+**Hidden Complexity**:
+
+- Recharts configuration (responsive sizing, tooltips, theming)
+- Dark mode color schemes
+- Empty state handling
+- Loading skeletons
+
+**Key Components**:
+
+```typescript
+<VolumeChart data={volumeData} />
+<ActivityHeatmap data={frequencyData} />
+<PRCard prs={recentPRs} />
+<StreakCard streak={streakData} />
+```
+
+#### 3. AI Insights Module (`convex/ai/`)
+
+**Interface**: Mutation to generate report, query to fetch reports
+**Responsibility**: Generate qualitative analysis using LLM
+**Hidden Complexity**:
+
+- Prompt engineering (system message, data formatting)
+- OpenAI API integration (error handling, retries)
+- Token optimization (sending only relevant data)
+- Report storage and retrieval
+
+**Key Functions**:
+
+```typescript
+generateWeeklyReport(userId) → reportId  // Scheduled cron job
+generateOnDemandReport(userId) → reportId  // User-triggered
+getLatestReport(userId) → AIReport
+getReportHistory(userId, limit) → AIReport[]
+```
+
+### Abstraction Layers
+
+**Layer 1: Data (Convex)**
+Vocabulary: sets, exercises, performedAt, weight, reps
+Abstraction: Raw workout logs
+
+**Layer 2: Analytics (Convex queries)**
+Vocabulary: volume, PRs, streaks, frequency
+Abstraction: Aggregated metrics
+
+**Layer 3: Visualization (React components)**
+Vocabulary: charts, cards, heatmaps, trends
+Abstraction: Visual representations
+
+**Layer 4: Insights (AI generation)**
+Vocabulary: patterns, plateaus, optimization, recovery
+Abstraction: Qualitative narratives
+
+Each layer transforms concepts - no leakage of implementation details upward.
+
+### Alternatives Considered
+
+| Approach                      | User Value                          | Simplicity                       | Risk                     | Why Not Chosen                                    |
+| ----------------------------- | ----------------------------------- | -------------------------------- | ------------------------ | ------------------------------------------------- |
+| **Quantitative Only**         | Medium - Numbers alone lack context | High - No AI integration         | Low                      | Misses user's request for qualitative analysis    |
+| **AI-First (Minimal Charts)** | Medium - Slow feedback loop         | Medium - Simpler UI              | Medium - API costs       | Users need instant visual feedback, not just text |
+| **Video Form Analysis**       | High - Unique feature               | Low - Complex multimodal         | High - Cost ($3/workout) | Not viable for MVP due to cost                    |
+| **Hybrid (Selected)**         | High - Best of both worlds          | Medium - Two systems to maintain | Low-Medium               | Balanced value, clear boundaries                  |
+
+## Dependencies & Assumptions
+
+### External Dependencies
+
+- **OpenAI API**: GPT-5 mini availability and pricing ($0.25/$2 per 1M tokens)
+- **React Libraries**: `recharts` (charts), `react-activity-calendar` (heatmap)
+- **Convex Features**: Scheduled functions (cron jobs), environment variables
+
+### Assumptions
+
+- **Scale**: <1000 users initially, <100 AI reports generated per day
+- **Data Availability**: Users have logged ≥7 days of workouts for meaningful analytics
+- **Budget**: ~$0.50/day for AI generation (250 weekly reports at $0.002 each)
+- **User Behavior**: Users check analytics 2-3x/week, value AI insights enough to read them
+
+### Integration Requirements
+
+- **Existing Systems**:
+  - PR detection (`src/lib/pr-detection.ts`) - use as-is
+  - Sets/exercises schema - no changes needed
+  - Bottom nav - add new "Analytics" tab
+- **New Systems**:
+  - OpenAI SDK for Node.js
+  - Convex scheduled functions (cron)
+  - New `aiReports` table in schema
+
+### Environment Requirements
+
+- **Convex Environment Variables**: `OPENAI_API_KEY`
+- **Node.js Version**: Already on 22.15 (supports latest OpenAI SDK)
+- **Testing**: Vitest for analytics calculations, manual QA for AI reports
+
+## Implementation Phases
+
+### Phase 1: Core Quantitative Analytics (Week 1)
+
+**Goal**: Ship working analytics dashboard with real metrics
+
+**Backend (Convex)**:
+
+1. Create `convex/analytics.ts` with queries:
+   - `getVolumeByExercise` - aggregate volume per exercise over date range
+   - `getWorkoutFrequency` - daily workout counts for heatmap
+   - `getCurrentStreak` - calculate consecutive weeks hitting goal
+   - `getRecentPRs` - fetch PRs from last N days
+2. Add database indexes for performance:
+   - `sets.by_user_performed` (already exists)
+   - Ensure queries use indexes efficiently
+3. Write tests for analytics calculations (`convex/analytics.test.ts`)
+
+**Frontend (UI)**:
+
+1. Add "Analytics" tab to bottom nav (`src/components/layout/bottom-nav.tsx`)
+2. Create `/analytics` page (`src/app/analytics/page.tsx`)
+3. Build analytics components:
+   - `<VolumeChart />` - Line chart showing volume trends (Recharts)
+   - `<ActivityHeatmap />` - 365-day contribution graph (react-activity-calendar)
+   - `<PRCard />` - Display recent PRs with celebration styling
+   - `<StreakCard />` - Current/longest streak, progress to goal
+4. Install dependencies: `pnpm add recharts react-activity-calendar`
+5. Implement loading states and empty states (new users)
+6. Dark mode theming for all charts
+
+**Testing**:
+
+- Backend: Unit tests for analytics queries (various date ranges, edge cases)
+- Frontend: Smoke tests for chart rendering, visual QA for dark mode
+- Manual QA: Test with real user data (multiple exercises, PRs, gaps in workout history)
+
+**Deliverable**: Fully functional analytics dashboard with 4 metric visualizations
+
+### Phase 2: AI Insights Integration (Week 2)
+
+**Goal**: Add GPT-5-powered weekly reports and on-demand analysis
+
+**Backend (Convex)**:
+
+1. Create `convex/ai/reports.ts`:
+   - `generateReport(userId, weekStartDate)` - internal mutation calling OpenAI
+   - `getLatestReport(userId)` - query fetching most recent report
+   - `getReportHistory(userId)` - paginated report archive
+2. Add `aiReports` table to schema:
+   ```typescript
+   aiReports: {
+     userId: string,
+     weekStartDate: number,
+     generatedAt: number,
+     content: string,  // Markdown-formatted AI response
+     metrics: object,  // JSON snapshot of metrics used (for transparency)
+     model: string,    // e.g., "gpt-5-mini"
+     tokenUsage: object // { input, output, cost }
+   }
+   ```
+3. Create prompt template (`convex/ai/prompts.ts`):
+   - System message: Define role as technical strength coach
+   - User message: Format weekly metrics (volume, PRs, frequency, rest days)
+   - Include examples of good analysis (plateau detection, recovery patterns)
+4. Set up OpenAI SDK integration:
+   - Install: `pnpm add openai`
+   - Configure API key from Convex environment
+   - Error handling and retry logic
+5. Implement scheduled function (`convex/crons.ts`):
+   - Run every Sunday at 9 PM UTC
+   - Generate reports for all active users (logged workout in last 14 days)
+   - Rate limit: max 100 reports per run (batch if needed)
+
+**Frontend (UI)**:
+
+1. Create `<AIInsightsCard />` component:
+   - Display latest report with markdown rendering
+   - Show generation timestamp
+   - "Generate New Report" button (on-demand)
+   - Loading state during generation
+   - Error handling (API failures)
+2. Add report history view (`/analytics/reports`)
+3. Integrate into analytics page layout
+
+**Testing**:
+
+- Backend: Test prompt with sample data, verify token usage
+- Frontend: Test on-demand generation, loading states
+- Cost validation: Monitor first week of automated reports (target <$0.50/day)
+- Quality QA: Read 10+ generated reports, tune prompt if needed
+
+**Deliverable**: Automated weekly AI reports + on-demand generation
+
+### Phase 3: Polish & Optimization (Week 3-4)
+
+**Goal**: Production-ready quality, performance optimization, user feedback iteration
+
+**Performance**:
+
+1. Add data caching for expensive analytics queries
+2. Implement pagination for report history
+3. Lazy load charts (code splitting)
+4. Optimize Recharts configuration (reduce re-renders)
+
+**UX Enhancements**:
+
+1. Add date range filters (7d, 30d, 90d, 1y, all-time)
+2. Exercise-specific analytics drill-down
+3. Export analytics data (CSV download)
+4. Share report feature (copy markdown to clipboard)
+
+**AI Improvements**:
+
+1. Tune prompt based on user feedback
+2. Add report regeneration (if user dislikes AI analysis)
+3. Implement A/B testing framework for prompt variations
+4. Add "feedback" button (thumbs up/down on AI quality)
+
+**Testing**:
+
+1. Load testing: analytics queries with 365 days of data
+2. Cost monitoring: track actual GPT-5 mini usage vs. projections
+3. User testing: 5+ beta users review analytics features
+4. Accessibility audit: keyboard nav, screen readers
+
+**Documentation**:
+
+1. Update `CLAUDE.md` with analytics architecture
+2. Document AI prompt engineering decisions
+3. Add cost monitoring dashboard (admin view)
+4. Create user guide for interpreting AI insights
+
+**Deliverable**: Production-ready analytics system ready for launch
+
+## Risks & Mitigation
+
+| Risk                                           | Likelihood | Impact | Mitigation                                                                                                              |
+| ---------------------------------------------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| **GPT-5 API costs exceed budget**              | Medium     | High   | Start with 50 user beta, monitor costs daily, implement rate limits (5 on-demand/day), fallback to GPT-5 nano if needed |
+| **AI reports lack quality/value**              | Medium     | High   | Extensive prompt engineering, include real data examples, A/B test prompts, allow user feedback/regeneration            |
+| **Analytics queries slow with large datasets** | Low        | Medium | Use Convex indexes, implement pagination, cache computed metrics, add loading states                                    |
+| **Empty states discourage new users**          | Medium     | Low    | Show sample analytics with fake data, add onboarding callout, require ≥7 days before showing analytics                  |
+| **OpenAI API outages**                         | Low        | Medium | Graceful degradation (show cached report), retry logic with exponential backoff, fallback message                       |
+| **Users don't engage with analytics**          | Medium     | High   | Make analytics actionable (not just vanity metrics), celebrate PRs prominently, test with beta users first              |
+
+## Key Decisions
+
+### 1. GPT-5 Mini Over Other Models
+
+**Alternatives**: Claude 3.5 (better quality?), Gemini 2.0 (cheaper?), GPT-5 nano (cheapest)
+
+**Decision**: Use GPT-5 mini
+
+**Rationale**:
+
+- **User Value**: Best balance of quality and cost for technical analysis
+- **Simplicity**: User already familiar with OpenAI ecosystem
+- **Cost**: $0.002 per report (400 input + 800 output tokens) is acceptable
+- **Explicitness**: Well-documented API, predictable pricing
+
+**Tradeoffs**: Locked into OpenAI pricing, but architecture allows easy model swaps later
+
+### 2. Scheduled Weekly Reports Over Daily
+
+**Alternatives**: Daily summaries, bi-weekly, on-demand only
+
+**Decision**: Weekly scheduled reports + on-demand option
+
+**Rationale**:
+
+- **User Value**: Weekly cadence matches typical training splits (PPL, Upper/Lower)
+- **Simplicity**: Less complex than daily (1/7th the API calls)
+- **Cost**: ~250 reports/week at $0.002 = $0.50/week vs. $3.50/week for daily
+- **Pattern Detection**: 7-day window sufficient for trend analysis
+
+**Tradeoffs**: Less immediate feedback, but on-demand option covers this
+
+### 3. Recharts Over Chart.js/Victory
+
+**Alternatives**: Chart.js (popular), Victory (Formidable), ECharts (powerful)
+
+**Decision**: Use Recharts
+
+**Rationale**:
+
+- **Simplicity**: Declarative React API, no imperative canvas management
+- **User Value**: Responsive out-of-box, excellent mobile support (our users are mobile-first)
+- **Maintainability**: Active development, large community, TypeScript support
+- **Bundle Size**: 95KB gzipped (acceptable for value provided)
+
+**Tradeoffs**: Less customizable than Chart.js, but meets our needs
+
+### 4. New Analytics Tab Over Enhanced History
+
+**Alternatives**: Add metrics to history page, show on dashboard homepage
+
+**Decision**: Dedicated `/analytics` tab in bottom nav
+
+**Rationale**:
+
+- **Information Hiding**: Separates concerns - history = logs, analytics = insights
+- **User Value**: Power users want deep-dive analytics without cluttering casual logging UX
+- **Explicitness**: Clear mental model - "Where do I see my progress?" → Analytics tab
+- **Future-Proof**: Room to expand analytics features without impacting other pages
+
+**Tradeoffs**: One more nav item, but value justifies the real estate
+
+## Success Criteria
+
+### Quantitative Metrics
+
+- **Engagement**: 60%+ of weekly active users visit analytics tab
+- **AI Value**: 40%+ of users read full AI report (track scroll depth)
+- **Retention**: Analytics users have 20%+ higher retention vs. non-analytics users
+- **Performance**: 95th percentile analytics query time <500ms
+- **Cost**: AI generation costs <$20/month for 1000 users
+
+### Qualitative Metrics
+
+- **User Feedback**: 4+ star average rating on analytics features
+- **AI Quality**: <10% of reports regenerated (indicates poor quality)
+- **Support Tickets**: <5% of users contact support about analytics confusion
+
+### Timeline
+
+- **Week 1**: Core quantitative analytics shipped to production
+- **Week 2**: AI insights beta testing with 50 users
+- **Week 3**: AI insights shipped to all users
+- **Week 4**: Polish iteration based on first week of usage data
+
+## Next Steps
+
+Run `/plan` to break this specification into detailed implementation tasks with file-level changes.
