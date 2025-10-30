@@ -307,7 +307,7 @@
 
   ```
 
-- [ ] Add deployment verification command to README.md
+- [x] Add deployment verification command to README.md
 
   ````
   Files: README.md or new DEPLOYMENT.md
