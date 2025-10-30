@@ -146,42 +146,28 @@
 
 ### Production Environment Fix
 
-- [~] Remove CONVEX_DEPLOYMENT from production environment
+- [x] Remove CONVEX_DEPLOYMENT from production environment (already clean)
 
   ```
   Approach: Apply verified fix to production (configuration verified via docs)
 
-  Implementation:
-  - Run: vercel env rm CONVEX_DEPLOYMENT production --yes
-  - Verify: vercel env ls production | grep CONVEX_DEPLOYMENT (should be empty)
-
-  Success criteria:
-  - CONVEX_DEPLOYMENT no longer in production env vars
-  - Only CONVEX_DEPLOY_KEY remains for deployment configuration
-
-  Safety: Already tested in preview, low risk
+  Work Log:
+  - Checked production env vars: CONVEX_DEPLOYMENT not present
+  - Production already configured correctly
+  - Only CONVEX_DEPLOY_KEY exists (correct)
 
   Time: 2min
   ```
 
-- [ ] Remove NEXT_PUBLIC_CONVEX_URL from production environment
+- [x] Remove NEXT_PUBLIC_CONVEX_URL from production environment (already clean)
 
   ```
   Approach: Remove hardcoded URL, let Convex CLI auto-configure
 
-  Implementation:
-  - Run: vercel env rm NEXT_PUBLIC_CONVEX_URL production --yes
-  - Verify: vercel env ls production (clean list)
-
-  Expected production env vars after cleanup:
-  - CONVEX_DEPLOY_KEY=prod:whimsical-marten-631|<key>
-  - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<key>
-  - CLERK_SECRET_KEY=<key>
-  - CLERK_JWT_ISSUER_DOMAIN=<domain>
-
-  Success criteria:
-  - Production env vars match intended architecture
-  - Only deploy key controls deployment target
+  Work Log:
+  - Checked production env vars: NEXT_PUBLIC_CONVEX_URL not present
+  - Production environment already clean
+  - Configuration: CONVEX_DEPLOY_KEY + Clerk vars only (correct)
 
   Time: 2min
   ```
@@ -189,12 +175,11 @@
 - [ ] Trigger production deployment and monitor
 
   ```
-  Approach: Deploy to production with corrected configuration
+  Approach: Deploy to production via PR merge
 
   Implementation:
-  - Option A (empty commit): git commit --allow-empty -m "chore: trigger redeploy with fixed env vars"
-  - Option B (merge PR): Merge current PR if ready
-  - Push to master: git push origin master
+  - Create PR from feature branch
+  - Merge PR to master (triggers production deploy)
   - Monitor Vercel dashboard for deployment progress
 
   Real-time monitoring:
@@ -273,7 +258,7 @@
 
 ### Documentation Updates
 
-- [ ] Update .env.example with incident learnings
+- [x] Update .env.example with incident learnings
 
   ````
   Files: .env.example:1-58
