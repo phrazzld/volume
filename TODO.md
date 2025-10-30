@@ -65,11 +65,24 @@
   Time: 2min
   ```
 
-- [ ] Trigger preview deployment and verify configuration
+- [x] Trigger preview deployment and verify configuration (SKIPPED - requires Convex Pro)
 
   ```
   Files: Any file (make trivial change to trigger deploy)
   Approach: Test that cleaned environment works correctly
+
+  Work Log:
+  - Pushed env cleanup commits (32eba84, 7955423)
+  - Preview deployment triggered: volume-o6yde7dq6-moomooskycow.vercel.app
+  - Deployment showed Error status (HTTP 401)
+  - Investigation via Exa + WebSearch revealed root cause:
+    * Convex preview deployments REQUIRE Pro plan
+    * We're on free dev tier (confirmed via `npx convex deployments`)
+    * Preview deployments won't work without upgrading
+  - Decision: Skip preview testing, proceed directly to production
+  - Configuration is correct per Convex docs:
+    * CONVEX_DEPLOY_KEY alone is sufficient
+    * `npx convex deploy` auto-injects NEXT_PUBLIC_CONVEX_URL during build
 
   Implementation:
   - Make trivial change (add comment to README.md)
@@ -93,10 +106,12 @@
   Time: 15min (plus deploy wait)
   ```
 
-- [ ] Verify preview site functionality
+- [x] Verify preview site functionality (SKIPPED - requires Convex Pro)
 
   ```
   Approach: Manual QA to confirm preview deployment works end-to-end
+
+  Note: Convex preview deployments require Pro plan. On free tier, proceeding directly to production cleanup.
 
   Test checklist:
   1. Load preview URL - site renders without errors
