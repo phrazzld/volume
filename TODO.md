@@ -977,7 +977,7 @@
   Time: 45min
   ```
 
-- [~] Create report query functions
+- [x] Create report query functions
 
   ```
   Files: convex/ai/reports.ts (append)
@@ -1011,7 +1011,7 @@
   Time: 30min
   ```
 
-- [ ] Implement scheduled weekly report generation
+- [~] Implement scheduled weekly report generation
 
   ```
   Files: convex/crons.ts (new)
