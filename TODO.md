@@ -860,7 +860,7 @@
   Time: 15min
   ```
 
-- [~] Create AI prompt template module
+- [x] Create AI prompt template module
 
   ```
   Files: convex/ai/prompts.ts (new), convex/ai/ (new directory)
@@ -899,7 +899,7 @@
   Time: 1hr (includes prompt iteration/testing)
   ```
 
-- [ ] Implement OpenAI integration module
+- [~] Implement OpenAI integration module
 
   ```
   Files: convex/ai/openai.ts (new), package.json (add openai)
