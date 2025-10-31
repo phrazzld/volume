@@ -1011,7 +1011,7 @@
   Time: 30min
   ```
 
-- [~] Implement scheduled weekly report generation
+- [x] Implement scheduled weekly report generation
 
   ```
   Files: convex/crons.ts (new)
@@ -1049,7 +1049,7 @@
 
 ### Frontend: AI Insights UI
 
-- [ ] Create AIInsightsCard component
+- [~] Create AIInsightsCard component
 
   ```
   Files: src/components/analytics/ai-insights-card.tsx (new)
