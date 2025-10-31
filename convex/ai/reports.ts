@@ -11,7 +11,8 @@
  */
 
 import { v } from "convex/values";
-import { internalMutation, query } from "../_generated/server";
+import { internalMutation, query, mutation } from "../_generated/server";
+import { internal } from "../_generated/api";
 import { generateAnalysis } from "./openai";
 import type { AnalyticsMetrics } from "./prompts";
 
@@ -399,5 +400,113 @@ export const getReportHistory = query({
       .take(limit);
 
     return reports;
+  },
+});
+
+/**
+ * Get start of current day in UTC
+ *
+ * @returns Unix timestamp (ms) for 00:00:00 UTC today
+ */
+function getStartOfDayUTC(): number {
+  const now = new Date();
+  const startOfDay = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0,
+      0,
+      0,
+      0
+    )
+  );
+  return startOfDay.getTime();
+}
+
+/**
+ * Generate AI report on-demand (user-triggered)
+ *
+ * User-facing mutation that generates a new AI workout analysis report.
+ * Includes rate limiting to prevent abuse and manage API costs.
+ *
+ * **Rate Limiting**: 5 reports per user per day
+ * - Counter resets at midnight UTC
+ * - Prevents excessive API costs
+ * - Clear error messages when limit reached
+ *
+ * **Process**:
+ * 1. Verify user is authenticated
+ * 2. Check daily generation count (last 24 hours)
+ * 3. If under limit, call internal generateReport
+ * 4. Return reportId or error
+ *
+ * @returns Report ID of generated report
+ * @throws Error if daily limit exceeded or generation fails
+ *
+ * @example
+ * ```typescript
+ * const generateReport = useMutation(api.ai.reports.generateOnDemandReport);
+ *
+ * try {
+ *   const reportId = await generateReport();
+ *   // Report generated successfully
+ * } catch (error) {
+ *   // Handle error (e.g., "Daily limit reached (5/5)")
+ * }
+ * ```
+ */
+export const generateOnDemandReport = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Verify authentication
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("You must be signed in to generate reports");
+    }
+
+    const userId = identity.subject;
+
+    // Calculate start of current UTC day for rate limiting
+    const startOfToday = getStartOfDayUTC();
+
+    // Count reports generated today
+    const reportsToday = await ctx.db
+      .query("aiReports")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.gte(q.field("generatedAt"), startOfToday))
+      .collect();
+
+    // Rate limit: 5 reports per day
+    const DAILY_LIMIT = 5;
+    if (reportsToday.length >= DAILY_LIMIT) {
+      throw new Error(
+        `Daily limit reached (${reportsToday.length}/${DAILY_LIMIT}). Try again tomorrow.`
+      );
+    }
+
+    console.log(
+      `[On-Demand] User ${userId} generating report (${reportsToday.length + 1}/${DAILY_LIMIT} today)`
+    );
+
+    // Generate report via internal mutation
+    try {
+      const reportId = await ctx.scheduler.runAfter(
+        0,
+        (internal as any).ai.reports.generateReport,
+        {
+          userId,
+        }
+      );
+
+      console.log(`[On-Demand] Report generation scheduled: ${reportId}`);
+
+      return reportId;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(`[On-Demand] Failed to generate report:`, errorMessage);
+      throw new Error(`Failed to generate report: ${errorMessage}`);
+    }
   },
 });

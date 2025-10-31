@@ -1049,7 +1049,7 @@
 
 ### Frontend: AI Insights UI
 
-- [~] Create AIInsightsCard component
+- [x] Create AIInsightsCard component
 
   ```
   Files: src/components/analytics/ai-insights-card.tsx (new)
@@ -1088,7 +1088,7 @@
   Time: 45min
   ```
 
-- [ ] Create on-demand report generation mutation
+- [~] Create on-demand report generation mutation
 
   ```
   Files: convex/ai/reports.ts (append)
