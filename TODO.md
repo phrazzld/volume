@@ -525,7 +525,7 @@
   Time: 45min
   ```
 
-- [ ] Add analytics query tests
+- [x] Add analytics query tests
 
   ```
   Files: convex/analytics.test.ts (new)
@@ -554,7 +554,7 @@
 
 ### Frontend: Navigation & Page Structure
 
-- [ ] Add Analytics tab to bottom navigation
+- [x] Add Analytics tab to bottom navigation
 
   ```
   Files: src/components/layout/bottom-nav.tsx:8-12
@@ -583,7 +583,7 @@
   Time: 10min
   ```
 
-- [ ] Create analytics page scaffold
+- [x] Create analytics page scaffold
 
   ```
   Files: src/app/analytics/page.tsx (new)
@@ -615,7 +615,7 @@
 
 ### Frontend: Visualization Components
 
-- [ ] Implement VolumeChart component
+- [x] Implement VolumeChart component
 
   ```
   Files: src/components/analytics/volume-chart.tsx (new), package.json (add recharts)
@@ -651,7 +651,7 @@
   Time: 45min
   ```
 
-- [ ] Implement ActivityHeatmap component
+- [x] Implement ActivityHeatmap component
 
   ```
   Files: src/components/analytics/activity-heatmap.tsx (new), package.json (add react-activity-calendar)
@@ -685,7 +685,7 @@
   Time: 30min
   ```
 
-- [ ] Implement PRCard component
+- [x] Implement PRCard component
 
   ```
   Files: src/components/analytics/pr-card.tsx (new)
@@ -721,7 +721,7 @@
   Time: 30min
   ```
 
-- [ ] Implement StreakCard component
+- [x] Implement StreakCard component
 
   ```
   Files: src/components/analytics/streak-card.tsx (new)
@@ -795,7 +795,7 @@
   Time: 45min
   ```
 
-- [~] Add empty state for new users
+- [x] Add empty state for new users
 
   ```
   Files: src/app/analytics/page.tsx (modify)
