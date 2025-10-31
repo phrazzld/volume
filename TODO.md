@@ -1088,7 +1088,7 @@
   Time: 45min
   ```
 
-- [~] Create on-demand report generation mutation
+- [x] Create on-demand report generation mutation
 
   ```
   Files: convex/ai/reports.ts (append)
@@ -1121,7 +1121,7 @@
   Time: 30min
   ```
 
-- [ ] Integrate AI insights into analytics page
+- [x] Integrate AI insights into analytics page
 
   ```
   Files: src/app/analytics/page.tsx (modify)
