@@ -1156,7 +1156,7 @@
 
 ### Backend: AI Testing & Cost Monitoring
 
-- [ ] Add OpenAI integration tests
+- [x] Add OpenAI integration tests
 
   ```
   Files: convex/ai/openai.test.ts (new)
