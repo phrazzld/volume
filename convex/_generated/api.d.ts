@@ -13,7 +13,10 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as analytics from "../analytics.js";
 import type * as exercises from "../exercises.js";
+import type * as lib_pr_detection from "../lib/pr_detection.js";
+import type * as lib_streak_calculator from "../lib/streak_calculator.js";
 import type * as lib_validate from "../lib/validate.js";
 import type * as sets from "../sets.js";
 
@@ -26,7 +29,10 @@ import type * as sets from "../sets.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  analytics: typeof analytics;
   exercises: typeof exercises;
+  "lib/pr_detection": typeof lib_pr_detection;
+  "lib/streak_calculator": typeof lib_streak_calculator;
   "lib/validate": typeof lib_validate;
   sets: typeof sets;
 }>;

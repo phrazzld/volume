@@ -4,8 +4,8 @@ import {
   calculateCurrentStreak,
   calculateLongestStreak,
   calculateTotalWorkouts,
-} from "./lib/streak-calculator";
-import { checkForPR, PRType } from "./lib/pr-detection";
+} from "./lib/streak_calculator";
+import { checkForPR, PRType } from "./lib/pr_detection";
 
 /**
  * Analytics queries for workout metrics
