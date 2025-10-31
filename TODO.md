@@ -758,7 +758,7 @@
 
 ### Frontend: Analytics Page Integration
 
-- [~] Integrate analytics components into page
+- [x] Integrate analytics components into page
 
   ```
   Files: src/app/analytics/page.tsx (modify)
@@ -795,7 +795,7 @@
   Time: 45min
   ```
 
-- [ ] Add empty state for new users
+- [~] Add empty state for new users
 
   ```
   Files: src/app/analytics/page.tsx (modify)
