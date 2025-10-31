@@ -826,7 +826,7 @@
 
 ### Backend: Schema & AI Module Setup
 
-- [~] Add aiReports table to Convex schema
+- [x] Add aiReports table to Convex schema
 
   ```
   Files: convex/schema.ts:32 (append after sets table)
@@ -860,7 +860,7 @@
   Time: 15min
   ```
 
-- [ ] Create AI prompt template module
+- [~] Create AI prompt template module
 
   ```
   Files: convex/ai/prompts.ts (new), convex/ai/ (new directory)
