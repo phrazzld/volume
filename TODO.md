@@ -826,7 +826,7 @@
 
 ### Backend: Schema & AI Module Setup
 
-- [ ] Add aiReports table to Convex schema
+- [~] Add aiReports table to Convex schema
 
   ```
   Files: convex/schema.ts:32 (append after sets table)
