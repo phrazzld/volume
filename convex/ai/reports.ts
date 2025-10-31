@@ -324,3 +324,80 @@ function calculateLongestStreak(sets: Array<{ performedAt: number }>): number {
 
   return maxStreak;
 }
+
+/**
+ * Get latest AI report for authenticated user
+ *
+ * Returns the most recently generated report, or null if no reports exist.
+ * Automatically filters by authenticated user.
+ *
+ * @returns Most recent report or null
+ *
+ * @example
+ * ```typescript
+ * const latestReport = useQuery(api.ai.reports.getLatestReport);
+ * if (latestReport) {
+ *   console.log(latestReport.content); // Markdown analysis
+ *   console.log(latestReport.tokenUsage.costUSD); // Report cost
+ * }
+ * ```
+ */
+export const getLatestReport = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const report = await ctx.db
+      .query("aiReports")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .order("desc")
+      .first();
+
+    return report;
+  },
+});
+
+/**
+ * Get report history for authenticated user
+ *
+ * Returns paginated list of reports sorted by generation date (newest first).
+ * Includes full metricsSnapshot for transparency about what data was analyzed.
+ *
+ * @param limit - Maximum number of reports to return (default: 10)
+ * @returns Array of reports sorted by generatedAt descending
+ *
+ * @example
+ * ```typescript
+ * // Get last 10 reports
+ * const reports = useQuery(api.ai.reports.getReportHistory, {});
+ *
+ * // Get last 5 reports
+ * const recentReports = useQuery(api.ai.reports.getReportHistory, {
+ *   limit: 5
+ * });
+ * ```
+ */
+export const getReportHistory = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
+    const limit = args.limit ?? 10;
+
+    const reports = await ctx.db
+      .query("aiReports")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .order("desc")
+      .take(limit);
+
+    return reports;
+  },
+});

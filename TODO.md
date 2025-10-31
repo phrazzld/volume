@@ -939,7 +939,7 @@
   Time: 1hr
   ```
 
-- [~] Create AI report generation mutation
+- [x] Create AI report generation mutation
 
   ```
   Files: convex/ai/reports.ts (new)
@@ -977,7 +977,7 @@
   Time: 45min
   ```
 
-- [ ] Create report query functions
+- [~] Create report query functions
 
   ```
   Files: convex/ai/reports.ts (append)
