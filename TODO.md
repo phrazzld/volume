@@ -899,7 +899,7 @@
   Time: 1hr (includes prompt iteration/testing)
   ```
 
-- [~] Implement OpenAI integration module
+- [x] Implement OpenAI integration module
 
   ```
   Files: convex/ai/openai.ts (new), package.json (add openai)
@@ -939,7 +939,7 @@
   Time: 1hr
   ```
 
-- [ ] Create AI report generation mutation
+- [~] Create AI report generation mutation
 
   ```
   Files: convex/ai/reports.ts (new)
