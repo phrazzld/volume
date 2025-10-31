@@ -1182,7 +1182,7 @@
   Time: 1hr
   ```
 
-- [ ] Add AI report generation tests
+- [x] Add AI report generation tests
 
   ```
   Files: convex/ai/reports.test.ts (new)
