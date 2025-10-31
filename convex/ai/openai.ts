@@ -15,20 +15,21 @@ import type { AnalyticsMetrics } from "./prompts";
  * OpenAI API configuration
  */
 const CONFIG = {
-  model: "gpt-4o-mini" as const,
+  model: "gpt-5-mini" as const,
   temperature: 0.7, // Creative but consistent
   maxTokens: 1000, // Cap output at ~800 words
   timeout: 30000, // 30 seconds
   maxRetries: 3,
+  reasoningEffort: "medium" as const, // Balanced reasoning depth for workout analysis
 } as const;
 
 /**
- * Pricing per 1M tokens (as of 2024)
+ * Pricing per 1M tokens (as of October 2025)
  * Source: https://openai.com/api/pricing/
  */
 const PRICING = {
-  inputPerMillion: 0.15, // $0.15 per 1M input tokens
-  outputPerMillion: 0.6, // $0.60 per 1M output tokens
+  inputPerMillion: 0.25, // $0.25 per 1M input tokens (GPT-5 mini)
+  outputPerMillion: 2.0, // $2.00 per 1M output tokens (GPT-5 mini)
 } as const;
 
 /**
@@ -76,8 +77,9 @@ function sleep(attempt: number): Promise<void> {
 /**
  * Generate workout analysis using OpenAI
  *
- * Sends analytics metrics to GPT-4o-mini for technical analysis and insights.
+ * Sends analytics metrics to GPT-5 mini for technical analysis and insights.
  * Includes automatic retry with exponential backoff for transient failures.
+ * Uses medium reasoning effort for balanced depth and cost.
  *
  * @param metrics - Structured workout analytics data
  * @returns Analysis content, token usage, and cost information
@@ -131,6 +133,7 @@ export async function generateAnalysis(
         ],
         temperature: CONFIG.temperature,
         max_tokens: CONFIG.maxTokens,
+        reasoning_effort: CONFIG.reasoningEffort,
       });
 
       // Extract response content

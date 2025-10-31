@@ -34,12 +34,12 @@ vi.mock("./openai", () => ({
       output: 150,
       costUSD: 0.0001,
     },
-    model: "gpt-4o-mini",
+    model: "gpt-5-mini",
   }),
   isConfigured: vi.fn().mockReturnValue(true),
   getPricing: vi.fn().mockReturnValue({
-    inputPerMillion: 0.15,
-    outputPerMillion: 0.6,
+    inputPerMillion: 0.25,
+    outputPerMillion: 2.0,
   }),
 }));
 
@@ -85,7 +85,7 @@ describe.skip("AI Report Queries and Mutations", () => {
           streak: { currentStreak: 5, longestStreak: 10, totalWorkouts: 50 },
           frequency: { workoutDays: 5, avgSetsPerDay: 12 }, // Note: restDays not in schema
         },
-        model: "gpt-4o-mini",
+        model: "gpt-5-mini",
         tokenUsage: { input: 250, output: 150, costUSD: 0.0001 },
       });
     });
@@ -302,7 +302,7 @@ describe.skip("AI Report Queries and Mutations", () => {
       expect(latestReport?.generatedAt).toBeDefined();
       expect(latestReport?.content).toBeDefined();
       expect(latestReport?.metricsSnapshot).toBeDefined();
-      expect(latestReport?.model).toBe("gpt-4o-mini");
+      expect(latestReport?.model).toBe("gpt-5-mini");
       expect(latestReport?.tokenUsage).toBeDefined();
     });
 

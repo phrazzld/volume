@@ -60,7 +60,7 @@ export default defineSchema({
         avgSetsPerDay: v.number(),
       }),
     }),
-    model: v.string(), // e.g., "gpt-4o-mini"
+    model: v.string(), // e.g., "gpt-5-mini"
     tokenUsage: v.object({
       input: v.number(),
       output: v.number(),

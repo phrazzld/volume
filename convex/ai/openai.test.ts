@@ -104,7 +104,7 @@ describe("OpenAI Integration", () => {
       expect(result.content).toContain("Recommendations");
 
       // Verify model
-      expect(result.model).toBe("gpt-4o-mini");
+      expect(result.model).toBe("gpt-5-mini");
     });
 
     test("should calculate token usage correctly", async () => {
@@ -151,8 +151,8 @@ describe("OpenAI Integration", () => {
 
       const result = await generateAnalysis(sampleMetrics);
 
-      // Cost = (1M * $0.15/1M) + (1M * $0.60/1M) = $0.75
-      expect(result.tokenUsage.costUSD).toBe(0.75);
+      // Cost = (1M * $0.25/1M) + (1M * $2.00/1M) = $2.25
+      expect(result.tokenUsage.costUSD).toBe(2.25);
     });
 
     test("should trim whitespace from content", async () => {
@@ -344,13 +344,14 @@ describe("OpenAI Integration", () => {
       // Verify createMock was called with correct structure
       expect(createMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: "gpt-4o-mini",
+          model: "gpt-5-mini",
           messages: expect.arrayContaining([
             expect.objectContaining({ role: "system" }),
             expect.objectContaining({ role: "user" }),
           ]),
           temperature: 0.7,
           max_tokens: 1000,
+          reasoning_effort: "medium",
         })
       );
 
@@ -408,8 +409,8 @@ describe("OpenAI Integration", () => {
 
       expect(pricing).toHaveProperty("inputPerMillion");
       expect(pricing).toHaveProperty("outputPerMillion");
-      expect(pricing.inputPerMillion).toBe(0.15);
-      expect(pricing.outputPerMillion).toBe(0.6);
+      expect(pricing.inputPerMillion).toBe(0.25);
+      expect(pricing.outputPerMillion).toBe(2.0);
     });
   });
 

@@ -18,6 +18,14 @@ _Changes that significantly improve user experience, developer velocity, or syst
 
 ---
 
+- support exercise durations
+  - eg planks don't have reps, they have durations; dead hangs don't have reps, they have durations
+- support cardio?
+  - maybe different than exercise durations
+  - running, swimming, etc
+  - some of these have distance in addition to duration, some fit neatly into duration
+  - maybe it's overcomplicated and we are fine without including distance here, just stick with reps vs duration + weight
+
 ### 8. [Testing] Add Unit Tests for Error Handler Production/Dev Branching
 
 **File**: `src/lib/error-handler.ts`
