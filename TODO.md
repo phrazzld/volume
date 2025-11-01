@@ -181,18 +181,27 @@
   - Loading skeleton: 5 animated placeholders ✓
   - Success criteria: Charts render correctly, hover shows tooltips, trends color-coded properly ✓
 
-- [~] Add progressive overload widget to analytics page grid in `src/app/analytics/page.tsx`
-  - Import widget component
-  - Add to grid with `lg:col-span-8` class (8 columns on desktop)
-  - Position after AI Insights card
-  - Pass isLoading prop based on query state
-  - Success criteria: Widget renders in correct grid position, responds to loading state
+- [x] Add progressive overload widget to analytics page grid in `src/app/analytics/page.tsx`
+  ```
+  Work Log:
+  - Imported ProgressiveOverloadWidget component
+  - Added to grid with md:col-span-6 lg:col-span-8 classes
+  - Positioned after AI Insights, before Activity Heatmap
+  - Passes isLoading prop from parent analytics queries
+  - Maintains responsive behavior across all breakpoints
+  ```
+
+  - Import widget component ✓
+  - Add to grid with `lg:col-span-8` class (8 columns on desktop) ✓
+  - Position after AI Insights card ✓
+  - Pass isLoading prop based on query state ✓
+  - Success criteria: Widget renders in correct grid position, responds to loading state ✓
 
 ## Phase 3: Muscle Group System & Recovery Dashboard
 
 ### 3.1 Muscle Group Mapping Module
 
-- [ ] Create `convex/lib/muscle-group-mapping.ts` with predefined exercise-to-muscle-group map
+- [~] Create `convex/lib/muscle-group-mapping.ts` with predefined exercise-to-muscle-group map
   - Define MuscleGroup enum:
     ```typescript
     export type MuscleGroup =
