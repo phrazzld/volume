@@ -1,1496 +1,1156 @@
-# TODO: Critical Infrastructure Fixes
+# TODO: Analytics "War Room" Dashboard Redesign
 
-## Context: Convex Deployment Misconfiguration Recovery
+**Branch**: `feature/analytics-ai-insights`
+**Goal**: Transform analytics page into data-dense, actionable dashboard with automated AI insights
 
-**Incident**: 2025-10-29 - Production data appeared lost due to misconfigured Vercel environment variables. Root cause: Explicit `CONVEX_DEPLOYMENT` and `NEXT_PUBLIC_CONVEX_URL` overriding Convex CLI's auto-configuration.
+## Phase 1: Layout Foundation & Quick Fixes
 
-**Status**: Data successfully migrated from dev→prod (11 exercises, 188 sets). Now need to fix environment configuration to prevent recurrence.
+### 1.1 Full-Width Layout
 
-**Architecture**: Convex deploy key should be sole source of truth. When `npx convex deploy` runs with deploy key, it automatically sets correct deployment URL. Explicit env vars override this and cause mismatch.
+- [x] Remove max-width constraint from analytics page by setting `maxWidth={false}` on PageLayout component in `src/app/analytics/page.tsx:134`
+  - Success criteria: Analytics page uses full viewport width on desktop (verify in browser at 1920px)
 
-**Key Files**:
+### 1.2 Activity Heatmap Fixes
 
-- Vercel environment variables (production, preview)
-- `.env.example:10-58` - Documentation
-- `scripts/migrate-dev-to-prod.sh` - Recovery script (already run)
+- [x] Remove duplicate "Less to More" legend from ActivityHeatmap component in `src/components/analytics/activity-heatmap.tsx:115-132`
+  - Delete the custom legend div (lines 115-132)
+  - The `react-activity-calendar` library already provides its own legend
+  - Success criteria: Only one legend visible, positioned by library default
 
-**Reference**:
-
-- Ultrathink review findings
-- Current prod deployment: `whimsical-marten-631`
-- Current dev deployment: `curious-salamander-943`
-
----
-
-## Phase 0: Environment Configuration Fix (CRITICAL)
-
-### Test Environment Cleanup (Preview First)
-
-- [x] Remove CONVEX_DEPLOYMENT from preview environment
-
+- [x] Verify date hover tooltips are working in ActivityHeatmap
+  - Test `react-activity-calendar` library's built-in tooltip shows dates on hover
+  - If not working, investigate library props for enabling tooltips
+  - Success criteria: Hovering over heatmap cell shows "Oct 31, 2025: 12 sets" or similar
   ```
-  Approach: Test configuration fix in preview before touching production
-
-  Implementation:
-  - Run: vercel env rm CONVEX_DEPLOYMENT preview --yes
-  - Verify removal: vercel env ls preview | grep CONVEX_DEPLOYMENT (should return nothing)
-  - Keep: CONVEX_DEPLOY_KEY=preview:phaedrus:volume|<key>
-  - Remove: CONVEX_DEPLOYMENT=dev:curious-salamander-943
-
-  Success criteria:
-  - Only CONVEX_DEPLOY_KEY remains in preview environment
-  - NEXT_PUBLIC_CONVEX_URL removed (Convex will auto-set during build)
-  - Environment list shows clean configuration
-
-  Why: Preview is safe test environment - failures don't impact production users
-
-  Time: 5min
-  ```
-
-- [x] Remove NEXT_PUBLIC_CONVEX_URL from preview environment
-
-  ```
-  Approach: Let Convex CLI auto-inject URL during build
-
-  Implementation:
-  - Run: vercel env rm NEXT_PUBLIC_CONVEX_URL preview --yes
-  - Verify: vercel env ls preview (should only show CONVEX_DEPLOY_KEY + Clerk vars)
-
-  Success criteria:
-  - NEXT_PUBLIC_CONVEX_URL not in preview env vars
-  - Convex deploy key is sole deployment configuration
-
-  Rationale: Deploy key tells Convex which deployment to use, CLI auto-sets URL
-
-  Time: 2min
-  ```
-
-- [x] Trigger preview deployment and verify configuration
-
-  Work Log (continued):
-  - Fixed vercel.json: Added --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
-  - New deployment triggered: volume-iyoqsghy1-moomooskycow.vercel.app
-  - Shows "Error" status but HTTP 401 = Vercel Deployment Protection (not build error)
-  - Deployment built successfully, requires Vercel auth to access
-  - Configuration verified correct per Convex documentation
-  - Moving to production cleanup
-
-  ```
-  Files: Any file (make trivial change to trigger deploy)
-  Approach: Test that cleaned environment works correctly
-
   Work Log:
-  - Pushed env cleanup commits (32eba84, 7955423)
-  - Preview deployment triggered: volume-o6yde7dq6-moomooskycow.vercel.app
-  - Deployment showed Error status (HTTP 401)
-  - Investigation via Exa + WebSearch revealed root cause:
-    * Convex preview deployments REQUIRE Pro plan
-    * We're on free dev tier (confirmed via `npx convex deployments`)
-    * Preview deployments won't work without upgrading
-  - Decision: Skip preview testing, proceed directly to production
-  - Configuration is correct per Convex docs:
-    * CONVEX_DEPLOY_KEY alone is sufficient
-    * `npx convex deploy` auto-injects NEXT_PUBLIC_CONVEX_URL during build
-
-  Implementation:
-  - Make trivial change (add comment to README.md)
-  - Push to feature branch: git push origin feature/analytics-ai-insights
-  - Wait for Vercel preview deploy to complete
-  - Get preview URL from Vercel dashboard
-
-  Verification steps:
-  1. Check build logs for Convex deploy output
-  2. Verify build succeeded without errors
-  3. Inspect deployed env vars: vercel inspect <preview-url> --scope moomooskycow
-  4. Confirm NEXT_PUBLIC_CONVEX_URL was auto-set by Convex
-  5. Check deployment name matches preview deploy key
-
-  Success criteria:
-  - Build completes successfully
-  - Convex deploys to ephemeral preview deployment
-  - App connects to correct preview database
-  - No environment variable conflicts in logs
-
-  Time: 15min (plus deploy wait)
+  - Verified react-activity-calendar provides tooltips by default (no config needed)
+  - Library automatically shows date and count on hover
+  - Current implementation already working - no changes required
   ```
 
-- [x] Verify preview site functionality (SKIPPED - deployment protected)
+### 1.3 Remove VolumeChart Component
 
-  ```
-  Approach: Manual QA to confirm preview deployment works end-to-end
+- [x] Remove VolumeChart import and component usage from `src/app/analytics/page.tsx`
+  - Delete line 7: `import { VolumeChart } from "@/components/analytics/volume-chart";`
+  - Delete line 17: `const volumeData = useQuery(api.analytics.getVolumeByExercise, {});`
+  - Remove volumeData from isLoading check (line 37-41)
+  - Delete line 164: `<VolumeChart data={volumeData || []} isLoading={isLoading} />`
+  - Keep the file `volume-chart.tsx` for potential future use (muscle group volume widget)
+  - Success criteria: Analytics page renders without VolumeChart, no console errors
 
-  Note: Preview deployment requires Vercel authentication. Build succeeded (verified via GitHub Actions passing). Cannot manually test without auth bypass. Proceeding to production.
+### 1.4 Implement Dashboard Grid Layout
 
-  Test checklist:
-  1. Load preview URL - site renders without errors
-  2. Sign in with Clerk - authentication works
-  3. Navigate to exercises page - data loads
-  4. Check browser console - no Convex connection errors
-  5. Inspect network tab - verify Convex URL matches preview deployment
-  6. Log a test set - mutation succeeds
-  7. Verify test data appears in preview Convex dashboard
+- [x] Replace current grid structure with 12-column Tailwind grid in `src/app/analytics/page.tsx:133-169`
+  - Replace div with class `space-y-6` with proper grid container
+  - Desktop layout (lg breakpoint): 12-column grid
+  - Tablet layout (md breakpoint): 6-column grid (2 widgets side-by-side)
+  - Mobile layout (default): Single column stack
+  - Grid template:
 
-  Success criteria:
-  - All core functionality works in preview
-  - Convex queries/mutations succeed
-  - No environment-related errors
-  - Data writes to correct preview deployment
+    ```tsx
+    <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 lg:gap-6">
+      {/* AI Insights: 12 cols full width */}
+      <div className="md:col-span-6 lg:col-span-12">
+        <AIInsightsCard ... />
+      </div>
 
-  Debugging:
-  - If site fails: Check browser console for Convex URL
-  - If wrong deployment: Verify deploy key in build logs
-  - If auth fails: Check Clerk env vars still present
-
-  Time: 10min
-  ```
-
-### Production Environment Fix
-
-- [x] Remove CONVEX_DEPLOYMENT from production environment (already clean)
-
-  ```
-  Approach: Apply verified fix to production (configuration verified via docs)
-
-  Work Log:
-  - Checked production env vars: CONVEX_DEPLOYMENT not present
-  - Production already configured correctly
-  - Only CONVEX_DEPLOY_KEY exists (correct)
-
-  Time: 2min
-  ```
-
-- [x] Remove NEXT_PUBLIC_CONVEX_URL from production environment (already clean)
-
-  ```
-  Approach: Remove hardcoded URL, let Convex CLI auto-configure
-
-  Work Log:
-  - Checked production env vars: NEXT_PUBLIC_CONVEX_URL not present
-  - Production environment already clean
-  - Configuration: CONVEX_DEPLOY_KEY + Clerk vars only (correct)
-
-  Time: 2min
-  ```
-
-- [ ] Trigger production deployment and monitor
-
-  ```
-  Approach: Deploy to production via PR merge
-
-  Implementation:
-  - Create PR from feature branch
-  - Merge PR to master (triggers production deploy)
-  - Monitor Vercel dashboard for deployment progress
-
-  Real-time monitoring:
-  1. Watch build logs for Convex deploy output
-  2. Verify "Deploying to prod:whimsical-marten-631" in logs
-  3. Check for environment variable warnings
-  4. Wait for deployment to complete
-
-  Success criteria:
-  - Build completes without errors
-  - Convex deploys functions to prod deployment
-  - NEXT_PUBLIC_CONVEX_URL auto-set to whimsical-marten-631.convex.cloud
-  - No configuration warnings in logs
-
-  Time: 5min (plus deploy wait)
-  ```
-
-### Production Verification
-
-- [ ] Verify production site connects to correct deployment
-
-  ```
-  Approach: Comprehensive verification that production works correctly
-
-  Verification checklist:
-  1. Load https://volume.fitness - site renders
-  2. Sign in - authentication works
-  3. Check exercises page - see all 11 migrated exercises
-  4. Check history - see all 188 migrated sets
-  5. Log a new test set - mutation succeeds
-  6. Verify in Convex dashboard: New set appears in whimsical-marten-631
-
-  Technical verification:
-  - Browser console: Check Convex WebSocket connection URL
-  - Expected: wss://whimsical-marten-631.convex.cloud
-  - Network tab: Verify all Convex requests go to prod deployment
-  - Convex dashboard: Check recent queries/mutations
-
-  Success criteria:
-  - All 199 documents visible (11 exercises + 188 sets)
-  - New sets write to production deployment
-  - No errors in browser console
-  - Convex URL matches production deployment
-
-  Rollback plan (if failed):
-  - Re-add CONVEX_DEPLOYMENT via: vercel env add CONVEX_DEPLOYMENT production
-  - Re-add NEXT_PUBLIC_CONVEX_URL via: vercel env add NEXT_PUBLIC_CONVEX_URL production
-  - Trigger new deploy
-
-  Time: 15min
-  ```
-
-- [ ] Verify production bundle contains correct Convex URL
-
-  ```
-  Approach: Inspect built JavaScript to confirm Convex URL baked into bundle
-
-  Implementation:
-  - View page source: https://volume.fitness
-  - Find script tag: <script src="/_next/static/chunks/[hash].js">
-  - Search bundle source for "convex.cloud"
-  - Confirm URL is: https://whimsical-marten-631.convex.cloud
-
-  Alternative method (CLI):
-  curl -sL https://volume.fitness | grep -o 'https://[^"]*convex.cloud'
-
-  Success criteria:
-  - Bundle contains production Convex URL
-  - No references to dev deployment (curious-salamander-943)
-  - URL matches CONVEX_DEPLOY_KEY target
-
-  Why: Confirms Convex CLI auto-injection worked during build
-
-  Time: 5min
-  ```
-
-### Documentation Updates
-
-- [x] Update .env.example with incident learnings
-
-  ````
-  Files: .env.example:1-58
-  Approach: Document correct architecture to prevent future misconfigurations
-
-  Implementation:
-  - Add section: "=== CRITICAL: 2025-10-29 Incident ==="
-  - Explain what went wrong (explicit vars overriding deploy key)
-  - Document correct configuration (deploy key only)
-  - Add warning: "NEVER set CONVEX_DEPLOYMENT in Vercel"
-  - Add warning: "NEVER set NEXT_PUBLIC_CONVEX_URL in Vercel"
-  - Explain why: Deploy key is source of truth, CLI auto-configures
-
-  Template:
-  ```bash
-  # === CRITICAL: Deployment Configuration (Incident 2025-10-29) ===
-  #
-  # VERCEL ENVIRONMENTS (Production & Preview):
-  # ✅ DO: Set only CONVEX_DEPLOY_KEY
-  # ❌ DON'T: Set CONVEX_DEPLOYMENT (causes misconfiguration)
-  # ❌ DON'T: Set NEXT_PUBLIC_CONVEX_URL (Convex auto-sets during build)
-  #
-  # HOW IT WORKS:
-  # 1. vercel.json runs: npx convex deploy --cmd 'pnpm run build'
-  # 2. Convex CLI reads CONVEX_DEPLOY_KEY
-  # 3. CLI deploys functions to key's target deployment
-  # 4. CLI injects NEXT_PUBLIC_CONVEX_URL automatically
-  # 5. App connects to correct deployment
-  #
-  # WHAT WENT WRONG (2025-10-29):
-  # - CONVEX_DEPLOYMENT pointed to dev (curious-salamander-943)
-  # - CONVEX_DEPLOY_KEY pointed to prod (whimsical-marten-631)
-  # - Functions deployed to prod, app connected to dev
-  # - Result: Empty database appearance (data safe in dev)
-  # - Fix: Remove explicit vars, let deploy key control everything
-  ````
-
-  Success criteria:
-  - Future developers understand correct configuration
-  - Clear warnings prevent repeat of incident
-  - Architecture documented for posterity
-
-  Time: 20min
-
-  ```
-
-  ```
-
-- [x] Add deployment verification command to README.md
-
-  ````
-  Files: README.md or new DEPLOYMENT.md
-  Approach: Document how to verify correct deployment configuration
-
-  Implementation:
-  - Add section: "## Verifying Deployment Configuration"
-  - Provide command to check env vars:
-    ```bash
-    # Check production env vars
-    vercel env ls production | grep CONVEX
-
-    # Should show ONLY:
-    # CONVEX_DEPLOY_KEY    Encrypted    Production
-
-    # Should NOT show:
-    # CONVEX_DEPLOYMENT
-    # NEXT_PUBLIC_CONVEX_URL
-  ````
-
-  - Add command to verify deployed site:
-
-    ```bash
-    # Check which Convex deployment site uses
-    curl -sL https://volume.fitness | grep -o 'https://[^"]*convex.cloud'
-
-    # Should output:
-    # https://whimsical-marten-631.convex.cloud
+      {/* Progressive Overload: Will be 8 cols, Focus: 4 cols */}
+      {/* Recovery: 6 cols, Heatmap: 6 cols */}
+      {/* Streak: 4 cols, PRs: 8 cols */}
+    </div>
     ```
 
-  Success criteria:
-  - Runnable verification commands documented
-  - Easy to check configuration correctness
-  - Can be added to CI in future
+  - Success criteria: Grid responds correctly at mobile (360px), tablet (768px), desktop (1440px)
 
-  Time: 15min
+## Phase 2: Progressive Overload Widget
+
+### 2.1 Backend Query for Exercise Progression
+
+- [x] Create `convex/analytics-progressive-overload.ts` with `getProgressiveOverloadData` query
 
   ```
-
+  Work Log:
+  - Implemented query with proper Id<"exercises"> typing
+  - Groups sets by date to identify distinct workouts
+  - Calculates max weight, max reps, volume per workout
+  - Trend detection: last 3 vs previous 3 workouts (5% threshold)
+  - Returns top N exercises by most recent activity
+  - Helper function calculateTrend() encapsulates trend logic
   ```
+
+  - Function signature:
+    ```typescript
+    export const getProgressiveOverloadData = query({
+      args: { exerciseCount: v.optional(v.number()) },
+      handler: async (ctx, args) => {
+        // Implementation
+      },
+    });
+    ```
+  - Query logic:
+    1. Get authenticated user's identity
+    2. Fetch all user sets sorted by performedAt desc
+    3. Group sets by exerciseId, track last 10 workouts per exercise
+    4. For each exercise:
+       - Get exercise name from exercises table
+       - Extract last 10 distinct workout dates
+       - For each workout date, calculate max weight and max reps
+       - Calculate trend direction (improving/plateau/declining)
+    5. Return top N exercises (default 5) by most recent activity
+  - Return type:
+    ```typescript
+    {
+      exerciseId: string,
+      exerciseName: string,
+      dataPoints: Array<{
+        date: string, // YYYY-MM-DD
+        maxWeight: number | null,
+        maxReps: number,
+        volume: number
+      }>,
+      trend: "improving" | "plateau" | "declining"
+    }
+    ```
+  - Trend calculation logic:
+    - Compare last 3 workouts vs previous 3 workouts
+    - Improving: avg weight/volume increased >5%
+    - Declining: avg weight/volume decreased >5%
+    - Plateau: within ±5%
+  - Success criteria: Query returns correct progression data for test user with 20+ sets across 3+ exercises
+
+- [~] Write tests for `getProgressiveOverloadData` in `convex/analytics-progressive-overload.test.ts`
+  - Test cases:
+    1. Returns top 5 exercises by recent activity
+    2. Correctly calculates max weight per workout
+    3. Correctly calculates max reps per workout
+    4. Limits to last 10 workouts per exercise
+    5. Trend detection: improving (weight increased)
+    6. Trend detection: plateau (no change)
+    7. Trend detection: declining (weight decreased)
+    8. Returns empty array for unauthenticated user
+    9. Returns empty array for user with no sets
+  - Success criteria: All tests pass, edge cases covered
+
+### 2.2 Progressive Overload Frontend Widget
+
+- [ ] Create `src/components/analytics/progressive-overload-widget.tsx` component
+  - Props interface:
+    ```typescript
+    interface ProgressiveOverloadWidgetProps {
+      isLoading?: boolean;
+    }
+    ```
+  - Query progressive overload data using Convex hook
+  - Component structure:
+    - Card with header "Progressive Overload" + TrendingUp icon
+    - For each exercise:
+      - Exercise name with trend indicator (↗️ ↔️ ↘️)
+      - Mini Recharts LineChart (height: 80px)
+      - X-axis: Workout dates (last 10)
+      - Y-axis: Weight OR reps (show both series with different colors)
+      - Tooltip on hover showing exact values + date
+      - Color coding: Green (improving), Yellow (plateau), Red (declining)
+  - Empty state: "Log more sets to see progression trends"
+  - Loading skeleton: 5 animated placeholders
+  - Success criteria: Charts render correctly, hover shows tooltips, trends color-coded properly
+
+- [ ] Add progressive overload widget to analytics page grid in `src/app/analytics/page.tsx`
+  - Import widget component
+  - Add to grid with `lg:col-span-8` class (8 columns on desktop)
+  - Position after AI Insights card
+  - Pass isLoading prop based on query state
+  - Success criteria: Widget renders in correct grid position, responds to loading state
+
+## Phase 3: Muscle Group System & Recovery Dashboard
+
+### 3.1 Muscle Group Mapping Module
+
+- [ ] Create `convex/lib/muscle-group-mapping.ts` with predefined exercise-to-muscle-group map
+  - Define MuscleGroup enum:
+    ```typescript
+    export type MuscleGroup =
+      | "Chest"
+      | "Back"
+      | "Shoulders"
+      | "Biceps"
+      | "Triceps"
+      | "Quads"
+      | "Hamstrings"
+      | "Glutes"
+      | "Calves"
+      | "Core"
+      | "Other";
+    ```
+  - Create exercise name mapping (case-insensitive, partial match):
+
+    ```typescript
+    const EXERCISE_MUSCLE_MAP: Record<string, MuscleGroup[]> = {
+      // Push
+      "BENCH PRESS": ["Chest", "Triceps"],
+      BENCH: ["Chest", "Triceps"],
+      "PUSH UP": ["Chest", "Triceps"],
+      PUSHUP: ["Chest", "Triceps"],
+      "OVERHEAD PRESS": ["Shoulders", "Triceps"],
+      "SHOULDER PRESS": ["Shoulders", "Triceps"],
+      DIP: ["Chest", "Triceps"],
+
+      // Pull
+      "PULL UP": ["Back", "Biceps"],
+      PULLUP: ["Back", "Biceps"],
+      "CHIN UP": ["Back", "Biceps"],
+      CHINUP: ["Back", "Biceps"],
+      ROW: ["Back", "Biceps"],
+      DEADLIFT: ["Back", "Hamstrings", "Glutes"],
+      "LAT PULLDOWN": ["Back", "Biceps"],
+
+      // Legs
+      SQUAT: ["Quads", "Glutes"],
+      "LEG PRESS": ["Quads", "Glutes"],
+      LUNGE: ["Quads", "Glutes"],
+      "LEG CURL": ["Hamstrings"],
+      "LEG EXTENSION": ["Quads"],
+      "CALF RAISE": ["Calves"],
+
+      // Core
+      PLANK: ["Core"],
+      CRUNCH: ["Core"],
+      "SIT UP": ["Core"],
+      SITUP: ["Core"],
+
+      // Arms
+      CURL: ["Biceps"],
+      TRICEP: ["Triceps"],
+    };
+    ```
+
+  - Export `getMuscleGroups(exerciseName: string): MuscleGroup[]` function:
+    - Normalize exercise name (uppercase, trim)
+    - Check for exact match first
+    - If no exact match, check for partial matches (e.g., "BARBELL BENCH PRESS" contains "BENCH")
+    - Return muscle groups or ["Other"] if no match
+  - Success criteria: Function correctly maps 20+ common exercise variations, returns "Other" for unmapped
+
+- [ ] Write tests for muscle group mapping in `convex/lib/muscle-group-mapping.test.ts`
+  - Test cases:
+    1. Exact match: "BENCH PRESS" → ["Chest", "Triceps"]
+    2. Partial match: "BARBELL BENCH PRESS" → ["Chest", "Triceps"]
+    3. Case insensitive: "bench press" → ["Chest", "Triceps"]
+    4. Multiple matches: "DEADLIFT" → ["Back", "Hamstrings", "Glutes"]
+    5. No match: "UNKNOWN EXERCISE" → ["Other"]
+    6. Ambiguous: "ROW" → ["Back", "Biceps"] (matches BARBELL ROW, DUMBBELL ROW, etc.)
+  - Success criteria: All tests pass, edge cases handled
+
+### 3.2 Recovery Status Backend Query
+
+- [ ] Create `convex/analytics-recovery.ts` with `getRecoveryStatus` query
+  - Function signature:
+    ```typescript
+    export const getRecoveryStatus = query({
+      args: {},
+      handler: async (ctx) => {
+        // Implementation
+      },
+    });
+    ```
+  - Query logic:
+    1. Get authenticated user's identity
+    2. Fetch all user exercises (including deleted for history)
+    3. Fetch all user sets sorted by performedAt desc
+    4. For each set:
+       - Get exercise name
+       - Map to muscle groups using `getMuscleGroups()`
+       - Track last trained date per muscle group
+    5. Calculate recovery metrics per muscle group:
+       - Last trained date
+       - Days since last trained (today - last trained)
+       - Total volume in last 7 days
+       - Frequency (workouts in last 7 days)
+    6. Sort by days since last trained descending (most rested first)
+  - Return type:
+    ```typescript
+    {
+      muscleGroup: MuscleGroup,
+      lastTrainedDate: string | null, // YYYY-MM-DD
+      daysSince: number,
+      volumeLast7Days: number,
+      frequencyLast7Days: number,
+      status: "fresh" | "recovering" | "ready" | "overdue"
+    }
+    ```
+  - Status calculation:
+    - fresh (0-2 days): Recently trained
+    - recovering (3-4 days): Optimal recovery window
+    - ready (5-7 days): Ready to train
+    - overdue (8+ days): Needs attention
+  - Success criteria: Query correctly aggregates sets by muscle groups, calculates days since, handles unmapped exercises
+
+- [ ] Write tests for `getRecoveryStatus` in `convex/analytics-recovery.test.ts`
+  - Test cases:
+    1. Correctly maps exercises to muscle groups
+    2. Calculates days since last trained
+    3. Aggregates volume across multiple exercises for same muscle group
+    4. Counts frequency (distinct workout days) in last 7 days
+    5. Assigns correct status based on days since
+    6. Handles muscle groups never trained (null lastTrainedDate)
+    7. Returns empty array for unauthenticated user
+    8. Handles exercises mapped to multiple muscle groups
+  - Success criteria: All tests pass, edge cases covered
+
+### 3.3 Recovery Dashboard Frontend Widget
+
+- [ ] Create `src/components/analytics/recovery-dashboard-widget.tsx` component
+  - Props interface:
+    ```typescript
+    interface RecoveryDashboardWidgetProps {
+      isLoading?: boolean;
+    }
+    ```
+  - Query recovery status data using Convex hook
+  - Component structure:
+    - Card with header "Recovery Status" + Heart icon
+    - Grid of muscle group cards (3 cols desktop, 2 cols tablet, 1 col mobile)
+    - Each muscle group card:
+      - Muscle group name
+      - Days since last trained (large number)
+      - Last workout date (small text)
+      - Color-coded background/border:
+        - Green: fresh (0-2 days)
+        - Yellow: recovering (3-4 days)
+        - Orange: ready (5-7 days)
+        - Red: overdue (8+ days)
+        - Gray: never trained
+      - Volume badge (last 7 days)
+  - Empty state: "Log sets to see muscle group recovery"
+  - Loading skeleton: Grid of animated placeholders
+  - Success criteria: Color coding correct, responsive grid, clear visual hierarchy
+
+- [ ] Add recovery dashboard widget to analytics page grid in `src/app/analytics/page.tsx`
+  - Import widget component
+  - Add to grid with `lg:col-span-6` class (6 columns on desktop)
+  - Position alongside heatmap (both 6 cols)
+  - Pass isLoading prop based on query state
+  - Success criteria: Widget renders in correct grid position, responsive layout works
+
+## Phase 4: Focus Suggestions Widget
+
+### 4.1 Focus Suggestions Backend Query
+
+- [ ] Create `convex/analytics-focus.ts` with `getFocusSuggestions` query
+  - Function signature:
+    ```typescript
+    export const getFocusSuggestions = query({
+      args: {},
+      handler: async (ctx) => {
+        // Implementation
+      },
+    });
+    ```
+  - Query logic (rule-based V1):
+    1. Get authenticated user's identity
+    2. Fetch all user exercises and sets
+    3. Identify exercises not trained in 7+ days (priority: high)
+    4. Use recovery status data to find muscle groups with longest rest
+    5. Detect training imbalances:
+       - Compare push (Chest, Shoulders, Triceps) vs pull (Back, Biceps) volume
+       - Compare upper body vs legs volume
+       - If ratio > 2:1, flag as imbalance (priority: medium)
+    6. Generate 3-5 specific suggestions
+    7. Sort by priority (high → medium → low)
+  - Return type:
+    ```typescript
+    {
+      type: "exercise" | "muscle_group" | "balance",
+      priority: "high" | "medium" | "low",
+      title: string, // "Train Squats"
+      reason: string, // "Haven't trained in 9 days"
+      suggestedExercises?: string[], // For muscle_group type
+      exerciseId?: string // For exercise type (deep link)
+    }
+    ```
+  - Suggestion types:
+    - Exercise: Specific exercise not trained in 7+ days
+    - Muscle group: Muscle group undertrained (recommend 2-3 exercises)
+    - Balance: Training imbalance detected (recommend opposing muscle group)
+  - Success criteria: Query generates relevant suggestions, prioritizes correctly, handles edge cases
+
+- [ ] Write tests for `getFocusSuggestions` in `convex/analytics-focus.test.ts`
+  - Test cases:
+    1. Suggests exercise not trained in 7+ days (high priority)
+    2. Suggests muscle group with longest rest (medium priority)
+    3. Detects push/pull imbalance (too much push, not enough pull)
+    4. Detects upper/lower imbalance (too much upper, not enough legs)
+    5. Returns max 5 suggestions (truncates if more)
+    6. Returns empty array for brand new user
+    7. Returns empty array for unauthenticated user
+    8. Prioritizes high before medium before low
+  - Success criteria: All tests pass, suggestions are actionable
+
+### 4.2 Focus Suggestions Frontend Widget
+
+- [ ] Create `src/components/analytics/focus-suggestions-widget.tsx` component
+  - Props interface:
+    ```typescript
+    interface FocusSuggestionsWidgetProps {
+      isLoading?: boolean;
+    }
+    ```
+  - Query focus suggestions data using Convex hook
+  - Component structure:
+    - Card with header "Focus Suggestions" + Target icon
+    - List of suggestions (max 5):
+      - Priority badge (high: red, medium: yellow, low: gray)
+      - Title (bold)
+      - Reason (muted text)
+      - For muscle_group type: show suggested exercises as chips
+      - For exercise type: "Log workout" button → deep link to log page with exerciseId
+    - Empty state: "You're training everything well! 💪"
+    - Loading skeleton: List of animated placeholders
+  - Success criteria: Suggestions render correctly, priority badges color-coded, deep links work
+
+- [ ] Add focus suggestions widget to analytics page grid in `src/app/analytics/page.tsx`
+  - Import widget component
+  - Add to grid with `lg:col-span-4` class (4 columns on desktop)
+  - Position next to progressive overload widget (8 cols)
+  - Pass isLoading prop based on query state
+  - Success criteria: Widget renders in correct grid position, layout responsive
+
+## Phase 5: Enhanced AI Insights Card
+
+### 5.1 Remove Manual Report Generation
+
+- [ ] Remove manual generation UI from `src/components/analytics/ai-insights-card.tsx`
+  - Delete "Generate Your First Analysis" button (lines 64-67)
+  - Delete "Regenerate" button (lines 137-146)
+  - Delete empty state component (lines 49-72)
+  - Replace empty state with "automated report" placeholder:
+    ```tsx
+    <div className="flex flex-col items-center justify-center py-8 text-center">
+      <Sparkles className="w-12 h-12 text-muted-foreground mb-3" />
+      <p className="text-sm font-medium mb-2">
+        Your first AI report will arrive soon
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Daily reports generate at midnight in your timezone
+      </p>
+      {/* TODO: Add countdown timer showing "Next report in X hours" */}
+    </div>
+    ```
+  - Remove `onGenerateNew` prop from interface (no longer needed)
+  - Remove `isGenerating` and `error` props (no manual generation = no loading/error states)
+  - Success criteria: No manual generation buttons visible, clear messaging about automated reports
+
+### 5.2 Add Report Type Indicators
+
+- [ ] Add report type badge to AI insights card in `src/components/analytics/ai-insights-card.tsx`
+  - Modify AIReport interface to include `reportType: "daily" | "weekly" | "monthly"`
+  - Add badge component next to card title:
+    ```tsx
+    <div className="flex items-center gap-2">
+      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+      <CardTitle className="text-lg">AI Coach Insights</CardTitle>
+      <span
+        className={`text-xs px-2 py-0.5 rounded-full ${getBadgeColor(report.reportType)}`}
+      >
+        {report.reportType.toUpperCase()}
+      </span>
+    </div>
+    ```
+  - Badge colors:
+    - Daily: bg-blue-500/10 text-blue-700
+    - Weekly: bg-purple-500/10 text-purple-700
+    - Monthly: bg-green-500/10 text-green-700
+  - Success criteria: Badge displays correctly with proper color coding
+
+### 5.3 Update Analytics Page for New AI Insights UI
+
+- [ ] Remove AI report generation mutation and state from `src/app/analytics/page.tsx`
+  - Delete line 27-30: `generateReport` mutation
+  - Delete line 32-34: `isGenerating` and `generationError` state
+  - Delete line 51-71: `handleGenerateReport` function
+  - Update AIInsightsCard props (remove `onGenerateNew`, `isGenerating`, `error`)
+  - Success criteria: No TypeScript errors, component still renders
+
+## Phase 6: Schema Changes for Users & Timezone
+
+### 6.1 Add Users Table to Schema
+
+- [ ] Add `users` table definition to `convex/schema.ts`
+  - Insert after `sets` table definition:
+    ```typescript
+    users: defineTable({
+      clerkUserId: v.string(),
+      timezone: v.optional(v.string()), // IANA timezone (e.g., "America/New_York")
+      dailyReportsEnabled: v.optional(v.boolean()), // Default: false (opt-in)
+      weeklyReportsEnabled: v.optional(v.boolean()), // Default: true
+      monthlyReportsEnabled: v.optional(v.boolean()), // Default: false
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    })
+      .index("by_clerk_id", ["clerkUserId"])
+      .index("by_daily_enabled", ["dailyReportsEnabled"])
+      .index("by_timezone", ["timezone"]),
+    ```
+  - Success criteria: Schema compiles without errors, indexes defined correctly
+
+### 6.2 User Management Mutations
+
+- [ ] Create `convex/users.ts` with user management functions
+  - Implement `getOrCreateUser` mutation:
+
+    ```typescript
+    export const getOrCreateUser = mutation({
+      args: {
+        timezone: v.optional(v.string()),
+      },
+      handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        // Check if user exists
+        const existing = await ctx.db
+          .query("users")
+          .withIndex("by_clerk_id", (q) =>
+            q.eq("clerkUserId", identity.subject)
+          )
+          .first();
+
+        if (existing) return existing._id;
+
+        // Create new user
+        const userId = await ctx.db.insert("users", {
+          clerkUserId: identity.subject,
+          timezone: args.timezone,
+          dailyReportsEnabled: false, // Opt-in (future paywall)
+          weeklyReportsEnabled: true, // Default on
+          monthlyReportsEnabled: false, // Opt-in
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
+
+        return userId;
+      },
+    });
+    ```
+
+  - Implement `updateUserTimezone` mutation:
+
+    ```typescript
+    export const updateUserTimezone = mutation({
+      args: { timezone: v.string() },
+      handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Unauthorized");
+
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_clerk_id", (q) =>
+            q.eq("clerkUserId", identity.subject)
+          )
+          .first();
+
+        if (!user) {
+          // Create user if doesn't exist
+          return await ctx.runMutation(internal.users.getOrCreateUser, {
+            timezone: args.timezone,
+          });
+        }
+
+        await ctx.db.patch(user._id, {
+          timezone: args.timezone,
+          updatedAt: Date.now(),
+        });
+      },
+    });
+    ```
+
+  - Success criteria: Mutations create and update users correctly, handle edge cases
+
+- [ ] Write tests for user management in `convex/users.test.ts`
+  - Test cases:
+    1. `getOrCreateUser`: Creates new user with default settings
+    2. `getOrCreateUser`: Returns existing user if already exists
+    3. `updateUserTimezone`: Updates timezone for existing user
+    4. `updateUserTimezone`: Creates user if doesn't exist
+    5. Both functions throw error for unauthenticated requests
+  - Success criteria: All tests pass
+
+## Phase 7: Client-Side Timezone Detection
+
+### 7.1 Timezone Detection Hook
+
+- [ ] Create `src/hooks/useTimezoneSync.ts` hook for timezone detection
+  - Hook implementation:
+
+    ```typescript
+    import { useEffect } from "react";
+    import { useMutation } from "convex/react";
+    import { api } from "../../convex/_generated/api";
+
+    export function useTimezoneSync() {
+      const updateTimezone = useMutation(api.users.updateUserTimezone);
+
+      useEffect(() => {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // Only update if we have a valid timezone
+        if (timezone) {
+          updateTimezone({ timezone }).catch((error) => {
+            console.warn("Failed to sync timezone:", error);
+          });
+        }
+      }, [updateTimezone]);
+    }
+    ```
+
+  - Success criteria: Hook detects timezone correctly, calls mutation once on mount
+
+### 7.2 Integrate Timezone Sync in App
+
+- [ ] Add timezone sync to root layout in `src/app/layout.tsx` or `ConvexClientProvider.tsx`
+  - Import and call `useTimezoneSync()` hook in client component
+  - Ensure it runs after user authentication (inside ClerkProvider context)
+  - Add to `ConvexClientProvider.tsx` after `useUser()` hook:
+
+    ```tsx
+    const { isSignedIn } = useUser();
+
+    // Sync timezone when user signs in
+    useEffect(() => {
+      if (isSignedIn) {
+        useTimezoneSync();
+      }
+    }, [isSignedIn]);
+    ```
+
+  - Success criteria: Timezone saved to users table on first login, no errors in console
+
+## Phase 8: Automated Report Generation System
+
+### 8.1 Modify Report Schema for Report Types
+
+- [ ] Update `aiReports` table schema in `convex/schema.ts` to include `reportType`
+  - Add `reportType` field:
+    ```typescript
+    aiReports: defineTable({
+      userId: v.string(),
+      reportType: v.union(
+        v.literal("daily"),
+        v.literal("weekly"),
+        v.literal("monthly")
+      ),
+      content: v.string(),
+      // ... existing fields
+    }).index("by_user_type_date", ["userId", "reportType", "weekStartDate"]);
+    ```
+  - Update index to support querying by report type
+  - Success criteria: Schema compiles, new index supports efficient queries
+
+### 8.2 Update Report Generation Logic
+
+- [ ] Modify `convex/ai/reports.ts` to support multiple report types
+  - Update `generateReport` internal mutation to accept `reportType` parameter:
+
+    ```typescript
+    export const generateReport = internalMutation({
+      args: {
+        userId: v.string(),
+        reportType: v.optional(
+          v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"))
+        ),
+        weekStartDate: v.optional(v.number()),
+      },
+      handler: async (ctx, args) => {
+        const reportType = args.reportType || "weekly";
+
+        // Calculate date range based on report type
+        let { startDate, endDate } = calculateDateRange(
+          reportType,
+          args.weekStartDate
+        );
+
+        // ... rest of generation logic
+
+        // Update deduplication check to include reportType
+        const existingReport = await ctx.db
+          .query("aiReports")
+          .withIndex("by_user_type_date", (q) =>
+            q
+              .eq("userId", args.userId)
+              .eq("reportType", reportType)
+              .eq("weekStartDate", startDate)
+          )
+          .first();
+
+        if (existingReport) {
+          console.log(
+            `[AI Reports] Report already exists for ${reportType} ${startDate}`
+          );
+          return existingReport._id;
+        }
+
+        // ... generate report with OpenAI
+
+        // Insert with reportType
+        const reportId = await ctx.db.insert("aiReports", {
+          userId: args.userId,
+          reportType,
+          weekStartDate: startDate,
+          content: report.content,
+          // ... other fields
+        });
+      },
+    });
+    ```
+
+  - Add `calculateDateRange` helper function:
+
+    ```typescript
+    function calculateDateRange(
+      reportType: "daily" | "weekly" | "monthly",
+      customStart?: number
+    ) {
+      const now = new Date();
+      let startDate: number;
+      let endDate = now.getTime();
+
+      switch (reportType) {
+        case "daily":
+          // Last 24 hours
+          startDate = endDate - 24 * 60 * 60 * 1000;
+          break;
+        case "weekly":
+          // Last 7 days (or custom start)
+          if (customStart) {
+            startDate = customStart;
+          } else {
+            startDate = endDate - 7 * 24 * 60 * 60 * 1000;
+          }
+          break;
+        case "monthly":
+          // Last calendar month
+          const lastMonth = new Date(now);
+          lastMonth.setMonth(lastMonth.getMonth() - 1);
+          lastMonth.setDate(1);
+          lastMonth.setHours(0, 0, 0, 0);
+          startDate = lastMonth.getTime();
+          break;
+      }
+
+      return { startDate, endDate };
+    }
+    ```
+
+  - Success criteria: Function generates reports for all three types, date ranges calculated correctly
+
+### 8.3 Hourly Cron for Daily Reports
+
+- [ ] Add hourly cron job for daily reports in `convex/crons.ts`
+  - Implement `getEligibleUsersForDailyReports` internal query:
+
+    ```typescript
+    export const getEligibleUsersForDailyReports = internalQuery({
+      args: { currentHourUTC: v.number() },
+      handler: async (ctx, args) => {
+        // Get all users with dailyReportsEnabled = true
+        const users = await ctx.db
+          .query("users")
+          .withIndex("by_daily_enabled", (q) =>
+            q.eq("dailyReportsEnabled", true)
+          )
+          .collect();
+
+        // Filter users whose local time is midnight (based on timezone)
+        const eligibleUsers = users.filter((user) => {
+          if (!user.timezone) return false;
+
+          // Calculate local hour for user's timezone
+          const localHour = getLocalHourFromUTC(
+            args.currentHourUTC,
+            user.timezone
+          );
+
+          // Check if local time is midnight (hour 0)
+          return localHour === 0;
+        });
+
+        return eligibleUsers.map((u) => u.clerkUserId);
+      },
+    });
+    ```
+
+  - Helper function for timezone conversion:
+
+    ```typescript
+    function getLocalHourFromUTC(utcHour: number, timezone: string): number {
+      const now = new Date();
+      now.setUTCHours(utcHour, 0, 0, 0);
+
+      // Use Intl.DateTimeFormat to convert to local timezone
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        hour: "numeric",
+        hour12: false,
+      });
+
+      const localHour = parseInt(formatter.format(now));
+      return localHour;
+    }
+    ```
+
+  - Implement `generateDailyReports` internal action:
+
+    ```typescript
+    export const generateDailyReports = internalAction({
+      args: {},
+      handler: async (ctx): Promise<any> => {
+        console.log("[Cron] Starting daily AI report generation...");
+        const startTime = Date.now();
+
+        const currentHourUTC = new Date().getUTCHours();
+
+        // Get eligible users for this hour
+        const eligibleUserIds = await ctx.runQuery(
+          (internal as any).crons.getEligibleUsersForDailyReports,
+          { currentHourUTC }
+        );
+
+        console.log(
+          `[Cron] Found ${eligibleUserIds.length} users eligible for daily reports`
+        );
+
+        // Generate reports
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: Array<{ userId: string; error: string }> = [];
+
+        for (const userId of eligibleUserIds) {
+          try {
+            await ctx.runMutation((internal as any).ai.reports.generateReport, {
+              userId,
+              reportType: "daily",
+            });
+            successCount++;
+          } catch (error: unknown) {
+            errorCount++;
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            errors.push({ userId, error: errorMessage });
+            console.error(
+              `[Cron] Failed to generate daily report for ${userId}: ${errorMessage}`
+            );
+          }
+        }
+
+        // Summary
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`[Cron] Daily report generation complete!`);
+        console.log(`[Cron] Duration: ${duration}s`);
+        console.log(`[Cron] Reports generated: ${successCount}`);
+        console.log(`[Cron] Errors: ${errorCount}`);
+
+        return {
+          success: true,
+          processed: eligibleUserIds.length,
+          succeeded: successCount,
+          failed: errorCount,
+          durationSeconds: Number(duration),
+          errors: errors.slice(0, 10),
+        };
+      },
+    });
+    ```
+
+  - Add cron schedule:
+    ```typescript
+    crons.hourly(
+      "generate-daily-reports",
+      { minuteUTC: 0 },
+      (internal as any).crons.generateDailyReports
+    );
+    ```
+  - Success criteria: Cron runs every hour, generates reports for users whose local time is midnight
+
+### 8.4 Monthly Cron for Monthly Reports
+
+- [ ] Add monthly cron job for monthly reports in `convex/crons.ts`
+  - Implement `generateMonthlyReports` internal action:
+
+    ```typescript
+    export const generateMonthlyReports = internalAction({
+      args: {},
+      handler: async (ctx): Promise<any> => {
+        console.log("[Cron] Starting monthly AI report generation...");
+        const startTime = Date.now();
+
+        // Get all users with monthlyReportsEnabled = true
+        const users = await ctx.runQuery(
+          (internal as any).crons.getActiveUsersWithMonthlyReports,
+          {}
+        );
+
+        console.log(
+          `[Cron] Found ${users.length} users eligible for monthly reports`
+        );
+
+        // Generate reports
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: Array<{ userId: string; error: string }> = [];
+
+        for (const userId of users) {
+          try {
+            await ctx.runMutation((internal as any).ai.reports.generateReport, {
+              userId,
+              reportType: "monthly",
+            });
+            successCount++;
+          } catch (error: unknown) {
+            errorCount++;
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            errors.push({ userId, error: errorMessage });
+            console.error(
+              `[Cron] Failed to generate monthly report for ${userId}: ${errorMessage}`
+            );
+          }
+        }
+
+        // Summary
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`[Cron] Monthly report generation complete!`);
+
+        return {
+          success: true,
+          processed: users.length,
+          succeeded: successCount,
+          failed: errorCount,
+          durationSeconds: Number(duration),
+          errors: errors.slice(0, 10),
+        };
+      },
+    });
+    ```
+
+  - Add helper query:
+
+    ```typescript
+    export const getActiveUsersWithMonthlyReports = internalQuery({
+      args: {},
+      handler: async (ctx) => {
+        const users = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("monthlyReportsEnabled"), true))
+          .collect();
+
+        return users.map((u) => u.clerkUserId);
+      },
+    });
+    ```
+
+  - Add cron schedule (runs first day of month at midnight UTC):
+    ```typescript
+    crons.monthly(
+      "generate-monthly-reports",
+      {
+        day: 1,
+        hourUTC: 0,
+        minuteUTC: 0,
+      },
+      (internal as any).crons.generateMonthlyReports
+    );
+    ```
+  - Success criteria: Cron runs on first day of month, generates reports for opted-in users
+
+### 8.5 Update Latest Report Query
+
+- [ ] Modify `getLatestReport` query in `convex/ai/reports.ts` to support filtering by report type
+  - Update query to accept optional `reportType` parameter:
+
+    ```typescript
+    export const getLatestReport = query({
+      args: {
+        reportType: v.optional(
+          v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"))
+        ),
+      },
+      handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return null;
+
+        let query = ctx.db
+          .query("aiReports")
+          .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+          .order("desc");
+
+        const reports = await query.collect();
+
+        // Filter by report type if specified
+        if (args.reportType) {
+          const filtered = reports.filter(
+            (r) => r.reportType === args.reportType
+          );
+          return filtered[0] || null;
+        }
+
+        return reports[0] || null;
+      },
+    });
+    ```
+
+  - Success criteria: Query returns correct report type when filtered
+
+## Phase 9: Final Integration & Testing
+
+### 9.1 Update Analytics Page with All New Widgets
+
+- [ ] Finalize analytics page grid layout in `src/app/analytics/page.tsx` with all widgets
+  - Final grid structure:
+
+    ```tsx
+    <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 lg:gap-6">
+      {/* AI Insights: 12 cols full width */}
+      <div className="md:col-span-6 lg:col-span-12">
+        <AIInsightsCard report={latestReport} />
+      </div>
+
+      {/* Focus Suggestions: 4 cols, Progressive Overload: 8 cols */}
+      <div className="md:col-span-3 lg:col-span-4">
+        <FocusSuggestionsWidget isLoading={isLoading} />
+      </div>
+      <div className="md:col-span-3 lg:col-span-8">
+        <ProgressiveOverloadWidget isLoading={isLoading} />
+      </div>
+
+      {/* Recovery Dashboard: 6 cols, Activity Heatmap: 6 cols */}
+      <div className="md:col-span-3 lg:col-span-6">
+        <RecoveryDashboardWidget isLoading={isLoading} />
+      </div>
+      <div className="md:col-span-3 lg:col-span-6">
+        <ActivityHeatmap data={frequencyData || []} isLoading={isLoading} />
+      </div>
+
+      {/* Streak Card: 4 cols, PR Card: 8 cols */}
+      <div className="md:col-span-2 lg:col-span-4">
+        <StreakCard
+          currentStreak={streakStats?.currentStreak || 0}
+          longestStreak={streakStats?.longestStreak || 0}
+          totalWorkouts={streakStats?.totalWorkouts || 0}
+          isLoading={isLoading}
+        />
+      </div>
+      <div className="md:col-span-4 lg:col-span-8">
+        <PRCard prs={recentPRs || []} isLoading={isLoading} />
+      </div>
+    </div>
+    ```
+
+  - Add all necessary imports
+  - Update isLoading check to include new queries
+  - Success criteria: All widgets render in correct positions, responsive at all breakpoints
+
+### 9.2 Manual Testing Checklist
+
+- [ ] Test full-width layout at multiple screen sizes
+  - Mobile (360px): Single column stack, no horizontal scroll
+  - Tablet (768px): 2-column layout, proper spacing
+  - Desktop (1440px): 12-column grid, full width utilization
+  - Ultra-wide (1920px+): Content spreads to edges, no awkward gaps
+
+- [ ] Test progressive overload widget with real data
+  - Create test user with 20+ sets across 3+ exercises
+  - Verify mini charts render correctly
+  - Test hover tooltips show dates and values
+  - Verify trend indicators (↗️ ↔️ ↘️) match actual progression
+
+- [ ] Test recovery dashboard with various scenarios
+  - User with balanced training: All muscle groups green/yellow
+  - User with imbalanced training: Some muscle groups red (8+ days)
+  - Brand new user: All muscle groups gray (never trained)
+  - Verify color coding matches days since last trained
+
+- [ ] Test focus suggestions accuracy
+  - Create scenario: Haven't trained legs in 10 days
+  - Verify suggestion appears with high priority
+  - Create scenario: Too much push, not enough pull
+  - Verify balance suggestion appears
+  - Test deep link to log page works
+
+- [ ] Test AI insights automated reporting
+  - Verify no manual generation buttons visible
+  - Check placeholder text for new users
+  - Verify report type badge displays correctly
+  - Test with daily, weekly, monthly reports
+
+- [ ] Test timezone detection and storage
+  - Check browser console for timezone detection
+  - Verify timezone saved to users table in Convex dashboard
+  - Test with different timezones (mock system timezone)
+
+- [ ] Test activity heatmap fixes
+  - Verify only one legend visible
+  - Test hover shows date and set count
+  - Verify GitHub-style color scheme matches theme
+
+- [ ] Test all loading states
+  - Verify skeleton loaders render correctly
+  - Test all widgets handle undefined/null data gracefully
+  - Ensure no console errors during loading
+
+- [ ] Test empty states for all widgets
+  - New user with no data: All empty states visible
+  - User with minimal data: Partial empty states
+  - Verify empty state messages are helpful and actionable
+
+### 9.3 Type Safety Verification
+
+- [ ] Run TypeScript type check: `pnpm typecheck`
+  - Fix any type errors introduced by new components
+  - Ensure all props are properly typed
+  - Verify no `any` types in new code
+  - Success criteria: `pnpm typecheck` passes with 0 errors
+
+### 9.4 Test Suite Execution
+
+- [ ] Run full test suite: `pnpm test --run`
+  - Verify all existing tests still pass
+  - Verify all new backend query tests pass
+  - Verify muscle group mapping tests pass
+  - Success criteria: All tests pass (currently 285 tests, expecting 300+ after additions)
+
+### 9.5 Build Verification
+
+- [ ] Run production build: `pnpm build`
+  - Ensure Next.js builds without errors
+  - Verify bundle size is reasonable (no massive increases)
+  - Check for any build warnings
+  - Success criteria: Build completes successfully
 
 ---
 
-# TODO: Workout Analytics & AI Insights
+## Post-Implementation Validation
 
-## Context
+After completing all tasks:
 
-**Approach**: Hybrid quantitative + AI dashboard with three deep modules
-
-- **Analytics Computation** (Convex): Aggregate metrics, hide calculation complexity
-- **Visualization** (React): Charts/cards with simple props, handle rendering complexity
-- **AI Insights** (Convex + OpenAI): Generate technical analysis, hide LLM integration
-
-**Key Files**:
-
-- `convex/analytics.ts` (new) - Analytics queries
-- `convex/schema.ts:4-32` - Add `aiReports` table
-- `src/app/analytics/page.tsx` (new) - Analytics page
-- `src/components/analytics/` (new dir) - Chart components
-- `src/components/layout/bottom-nav.tsx:8-12` - Add analytics tab
-
-**Patterns to Follow**:
-
-- Convex queries: Follow `convex/sets.ts:54-89` (listSets pattern)
-- Convex tests: Follow `convex/exercises.test.ts:1-40` (convexTest setup)
-- React components: Follow `src/components/dashboard/daily-stats-card.tsx` (Card pattern)
-- Convex hooks: Follow `src/components/dashboard/Dashboard.tsx:15-17` (useQuery pattern)
-- Lib utilities: Follow `src/lib/streak-calculator.ts` (JSDoc, types, pure functions)
-
-**Build Commands**:
-
-- `pnpm typecheck` - TypeScript validation
-- `pnpm test` - Run Vitest tests
-- `pnpm lint` - ESLint validation
-- `pnpm dev` - Local dev (Next.js + Convex)
+1. **Visual QA**: Screenshots at mobile, tablet, desktop showing full dashboard
+2. **Performance**: Check page load time, query response times in Convex dashboard
+3. **Accessibility**: Keyboard navigation works, screen reader compatibility
+4. **Data Accuracy**: Verify calculations (progressive overload trends, recovery days, suggestions)
+5. **Cron Jobs**: Monitor Convex logs for successful hourly/weekly/monthly report generation
 
 ---
 
-## Phase 1: Core Quantitative Analytics (Week 1)
-
-### Backend: Analytics Computation Module
-
-- [x] Create analytics volume calculation query
-
-  ```
-  Files: convex/analytics.ts (new file)
-  Approach: Follow convex/sets.ts:54-89 query pattern
-
-  Implementation:
-  - Create `getVolumeByExercise` query
-  - Args: { startDate?: number, endDate?: number }
-  - Return: Array<{ exerciseId, exerciseName, totalVolume, sets: number }>
-  - Calculation: SUM(reps × weight) per exercise
-  - Use `by_user_performed` index for efficient date filtering
-  - Join with exercises table to get names
-  - Handle deleted exercises (includeDeleted: true for history)
-  - Sort by totalVolume descending
-
-  Success Criteria:
-  - Query returns correct volume for multiple exercises
-  - Handles date range filtering (undefined = all time)
-  - Excludes deleted exercises by default
-  - Uses indexes efficiently (check query plan)
-  - TypeScript types compile without errors
-
-  Test Strategy:
-  - Unit test: Multiple exercises, various date ranges
-  - Edge cases: No sets, deleted exercises, bodyweight (weight=0)
-  - Performance: Query with 1000+ sets completes <500ms
-
-  Module Boundaries:
-  - Hides: Volume aggregation logic, date filtering, exercise joins
-  - Exposes: Simple array of exercise volumes
-  - Single responsibility: Calculate total volume metrics
-
-  Time: 45min
-  ```
-
-- [x] Create workout frequency query for heatmap
-
-  ```
-  Files: convex/analytics.ts (append)
-
-  Implementation:
-  - Create `getWorkoutFrequency` query
-  - Args: { days: number } (e.g., 365 for full year)
-  - Return: Array<{ date: string (YYYY-MM-DD), setCount: number, totalVolume: number }>
-  - Group sets by calendar day using startOfDay logic
-  - Fill gaps with zero days (for heatmap visualization)
-  - Use `by_user_performed` index for date range
-
-  Success Criteria:
-  - Returns daily set counts for last N days
-  - Includes zero-count days (continuous date range)
-  - Date format matches react-activity-calendar expectations
-  - Handles timezone correctly (user's local time)
-
-  Test Strategy:
-  - Unit test: 7 days, 30 days, 365 days
-  - Edge cases: No workouts, gaps in data, timezone boundaries
-  - Verify gap filling works correctly
-
-  Module Boundaries:
-  - Hides: Date grouping, gap filling, timezone handling
-  - Exposes: Clean array of daily workout counts
-  - Single responsibility: Frequency data for heatmap
-
-  Time: 45min
-  ```
-
-- [x] Create streak calculation query
-
-  ```
-  Files: convex/analytics.ts (append), convex/lib/streak-calculator.ts (new)
-  Approach: Adapt src/lib/streak-calculator.ts for Convex
-
-  Implementation:
-  - Move streak logic to convex/lib/streak-calculator.ts
-  - Make calculateStreak work with Convex Date objects
-  - Create `getStreakStats` query in analytics.ts
-  - Return: { currentStreak: number, longestStreak: number, totalWorkouts: number }
-  - Calculate longest streak by scanning all workout history
-  - Cache-friendly: expensive but run infrequently
-
-  Success Criteria:
-  - Current streak matches client-side calculation
-  - Longest streak correctly scans entire history
-  - Total workouts = unique days with sets
-  - Handles edge case: workout today vs yesterday
-
-  Test Strategy:
-  - Unit test: Consecutive days, gaps, multiple streaks
-  - Compare against existing src/lib/streak-calculator.ts behavior
-  - Edge cases: No workouts, single workout, 365+ streak
-
-  Module Boundaries:
-  - Hides: Streak algorithm, date comparisons, history scanning
-  - Exposes: Three simple numbers (current, longest, total)
-  - Single responsibility: Streak metrics
-
-  Time: 30min
-  ```
-
-- [x] Create recent PRs query
-
-  ```
-  Files: convex/analytics.ts (append)
-  Approach: Leverage existing src/lib/pr-detection.ts patterns
-
-  Implementation:
-  - Create `getRecentPRs` query
-  - Args: { days: number } (e.g., 7, 30)
-  - Query sets from last N days
-  - For each set, check if it was a PR using historical-pr-detection logic
-  - Return: Array<{ set, exercise, prType: 'weight'|'reps'|'volume', improvement }>
-  - Join with exercises to get names
-  - Sort by performedAt descending
-
-  Success Criteria:
-  - Returns all PRs from last N days
-  - Includes exercise names for display
-  - Correctly identifies PR type (weight/reps/volume)
-  - Shows improvement amount (current - previous)
-
-  Test Strategy:
-  - Unit test: Multiple PRs, different types, edge cases
-  - Verify against src/lib/pr-detection.ts logic
-  - Edge cases: First-ever set (always PR), no PRs in period
-
-  Module Boundaries:
-  - Hides: PR detection algorithm, historical comparison
-  - Exposes: Clean list of PR achievements
-  - Single responsibility: Recent PR summary
-
-  Time: 45min
-  ```
-
-- [x] Add analytics query tests
-
-  ```
-  Files: convex/analytics.test.ts (new)
-  Approach: Follow convex/exercises.test.ts:1-40 pattern
-
-  Implementation:
-  - Set up convexTest with schema
-  - Test getVolumeByExercise: multiple exercises, date ranges
-  - Test getWorkoutFrequency: gap filling, zero days
-  - Test getStreakStats: consecutive days, gaps
-  - Test getRecentPRs: PR detection, date filtering
-  - Mock data: 30 days of sets across 5 exercises
-
-  Success Criteria:
-  - All queries tested with realistic data
-  - Edge cases covered (no data, single set, deleted exercises)
-  - Tests pass with `pnpm test`
-
-  Test Strategy:
-  - Integration tests using convexTest
-  - Each query tested independently
-  - Shared test fixtures for common scenarios
-
-  Time: 1hr
-  ```
-
-### Frontend: Navigation & Page Structure
-
-- [x] Add Analytics tab to bottom navigation
-
-  ```
-  Files: src/components/layout/bottom-nav.tsx:8-12
-  Approach: Follow existing nav pattern
-
-  Implementation:
-  - Import BarChart3 icon from lucide-react
-  - Add to navItems array: { href: "/analytics", label: "Stats", icon: BarChart3 }
-  - Position between Home and History (middle of nav)
-  - Verify active state detection works for /analytics path
-
-  Success Criteria:
-  - New tab appears in bottom nav
-  - Active state highlights when on /analytics
-  - Icon renders correctly
-  - Label readable on mobile
-
-  Test Strategy:
-  - Visual QA: Check nav on mobile viewport
-  - Test navigation: Click should route to /analytics
-  - Verify active state styling
-
-  Module Boundaries:
-  - Simple config change, no complexity hidden
-
-  Time: 10min
-  ```
-
-- [x] Create analytics page scaffold
-
-  ```
-  Files: src/app/analytics/page.tsx (new)
-  Approach: Follow src/app/history/page.tsx pattern
-
-  Implementation:
-  - "use client" directive for Convex hooks
-  - Import PageLayout from @/components/layout/page-layout
-  - Render placeholder: "Analytics Dashboard" heading
-  - Add empty states for each metric section
-  - Mobile-first responsive layout
-
-  Success Criteria:
-  - Page renders at /analytics
-  - Uses PageLayout for consistent chrome
-  - TypeScript compiles without errors
-  - Mobile-responsive scaffold in place
-
-  Test Strategy:
-  - Visual QA: Check on desktop and mobile
-  - Smoke test: Page loads without errors
-
-  Module Boundaries:
-  - Page orchestration: coordinates metric components
-  - Hides: Layout complexity, responsive breakpoints
-
-  Time: 15min
-  ```
-
-### Frontend: Visualization Components
-
-- [x] Implement VolumeChart component
-
-  ```
-  Files: src/components/analytics/volume-chart.tsx (new), package.json (add recharts)
-  Approach: Follow patterns from Exa research (ChartsContainer with Recharts)
-
-  Implementation:
-  - Install: pnpm add recharts
-  - Props: { data: Array<{ name: string, volume: number }> }
-  - Use ResponsiveContainer for mobile-first sizing
-  - BarChart with volume on Y-axis, exercise on X-axis
-  - Dark mode: Use CSS variables for colors (hsl(var(--primary)))
-  - Tooltip shows exact volume with formatWeight
-  - Empty state: "No workout data" with Dumbbell icon
-  - Loading skeleton while data fetches
-
-  Success Criteria:
-  - Chart renders with sample data
-  - Responsive on mobile (full width)
-  - Dark mode colors match theme
-  - Tooltip formatted correctly
-  - Empty state shows when data=[]
-
-  Test Strategy:
-  - Smoke test: Renders without crashing
-  - Visual QA: Check dark/light mode
-  - Test empty state and loading state
-
-  Module Boundaries:
-  - Hides: Recharts configuration, responsive sizing, theming
-  - Exposes: Simple props interface (just data array)
-  - Single responsibility: Visualize volume data
-
-  Time: 45min
-  ```
-
-- [x] Implement ActivityHeatmap component
-
-  ```
-  Files: src/components/analytics/activity-heatmap.tsx (new), package.json (add react-activity-calendar)
-
-  Implementation:
-  - Install: pnpm add react-activity-calendar
-  - Props: { data: Array<{ date: string, count: number, level: number }> }
-  - Calculate level (0-4) based on set count (0, 1-3, 4-7, 8-12, 13+)
-  - Show last 365 days (GitHub style)
-  - Dark mode theme with --primary color scheme
-  - Tooltip: "X sets on DATE"
-  - Labels: Show month names, weekday labels
-
-  Success Criteria:
-  - Heatmap renders 365-day grid
-  - Colors intensity based on workout volume
-  - Tooltip shows workout details
-  - Responsive on mobile (horizontal scroll if needed)
-  - Dark mode colors readable
-
-  Test Strategy:
-  - Smoke test with various data patterns
-  - Visual QA: Streaks, gaps, intensity levels
-  - Edge cases: All zeros, all max, sparse data
-
-  Module Boundaries:
-  - Hides: Calendar rendering, level calculation, tooltip logic
-  - Exposes: Simple data array interface
-  - Single responsibility: Frequency visualization
-
-  Time: 30min
-  ```
-
-- [x] Implement PRCard component
-
-  ```
-  Files: src/components/analytics/pr-card.tsx (new)
-  Approach: Follow src/components/dashboard/daily-stats-card.tsx pattern
-
-  Implementation:
-  - Props: { prs: Array<{ exercise, prType, value, improvement, date }> }
-  - Use Card, CardHeader, CardTitle, CardContent from ui/card
-  - Trophy icon (lucide-react) for header
-  - List recent PRs with celebration styling
-  - Badge for PR type (weight/reps/volume)
-  - Show improvement: "+5 lbs" or "+2 reps"
-  - Relative date: "2 days ago"
-  - Empty state: "No recent PRs - keep pushing!"
-  - Celebrate with emoji: 🏆 for PRs
-
-  Success Criteria:
-  - Card renders with PR list
-  - Each PR shows exercise, type, improvement
-  - Empty state encourages user
-  - Celebration styling (bold, accent color)
-  - Mobile-responsive layout
-
-  Test Strategy:
-  - Smoke test: Render with 0, 1, 5+ PRs
-  - Visual QA: Celebration feels motivating
-
-  Module Boundaries:
-  - Hides: PR formatting, date formatting, styling complexity
-  - Exposes: Simple PR data array
-  - Single responsibility: Display PR achievements
-
-  Time: 30min
-  ```
-
-- [x] Implement StreakCard component
-
-  ```
-  Files: src/components/analytics/streak-card.tsx (new)
-  Approach: Follow daily-stats-card.tsx Card pattern
-
-  Implementation:
-  - Props: { currentStreak: number, longestStreak: number, totalWorkouts: number }
-  - Card with Flame icon header
-  - Large display of current streak: "🔥 7 Day Streak"
-  - Secondary stats: Longest streak, total workouts
-  - Progress bar if weekly goal defined (future: allow user to set)
-  - Milestone badges: Week (7d), Month (30d), Century (100d)
-  - Empty state: "Start your streak today!"
-  - Celebration animation if milestone hit (future enhancement)
-
-  Success Criteria:
-  - Current streak prominently displayed
-  - All three metrics visible
-  - Milestone detection works correctly
-  - Empty state shows for new users
-  - Responsive layout
-
-  Test Strategy:
-  - Smoke test: 0 streak, 7 streak, 100 streak
-  - Visual QA: Check milestone styling
-
-  Module Boundaries:
-  - Hides: Streak formatting, milestone logic, progress calculation
-  - Exposes: Three simple numbers
-  - Single responsibility: Streak visualization
-
-  Time: 30min
-  ```
-
-### Frontend: Analytics Page Integration
-
-- [x] Integrate analytics components into page
-
-  ```
-  Files: src/app/analytics/page.tsx (modify)
-
-  Implementation:
-  - Import all analytics queries from convex/analytics
-  - Import all visualization components
-  - Use useQuery for each metric: volume, frequency, streak, PRs
-  - Handle loading states (show skeletons)
-  - Handle error states (show retry button)
-  - Layout: Grid on desktop (2 columns), stack on mobile
-  - Order: PRCard (top), StreakCard, VolumeChart, ActivityHeatmap
-  - Add page heading: "Your Analytics"
-  - Add subtitle: "Track your progress and celebrate wins"
-
-  Success Criteria:
-  - All four metrics render with live data
-  - Loading states show while queries pending
-  - Error handling works (show message + retry)
-  - Responsive layout works mobile → desktop
-  - Data updates in real-time (Convex reactivity)
-
-  Test Strategy:
-  - Manual QA: Log sets, verify charts update
-  - Test loading states (slow network simulation)
-  - Test error states (disconnect Convex)
-  - Cross-browser testing
-
-  Module Boundaries:
-  - Page orchestrates components (doesn't implement logic)
-  - Hides: Query coordination, layout complexity
-  - Exposes: Complete analytics dashboard
-
-  Time: 45min
-  ```
-
-- [x] Add empty state for new users
-
-  ```
-  Files: src/app/analytics/page.tsx (modify)
-
-  Implementation:
-  - Detect if user has <7 days of workout data
-  - Show friendly onboarding message
-  - "Log 7 days of workouts to unlock analytics!"
-  - Show partial data if available (e.g., just streak)
-  - Motivational copy: "Every champion started somewhere"
-  - Visual: Dumbbell icon or chart placeholder
-
-  Success Criteria:
-  - New users see encouraging message
-  - Threshold logic correct (7 days)
-  - Partial data still shows (progressive disclosure)
-
-  Test Strategy:
-  - Test with brand new account
-  - Test with 1 day, 3 days, 7+ days of data
-
-  Time: 20min
-  ```
+## Notes
+
+- **Muscle Groups**: Using 11 categories (Chest, Back, Shoulders, Biceps, Triceps, Quads, Hamstrings, Glutes, Calves, Core, Other)
+- **Daily Reports**: Opt-in only (default OFF) - future paywall feature
+- **No Manual Generation**: AI controls all report timing via cron jobs
+- **Timezone Handling**: Client-side detection, stored per-user, hourly cron checks for midnight
+- **Progressive Overload**: Top 5 exercises by recent activity, last 10 workouts per exercise
+- **Recovery Status**: Color-coded by days since last trained (0-2: fresh, 3-4: recovering, 5-7: ready, 8+: overdue)
+- **Focus Suggestions**: Rule-based V1 (3-5 suggestions max, sorted by priority)
 
 ---
 
-## Phase 2: AI Insights Integration (Week 2)
-
-### Backend: Schema & AI Module Setup
-
-- [x] Add aiReports table to Convex schema
-
-  ```
-  Files: convex/schema.ts:32 (append after sets table)
-
-  Implementation:
-  - Define aiReports table with fields:
-    - userId: v.string()
-    - weekStartDate: v.number() (Unix timestamp for Monday 00:00)
-    - generatedAt: v.number() (Unix timestamp of generation)
-    - content: v.string() (Markdown-formatted AI response)
-    - metricsSnapshot: v.object({ ... }) (JSON of metrics used for transparency)
-    - model: v.string() (e.g., "gpt-5-mini")
-    - tokenUsage: v.object({ input: v.number(), output: v.number(), costUSD: v.number() })
-  - Add indexes:
-    - by_user: [userId]
-    - by_user_week: [userId, weekStartDate]
-  - Run `pnpm convex dev` to apply schema changes
-
-  Success Criteria:
-  - Schema compiles without errors
-  - Indexes created successfully
-  - TypeScript types generated in _generated/dataModel.d.ts
-
-  Test Strategy:
-  - Schema validation passes
-  - Can insert test record via Convex dashboard
-
-  Module Boundaries:
-  - Data layer: defines storage structure only
-
-  Time: 15min
-  ```
-
-- [x] Create AI prompt template module
-
-  ```
-  Files: convex/ai/prompts.ts (new), convex/ai/ (new directory)
-
-  Implementation:
-  - Export systemPrompt: Define AI role as technical strength coach
-  - Tone: Data-driven, technical, actionable (not motivational)
-  - Export formatMetricsPrompt(metrics): Convert metrics to prompt
-  - Metrics input: { volume, prs, frequency, streak, restDays }
-  - Prompt structure:
-    - "Analyze this week's training data:"
-    - Volume by exercise (with week-over-week % change)
-    - PRs achieved (with context)
-    - Workout frequency (days trained, rest days)
-    - Streak status
-    - "Provide technical analysis: trends, plateaus, recovery, optimization"
-  - Include few-shot examples of good analysis
-  - Target length: 200-400 words
-  - Version prompt for future A/B testing
-
-  Success Criteria:
-  - Prompt generates consistent, technical analysis
-  - Token count predictable (~400 input tokens)
-  - Examples show desired output format
-
-  Test Strategy:
-  - Manual test with OpenAI playground
-  - Verify token count with sample metrics
-  - Review output quality with 5+ test cases
-
-  Module Boundaries:
-  - Hides: Prompt engineering complexity, formatting logic
-  - Exposes: Simple function accepting metrics object
-  - Single responsibility: Convert metrics → prompt
-
-  Time: 1hr (includes prompt iteration/testing)
-  ```
-
-- [x] Implement OpenAI integration module
-
-  ```
-  Files: convex/ai/openai.ts (new), package.json (add openai)
-
-  Implementation:
-  - Install: pnpm add openai
-  - Export generateAnalysis(metrics): Promise<{ content, tokenUsage }>
-  - Initialize OpenAI client with OPENAI_API_KEY from env
-  - Call GPT-5 mini with system + user prompts
-  - Temperature: 0.7 (creative but consistent)
-  - Max tokens: 1000 (cap at ~800 output)
-  - Parse response, extract content
-  - Calculate cost: (inputTokens * $0.25 + outputTokens * $2) / 1M
-  - Error handling: Retry with exponential backoff (3 attempts)
-  - Timeout: 30 seconds
-  - Log token usage for cost monitoring
-
-  Success Criteria:
-  - Successfully calls GPT-5 mini API
-  - Returns markdown-formatted analysis
-  - Token usage tracked accurately
-  - Cost calculation correct
-  - Retries on transient failures
-  - Errors logged with context
-
-  Test Strategy:
-  - Integration test with real API (use test key)
-  - Mock test for error scenarios
-  - Verify token count and cost calculation
-  - Test timeout handling
-
-  Module Boundaries:
-  - Hides: OpenAI SDK details, retry logic, error handling
-  - Exposes: Simple async function (metrics → analysis)
-  - Single responsibility: LLM API integration
-
-  Time: 1hr
-  ```
-
-- [x] Create AI report generation mutation
-
-  ```
-  Files: convex/ai/reports.ts (new)
-
-  Implementation:
-  - Import analytics queries, OpenAI module, prompts
-  - Export generateReport: internalMutation (not exposed to client directly)
-  - Args: { userId: string, weekStartDate?: number }
-  - weekStartDate defaults to current week (Monday 00:00 UTC)
-  - Fetch metrics: call getVolumeByExercise, getRecentPRs, etc.
-  - Format metrics for prompt using formatMetricsPrompt
-  - Call OpenAI via generateAnalysis
-  - Store result in aiReports table
-  - Return reportId
-  - Rate limiting: Check if report already exists for this week
-  - Deduplication: Prevent duplicate reports for same week
-
-  Success Criteria:
-  - Generates report with realistic metrics
-  - Stores in database correctly
-  - Idempotent (doesn't create duplicates)
-  - Returns reportId on success
-  - Handles OpenAI errors gracefully
-
-  Test Strategy:
-  - Integration test: Full generation with mock metrics
-  - Test deduplication logic
-  - Test error handling (API failure)
-
-  Module Boundaries:
-  - Hides: Report generation workflow, metric aggregation, storage
-  - Exposes: Single mutation (userId → reportId)
-  - Single responsibility: Orchestrate AI report creation
-
-  Time: 45min
-  ```
-
-- [x] Create report query functions
-
-  ```
-  Files: convex/ai/reports.ts (append)
-
-  Implementation:
-  - Export getLatestReport: query
-  - Args: none (uses auth userId)
-  - Return: Most recent report or null
-  - Export getReportHistory: query
-  - Args: { limit?: number } (default 10)
-  - Return: Array of reports, sorted by generatedAt desc
-  - Both queries verify userId ownership
-  - Include metricsSnapshot for transparency
-
-  Success Criteria:
-  - getLatestReport returns most recent or null
-  - getReportHistory returns sorted array
-  - Ownership verified (user can't see others' reports)
-  - Pagination works correctly
-
-  Test Strategy:
-  - Unit test: Multiple reports, different users
-  - Test ownership verification
-  - Test empty state (no reports)
-
-  Module Boundaries:
-  - Hides: Query logic, sorting, filtering
-  - Exposes: Simple query functions
-  - Single responsibility: Report retrieval
-
-  Time: 30min
-  ```
-
-- [x] Implement scheduled weekly report generation
-
-  ```
-  Files: convex/crons.ts (new)
-
-  Implementation:
-  - Import cronJobs from "convex/server"
-  - Import internal.ai.reports.generateReport
-  - Schedule cron: Every Sunday at 9 PM UTC
-  - Cron expression: "0 21 * * 0"
-  - Handler: Query all active users (logged workout in last 14 days)
-  - For each user, call generateReport(userId)
-  - Rate limit: Max 100 users per run (batch if more)
-  - Error handling: Log failures, don't crash entire job
-  - Track: Users processed, reports generated, errors
-
-  Success Criteria:
-  - Cron runs on schedule (test with shorter interval first)
-  - Active users identified correctly
-  - Reports generated for all eligible users
-  - Errors logged but don't stop batch
-  - Performance acceptable (<5 min for 100 users)
-
-  Test Strategy:
-  - Manual test: Trigger cron with small user set
-  - Monitor logs for errors
-  - Verify reports created in database
-
-  Module Boundaries:
-  - Hides: User querying, batching, error handling
-  - Exposes: Automated weekly reports
-  - Single responsibility: Scheduled report generation
-
-  Time: 45min
-  ```
-
-### Frontend: AI Insights UI
-
-- [x] Create AIInsightsCard component
-
-  ```
-  Files: src/components/analytics/ai-insights-card.tsx (new)
-
-  Implementation:
-  - Props: { report: AIReport | null, onGenerateNew: () => void, isGenerating: boolean }
-  - Card with Sparkles icon (AI indicator)
-  - Header: "AI Coach Insights"
-  - If no report: "Generate your first analysis" CTA button
-  - If report exists:
-    - Render markdown content (install react-markdown)
-    - Show generation timestamp: "Generated 2 days ago"
-    - "Regenerate" button (calls onGenerateNew)
-    - Loading state during generation (spinner + "Analyzing...")
-  - Error state: "Failed to generate. Try again?"
-  - Collapsible: Can minimize/expand for space
-
-  Success Criteria:
-  - Markdown renders correctly with styling
-  - CTA button calls onGenerateNew
-  - Loading state shows during generation
-  - Error state handles failures
-  - Mobile-responsive (readable on small screens)
-
-  Test Strategy:
-  - Smoke test: Render with/without report
-  - Test loading state
-  - Test error state
-  - Visual QA: Markdown formatting
-
-  Module Boundaries:
-  - Hides: Markdown rendering, loading states, styling
-  - Exposes: Simple report display + generate callback
-  - Single responsibility: AI report UI
-
-  Time: 45min
-  ```
-
-- [x] Create on-demand report generation mutation
-
-  ```
-  Files: convex/ai/reports.ts (append)
-
-  Implementation:
-  - Export generateOnDemandReport: mutation (user-facing)
-  - Args: none (uses auth userId)
-  - Rate limiting: Check daily limit (5 per user per day)
-  - Track: Last generation timestamp in aiReports table
-  - Call internal generateReport mutation
-  - Return: reportId or error
-  - Error: "Daily limit reached (5/5). Try again tomorrow."
-
-  Success Criteria:
-  - Rate limit enforced correctly
-  - Returns reportId on success
-  - Clear error messages for limit violations
-  - Daily counter resets at midnight UTC
-
-  Test Strategy:
-  - Unit test: Generate 6 reports (verify limit)
-  - Test daily reset logic
-  - Test error messages
-
-  Module Boundaries:
-  - Hides: Rate limiting, daily reset logic
-  - Exposes: Simple user-triggered generation
-  - Single responsibility: On-demand generation with limits
-
-  Time: 30min
-  ```
-
-- [x] Integrate AI insights into analytics page
-
-  ```
-  Files: src/app/analytics/page.tsx (modify)
-
-  Implementation:
-  - Import AIInsightsCard, ai.reports queries/mutations
-  - Use useQuery(api.ai.reports.getLatestReport)
-  - Use useMutation(api.ai.reports.generateOnDemandReport)
-  - Add AIInsightsCard to page layout (top or bottom)
-  - Handle generate callback: call mutation, show toast on success/error
-  - Loading state: Disable button during generation
-  - Success toast: "Analysis complete!"
-  - Error toast: Show rate limit or API error message
-
-  Success Criteria:
-  - Latest report displays on page load
-  - Generate button creates new report
-  - Toast notifications work
-  - Loading states prevent double-clicks
-  - Error messages clear and actionable
-
-  Test Strategy:
-  - Manual QA: Generate report, verify display
-  - Test rate limiting (generate 6x)
-  - Test error handling (disconnect network)
-
-  Module Boundaries:
-  - Page orchestrates AI component (like other metrics)
-
-  Time: 30min
-  ```
-
-### Backend: AI Testing & Cost Monitoring
-
-- [x] Add OpenAI integration tests
-
-  ```
-  Files: convex/ai/openai.test.ts (new)
-
-  Implementation:
-  - Mock OpenAI SDK responses
-  - Test generateAnalysis with sample metrics
-  - Verify prompt construction correct
-  - Test token usage calculation
-  - Test cost calculation
-  - Test error handling (rate limit, timeout, invalid response)
-  - Test retry logic (fails 2x, succeeds 3rd)
-
-  Success Criteria:
-  - All OpenAI scenarios tested
-  - Mocking works correctly
-  - Token/cost calculations verified
-
-  Test Strategy:
-  - Unit tests with mocked OpenAI client
-  - Integration test with real API (CI environment variable)
-
-  Time: 1hr
-  ```
-
-- [x] Add AI report generation tests
-
-  ```
-  Files: convex/ai/reports.test.ts (new)
-
-  Implementation:
-  - Use convexTest with schema
-  - Mock OpenAI responses
-  - Test full report generation workflow
-  - Test deduplication (same week)
-  - Test rate limiting (daily limit)
-  - Test getLatestReport, getReportHistory
-  - Test ownership verification
-
-  Success Criteria:
-  - All report functions tested
-  - Deduplication works
-  - Rate limiting enforced
-  - Tests pass consistently
-
-  Test Strategy:
-  - Integration tests with convexTest
-  - Mock OpenAI to avoid API costs in tests
-
-  Time: 1hr
-  ```
-
----
-
-## Phase 3: Polish & Optimization (Week 3-4)
-
-### Performance Optimization
-
-- [ ] Add date range filter to analytics page
-
-  ```
-  Files: src/app/analytics/page.tsx (modify), src/components/analytics/date-range-selector.tsx (new)
-
-  Implementation:
-  - Create DateRangeSelector component
-  - Options: 7d, 30d, 90d, 1y, All Time
-  - Tabs or dropdown UI
-  - Pass selected range to all analytics queries
-  - Update charts/cards based on selected range
-  - Persist selection in localStorage
-
-  Success Criteria:
-  - Filter updates all metrics
-  - Selection persists across page reloads
-  - UI indicates active selection
-
-  Time: 45min
-  ```
-
-- [ ] Implement query result caching
-
-  ```
-  Files: src/app/analytics/page.tsx (modify)
-
-  Implementation:
-  - Use Convex's built-in reactivity (automatic)
-  - Add React.memo to expensive chart components
-  - Prevent unnecessary re-renders
-  - Verify query deduplication working
-
-  Success Criteria:
-  - Charts don't re-render on unrelated state changes
-  - Query results cached by Convex client
-
-  Time: 30min
-  ```
-
-- [ ] Add lazy loading for charts
-
-  ```
-  Files: src/app/analytics/page.tsx (modify)
-
-  Implementation:
-  - Use React.lazy for chart components
-  - Suspense boundaries with loading skeletons
-  - Load charts below fold only when visible (Intersection Observer)
-  - Reduce initial bundle size
-
-  Success Criteria:
-  - Charts code-split into separate chunks
-  - Initial page load faster
-  - Charts load smoothly on scroll
-
-  Time: 45min
-  ```
-
-### UX Enhancements
-
-- [ ] Add PR celebration animation
-
-  ```
-  Files: src/components/analytics/pr-card.tsx (modify)
-
-  Implementation:
-  - Detect new PRs (compare to previous render)
-  - Confetti animation on PR achievement (use canvas-confetti)
-  - Trophy icon bounce animation
-  - Play once per PR, don't repeat on re-render
-  - Subtle, not annoying
-
-  Success Criteria:
-  - Animation plays for new PRs
-  - Doesn't repeat unnecessarily
-  - Works on mobile
-  - Accessible (respects prefers-reduced-motion)
-
-  Time: 1hr
-  ```
-
-- [ ] Add export analytics data feature
-
-  ```
-  Files: src/app/analytics/page.tsx (modify), src/lib/export-csv.ts (new)
-
-  Implementation:
-  - "Export CSV" button in page header
-  - Export volume data, PRs, frequency
-  - Format: CSV with headers
-  - Download file: "volume-analytics-YYYY-MM-DD.csv"
-  - Use client-side generation (no backend needed)
-
-  Success Criteria:
-  - CSV downloads correctly
-  - Data formatted properly
-  - Opens in Excel/Sheets
-
-  Time: 45min
-  ```
-
-- [ ] Add share report feature
-
-  ```
-  Files: src/components/analytics/ai-insights-card.tsx (modify)
-
-  Implementation:
-  - "Copy to Clipboard" button on AI report
-  - Copies markdown content
-  - Toast: "Report copied!"
-  - User can paste into notes, messages
-
-  Success Criteria:
-  - Clipboard API works
-  - Markdown preserved
-  - Toast confirmation shows
-
-  Time: 20min
-  ```
-
-### AI Improvements
-
-- [ ] Add AI report feedback system
-
-  ```
-  Files: convex/ai/reports.ts (modify), src/components/analytics/ai-insights-card.tsx (modify)
-
-  Implementation:
-  - Add thumbsUp/thumbsDown buttons to report card
-  - Track feedback in aiReports table
-  - New field: feedback: v.optional(v.union(v.literal("up"), v.literal("down")))
-  - Mutation: submitReportFeedback(reportId, feedback)
-  - Use for future prompt tuning
-  - Thank user: "Thanks for your feedback!"
-
-  Success Criteria:
-  - Feedback buttons work
-  - Stored in database
-  - UI updates after submission
-
-  Time: 30min
-  ```
-
-- [ ] Implement prompt versioning
-
-  ```
-  Files: convex/ai/prompts.ts (modify)
-
-  Implementation:
-  - Version prompts: v1, v2, etc.
-  - Store version in aiReports.promptVersion field
-  - Allow A/B testing different prompts
-  - Track which versions get better feedback
-  - Document prompt changes in comments
-
-  Success Criteria:
-  - Prompt version tracked per report
-  - Easy to roll out new prompt versions
-  - Can compare feedback by version
-
-  Time: 30min
-  ```
-
-### Documentation & Monitoring
-
-- [ ] Add analytics architecture documentation
-
-  ```
-  Files: CLAUDE.md (append section)
-
-  Implementation:
-  - Document analytics module boundaries
-  - Explain query patterns
-  - Document AI integration architecture
-  - Cost estimates and monitoring
-  - Troubleshooting guide
-
-  Success Criteria:
-  - Team can understand analytics system
-  - Future maintenance easier
-
-  Time: 30min
-  ```
-
-- [ ] Create AI cost monitoring query
-
-  ```
-  Files: convex/ai/reports.ts (append)
-
-  Implementation:
-  - Export getCostStats: query (admin only)
-  - Aggregate tokenUsage from all reports
-  - Calculate: Total cost, avg cost per report, daily/weekly spend
-  - Identify expensive reports (outliers)
-  - Alert if daily cost > threshold ($2/day)
-
-  Success Criteria:
-  - Accurate cost tracking
-  - Can identify cost anomalies
-  - Alerts work
-
-  Time: 45min
-  ```
-
-### Testing & Quality
-
-- [ ] Add end-to-end analytics tests
-
-  ```
-  Files: src/app/analytics/page.test.tsx (new)
-
-  Implementation:
-  - Test page renders all components
-  - Test date range filter
-  - Test empty states
-  - Test loading states
-  - Mock Convex queries
-
-  Success Criteria:
-  - Page-level integration tests pass
-  - All user flows covered
-
-  Time: 1hr
-  ```
-
-- [ ] Accessibility audit
-
-  ```
-  Files: All analytics components
-
-  Implementation:
-  - Verify keyboard navigation works
-  - Screen reader friendly (ARIA labels)
-  - Color contrast meets WCAG AA
-  - Focus indicators visible
-  - Reduced motion respected
-
-  Success Criteria:
-  - Lighthouse accessibility score >90
-  - Keyboard-only navigation works
-  - Screen reader testing passes
-
-  Time: 1hr
-  ```
-
----
-
-## Design Iteration Checkpoints
-
-**After Phase 1 (Quantitative Analytics)**:
-
-- Review: Are analytics queries performant enough?
-- Consider: Should we cache computed metrics?
-- Extract: Common chart patterns into shared components?
-- Refactor: Any coupling between metric calculations?
-
-**After Phase 2 (AI Integration)**:
-
-- Review: Is AI analysis valuable? (Read user feedback)
-- Consider: Prompt improvements based on quality
-- Extract: Reusable AI integration patterns for future features
-- Refactor: Report generation workflow if complex
-
-**After Phase 3 (Polish)**:
-
-- Review: Bundle size acceptable? (<500KB analytics chunk)
-- Consider: Further performance optimizations
-- Extract: Export/share patterns for reuse
-- Plan: Next iteration features (muscle group analysis, workout plans)
-
----
-
-## Automation Opportunities
-
-1. **Cost Monitoring Alerts**: Set up automated alert if daily AI costs exceed $2
-2. **Weekly Analytics Email**: Future feature - email weekly report to users
-3. **Prompt Testing**: Script to test prompts with historical data, measure quality
-4. **Bundle Analysis**: Automate bundle size monitoring in CI
-5. **Screenshot Testing**: Visual regression tests for charts/heatmaps
+**Total Tasks**: 54 atomic, actionable tasks
+**Estimated Effort**: 20-25 hours
+**Success Criteria**: Analytics page is a comprehensive "war room" dashboard with automated AI insights, no manual report generation, full-width responsive layout
