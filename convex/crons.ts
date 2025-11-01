@@ -4,6 +4,7 @@
  * Defines automated background jobs that run on a schedule:
  * - Daily AI reports: Hourly cron with timezone-aware midnight detection
  * - Weekly AI reports: Sunday 9 PM UTC for active users
+ * - Monthly AI reports: 1st of month at midnight UTC for opted-in users
  *
  * @module crons
  */
@@ -301,11 +302,108 @@ export const generateDailyReports = internalAction({
 });
 
 /**
+ * Internal query to get users with monthly reports enabled
+ *
+ * Returns list of user IDs who have opted in to monthly reports.
+ *
+ * @returns Array of user IDs (clerkUserId)
+ */
+export const getActiveUsersWithMonthlyReports = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("monthlyReportsEnabled"), true))
+      .collect();
+
+    return users.map((u) => u.clerkUserId);
+  },
+});
+
+/**
+ * Monthly AI Report Generation Action
+ *
+ * Internal action that generates monthly workout analysis reports for
+ * users with monthlyReportsEnabled = true.
+ *
+ * **Process**:
+ * 1. Query all users with monthlyReportsEnabled = true
+ * 2. Generate monthly report for each user (previous calendar month)
+ * 3. Error logging for individual failures
+ *
+ * **Timing**:
+ * - Runs on 1st day of month at midnight UTC
+ * - Generates reports for previous full month
+ *
+ * **Cost Management**:
+ * - Only generates for opted-in users
+ * - Deduplication prevents duplicate API calls
+ * - ~$0.003 per monthly report (longer than daily/weekly)
+ */
+export const generateMonthlyReports = internalAction({
+  args: {},
+  handler: async (ctx): Promise<any> => {
+    console.log("[Cron] Starting monthly AI report generation...");
+    const startTime = Date.now();
+
+    // Get all users with monthlyReportsEnabled = true
+    const users = await ctx.runQuery(
+      (internal as any).crons.getActiveUsersWithMonthlyReports,
+      {}
+    );
+
+    console.log(
+      `[Cron] Found ${users.length} users eligible for monthly reports`
+    );
+
+    // Generate reports
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: Array<{ userId: string; error: string }> = [];
+
+    for (const userId of users) {
+      try {
+        await ctx.runMutation((internal as any).ai.reports.generateReport, {
+          userId,
+          reportType: "monthly",
+        });
+        successCount++;
+      } catch (error: unknown) {
+        errorCount++;
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        errors.push({ userId, error: errorMessage });
+        console.error(
+          `[Cron] Failed to generate monthly report for ${userId}: ${errorMessage}`
+        );
+      }
+    }
+
+    // Summary
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[Cron] Monthly report generation complete!`);
+    console.log(`[Cron] Duration: ${duration}s`);
+    console.log(`[Cron] Reports generated: ${successCount}`);
+    console.log(`[Cron] Errors: ${errorCount}`);
+
+    return {
+      success: true,
+      processed: users.length,
+      succeeded: successCount,
+      failed: errorCount,
+      durationSeconds: Number(duration),
+      errors: errors.slice(0, 10),
+    };
+  },
+});
+
+/**
  * Cron Schedule Configuration
  *
- * Runs every Sunday at 9 PM UTC to trigger weekly report generation.
- * - Sunday chosen as typical end-of-week reflection time
- * - 9 PM allows international users to see reports Monday morning
+ * Three scheduled report generation jobs:
+ * - Daily: Hourly cron with timezone-aware midnight detection
+ * - Weekly: Sunday 9 PM UTC for active users
+ * - Monthly: 1st of month at midnight UTC for opted-in users
  */
 const crons = cronJobs();
 
@@ -325,6 +423,17 @@ crons.weekly(
     dayOfWeek: "sunday",
   },
   (internal as any).crons.generateWeeklyReports
+);
+
+// Monthly reports: Run on 1st day of month at midnight UTC
+crons.monthly(
+  "generate-monthly-reports",
+  {
+    day: 1,
+    hourUTC: 0,
+    minuteUTC: 0,
+  },
+  (internal as any).crons.generateMonthlyReports
 );
 
 export default crons;
