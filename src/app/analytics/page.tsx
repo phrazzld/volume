@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { PageLayout } from "@/components/layout/page-layout";
 import { ActivityHeatmap } from "@/components/analytics/activity-heatmap";
@@ -10,8 +9,8 @@ import { StreakCard } from "@/components/analytics/streak-card";
 import { AIInsightsCard } from "@/components/analytics/ai-insights-card";
 import { ProgressiveOverloadWidget } from "@/components/analytics/progressive-overload-widget";
 import { RecoveryDashboardWidget } from "@/components/analytics/recovery-dashboard-widget";
+import { FocusSuggestionsWidget } from "@/components/analytics/focus-suggestions-widget";
 import { Dumbbell } from "lucide-react";
-import { toast } from "sonner";
 
 export default function AnalyticsPage() {
   // Fetch analytics data using Convex queries
@@ -23,15 +22,6 @@ export default function AnalyticsPage() {
 
   // Fetch AI report data
   const latestReport = useQuery((api as any).ai.reports.getLatestReport, {});
-
-  // AI report generation mutation
-  const generateReport = useMutation(
-    (api as any).ai.reports.generateOnDemandReport
-  );
-
-  // Local state for generation loading/error
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationError, setGenerationError] = useState<string | null>(null);
 
   // Determine loading state (any query undefined = still loading)
   const isLoading =
@@ -46,28 +36,6 @@ export default function AnalyticsPage() {
 
   // Show empty state for users with <7 days of data
   const isNewUser = !isLoading && workoutDaysCount < 7;
-
-  // Handle AI report generation
-  const handleGenerateReport = async () => {
-    setIsGenerating(true);
-    setGenerationError(null);
-
-    try {
-      await generateReport();
-      toast.success("Analysis complete!", {
-        description: "Your AI coach insights are ready",
-      });
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to generate report";
-      setGenerationError(errorMessage);
-      toast.error("Failed to generate analysis", {
-        description: errorMessage,
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   // Empty state for new users
   if (isNewUser) {
@@ -140,18 +108,16 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 lg:gap-6">
         {/* AI Insights: 12 cols full width */}
         <div className="md:col-span-6 lg:col-span-12">
-          <AIInsightsCard
-            report={latestReport}
-            onGenerateNew={handleGenerateReport}
-            isGenerating={isGenerating}
-            error={generationError}
-          />
+          <AIInsightsCard report={latestReport} />
         </div>
 
-        {/* Placeholder comment for future Focus Suggestions widget: 4 cols */}
+        {/* Focus Suggestions: 4 cols */}
+        <div className="md:col-span-3 lg:col-span-4">
+          <FocusSuggestionsWidget isLoading={isLoading} />
+        </div>
 
         {/* Progressive Overload: 8 cols */}
-        <div className="md:col-span-6 lg:col-span-8">
+        <div className="md:col-span-3 lg:col-span-8">
           <ProgressiveOverloadWidget isLoading={isLoading} />
         </div>
 
