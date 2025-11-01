@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { PageLayout } from "@/components/layout/page-layout";
-import { VolumeChart } from "@/components/analytics/volume-chart";
 import { ActivityHeatmap } from "@/components/analytics/activity-heatmap";
 import { PRCard } from "@/components/analytics/pr-card";
 import { StreakCard } from "@/components/analytics/streak-card";
@@ -14,7 +13,6 @@ import { toast } from "sonner";
 
 export default function AnalyticsPage() {
   // Fetch analytics data using Convex queries
-  const volumeData = useQuery(api.analytics.getVolumeByExercise, {});
   const frequencyData = useQuery(api.analytics.getWorkoutFrequency, {
     days: 365,
   });
@@ -35,7 +33,6 @@ export default function AnalyticsPage() {
 
   // Determine loading state (any query undefined = still loading)
   const isLoading =
-    volumeData === undefined ||
     frequencyData === undefined ||
     streakStats === undefined ||
     recentPRs === undefined;
@@ -161,8 +158,6 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Full-width charts */}
-        <VolumeChart data={volumeData || []} isLoading={isLoading} />
-
         <ActivityHeatmap data={frequencyData || []} isLoading={isLoading} />
       </div>
     </PageLayout>
