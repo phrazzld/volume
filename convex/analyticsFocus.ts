@@ -1,6 +1,6 @@
 import { query } from "./_generated/server";
-import { getMuscleGroups } from "./lib/muscle-group-mapping";
-import type { MuscleGroup } from "./lib/muscle-group-mapping";
+import { getMuscleGroups } from "./lib/muscle_group_mapping";
+import type { MuscleGroup } from "./lib/muscle_group_mapping";
 import type { Id } from "./_generated/dataModel";
 
 /**

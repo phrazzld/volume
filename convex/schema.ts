@@ -45,6 +45,9 @@ export default defineSchema({
 
   aiReports: defineTable({
     userId: v.string(),
+    reportType: v.optional(
+      v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"))
+    ), // Report type (optional for backward compatibility, defaults to "weekly")
     weekStartDate: v.number(), // Unix timestamp for Monday 00:00
     generatedAt: v.number(), // Unix timestamp of generation
     content: v.string(), // Markdown-formatted AI response
@@ -81,5 +84,6 @@ export default defineSchema({
     }),
   })
     .index("by_user", ["userId"])
-    .index("by_user_week", ["userId", "weekStartDate"]),
+    .index("by_user_week", ["userId", "weekStartDate"])
+    .index("by_user_type_date", ["userId", "reportType", "weekStartDate"]),
 });

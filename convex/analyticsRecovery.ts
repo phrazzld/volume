@@ -2,8 +2,8 @@ import { query } from "./_generated/server";
 import {
   getMuscleGroups,
   getAllMuscleGroups,
-} from "./lib/muscle-group-mapping";
-import type { MuscleGroup } from "./lib/muscle-group-mapping";
+} from "./lib/muscle_group_mapping";
+import type { MuscleGroup } from "./lib/muscle_group_mapping";
 
 /**
  * Recovery Analytics

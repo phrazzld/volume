@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getMuscleGroups, getAllMuscleGroups } from "./muscle-group-mapping";
-import type { MuscleGroup } from "./muscle-group-mapping";
+import { getMuscleGroups, getAllMuscleGroups } from "./muscle_group_mapping";
+import type { MuscleGroup } from "./muscle_group_mapping";
 
 describe("getMuscleGroups", () => {
   describe("exact matches", () => {
