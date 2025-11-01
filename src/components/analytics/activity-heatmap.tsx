@@ -110,26 +110,6 @@ export function ActivityHeatmap({
             fontSize={12}
           />
         </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-end gap-2 mt-4 text-xs text-muted-foreground">
-          <span>Less</span>
-          <div className="flex gap-1">
-            {[0, 1, 2, 3, 4].map((level) => (
-              <div
-                key={level}
-                className="w-3 h-3 rounded-sm"
-                style={{
-                  backgroundColor:
-                    level === 0
-                      ? "hsl(var(--muted))"
-                      : `hsl(var(--primary) / ${0.2 * level})`,
-                }}
-              />
-            ))}
-          </div>
-          <span>More</span>
-        </div>
       </CardContent>
     </Card>
   );
