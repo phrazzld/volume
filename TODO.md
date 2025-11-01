@@ -280,6 +280,7 @@
   - Success criteria: Function correctly maps 20+ common exercise variations, returns "Other" for unmapped
 
 - [x] Write tests for muscle group mapping in `convex/lib/muscle-group-mapping.test.ts`
+
   ```
   Work Log:
   - Created 41 comprehensive test cases covering all functionality
@@ -301,7 +302,20 @@
 
 ### 3.2 Recovery Status Backend Query
 
-- [~] Create `convex/analyticsRecovery.ts` with `getRecoveryStatus` query
+- [x] Create `convex/analyticsRecovery.ts` with `getRecoveryStatus` query
+
+  ```
+  Work Log:
+  - Implemented getRecoveryStatus query with muscle group aggregation
+  - Calculates days since last trained per muscle group
+  - Tracks volume and frequency metrics for last 7 days
+  - Assigns recovery status (fresh/recovering/ready/overdue) based on days
+  - Handles compound exercises (maps to multiple muscle groups)
+  - Sorts results by days since descending (most rested first)
+  - Returns all 10 muscle groups (excluding "Other")
+  - Proper handling of never-trained groups (daysSince: 999)
+  ```
+
   - Function signature:
     ```typescript
     export const getRecoveryStatus = query({
@@ -343,21 +357,33 @@
     - overdue (8+ days): Needs attention
   - Success criteria: Query correctly aggregates sets by muscle groups, calculates days since, handles unmapped exercises
 
-- [ ] Write tests for `getRecoveryStatus` in `convex/analytics-recovery.test.ts`
+- [x] Write tests for `getRecoveryStatus` in `convex/analyticsRecovery.test.ts`
+  ```
+  Work Log:
+  - Created 17 comprehensive test cases covering all functionality
+  - Tests validate muscle group mapping, days calculation, volume aggregation
+  - Frequency counting with distinct workout dates
+  - Status assignment for all four categories
+  - Edge cases: never trained, bodyweight exercises, multi-muscle exercises
+  - Data isolation between users
+  - Timezone-tolerant assertions (using ranges instead of exact values)
+  - All 17 tests passing, total suite: 359 tests passing
+  ```
+
   - Test cases:
-    1. Correctly maps exercises to muscle groups
-    2. Calculates days since last trained
-    3. Aggregates volume across multiple exercises for same muscle group
-    4. Counts frequency (distinct workout days) in last 7 days
-    5. Assigns correct status based on days since
-    6. Handles muscle groups never trained (null lastTrainedDate)
-    7. Returns empty array for unauthenticated user
-    8. Handles exercises mapped to multiple muscle groups
-  - Success criteria: All tests pass, edge cases covered
+    1. Correctly maps exercises to muscle groups ✓
+    2. Calculates days since last trained ✓
+    3. Aggregates volume across multiple exercises for same muscle group ✓
+    4. Counts frequency (distinct workout days) in last 7 days ✓
+    5. Assigns correct status based on days since ✓
+    6. Handles muscle groups never trained (null lastTrainedDate) ✓
+    7. Returns empty array for unauthenticated user ✓
+    8. Handles exercises mapped to multiple muscle groups ✓
+  - Success criteria: All tests pass, edge cases covered ✓
 
 ### 3.3 Recovery Dashboard Frontend Widget
 
-- [ ] Create `src/components/analytics/recovery-dashboard-widget.tsx` component
+- [~] Create `src/components/analytics/recovery-dashboard-widget.tsx` component
   - Props interface:
     ```typescript
     interface RecoveryDashboardWidgetProps {
