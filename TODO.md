@@ -118,22 +118,39 @@
     - Plateau: within ±5%
   - Success criteria: Query returns correct progression data for test user with 20+ sets across 3+ exercises
 
-- [~] Write tests for `getProgressiveOverloadData` in `convex/analytics-progressive-overload.test.ts`
+- [x] Write tests for `getProgressiveOverloadData` in `convex/analyticsProgressiveOverload.test.ts`
+  ```
+  Work Log:
+  - Created 16 comprehensive test cases covering all functionality
+  - Tests verify max weight/reps calculations, volume aggregation
+  - Trend detection tested (improving/plateau/declining with proper thresholds)
+  - Edge cases covered: no auth, no sets, <6 workouts, data isolation
+  - Renamed file to camelCase (analyticsProgressiveOverload.ts) for Convex API compatibility
+  - All 16 tests passing, total test suite: 301 tests passing
+  ```
+
   - Test cases:
-    1. Returns top 5 exercises by recent activity
-    2. Correctly calculates max weight per workout
-    3. Correctly calculates max reps per workout
-    4. Limits to last 10 workouts per exercise
-    5. Trend detection: improving (weight increased)
-    6. Trend detection: plateau (no change)
-    7. Trend detection: declining (weight decreased)
-    8. Returns empty array for unauthenticated user
-    9. Returns empty array for user with no sets
-  - Success criteria: All tests pass, edge cases covered
+    1. Returns top 5 exercises by recent activity ✓
+    2. Correctly calculates max weight per workout ✓
+    3. Correctly calculates max reps per workout ✓
+    4. Limits to last 10 workouts per exercise ✓
+    5. Trend detection: improving (weight increased) ✓
+    6. Trend detection: plateau (no change) ✓
+    7. Trend detection: declining (weight decreased) ✓
+    8. Returns empty array for unauthenticated user ✓
+    9. Returns empty array for user with no sets ✓
+    10. Handles bodyweight exercises (null weight) ✓
+    11. Handles multiple sets on same day correctly ✓
+    12. DataPoints sorted chronologically ✓
+    13. Data isolation between users ✓
+    14. Respects custom exerciseCount parameter ✓
+    15. Correctly calculates volume per workout ✓
+    16. Defaults to plateau with <6 workouts ✓
+  - Success criteria: All tests pass, edge cases covered ✓
 
 ### 2.2 Progressive Overload Frontend Widget
 
-- [ ] Create `src/components/analytics/progressive-overload-widget.tsx` component
+- [~] Create `src/components/analytics/progressive-overload-widget.tsx` component
   - Props interface:
     ```typescript
     interface ProgressiveOverloadWidgetProps {
