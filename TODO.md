@@ -424,18 +424,41 @@
   - Loading skeleton: Grid of animated placeholders
   - Success criteria: Color coding correct, responsive grid, clear visual hierarchy
 
-- [~] Add recovery dashboard widget to analytics page grid in `src/app/analytics/page.tsx`
-  - Import widget component
-  - Add to grid with `lg:col-span-6` class (6 columns on desktop)
-  - Position alongside heatmap (both 6 cols)
-  - Pass isLoading prop based on query state
-  - Success criteria: Widget renders in correct grid position, responsive layout works
+- [x] Add recovery dashboard widget to analytics page grid in `src/app/analytics/page.tsx`
+  ```
+  Work Log:
+  - Imported RecoveryDashboardWidget component
+  - Added to grid with md:col-span-3 lg:col-span-6 classes
+  - Positioned alongside Activity Heatmap (both 6 cols on desktop)
+  - Passes isLoading prop from parent analytics queries
+  - Maintains responsive behavior (3 cols tablet, full width mobile)
+  ```
+
+  - Import widget component ✓
+  - Add to grid with `lg:col-span-6` class (6 columns on desktop) ✓
+  - Position alongside heatmap (both 6 cols) ✓
+  - Pass isLoading prop based on query state ✓
+  - Success criteria: Widget renders in correct grid position, responsive layout works ✓
 
 ## Phase 4: Focus Suggestions Widget
 
 ### 4.1 Focus Suggestions Backend Query
 
-- [ ] Create `convex/analytics-focus.ts` with `getFocusSuggestions` query
+- [x] Create `convex/analyticsFocus.ts` with `getFocusSuggestions` query
+
+  ```
+  Work Log:
+  - Implemented getFocusSuggestions query with rule-based logic
+  - Identifies exercises not trained in 7+ days (high priority)
+  - Detects push/pull imbalance (ratio > 2:1)
+  - Detects upper/lower imbalance
+  - Identifies undertrained muscle groups (no volume in 7 days)
+  - Returns max 5 suggestions sorted by priority
+  - Handles compound exercises mapping to multiple muscle groups
+  - Provides suggested exercises for muscle group and balance types
+  - All 14 tests passing, total suite: 373 tests passing
+  ```
+
   - Function signature:
     ```typescript
     export const getFocusSuggestions = query({
@@ -473,71 +496,113 @@
     - Balance: Training imbalance detected (recommend opposing muscle group)
   - Success criteria: Query generates relevant suggestions, prioritizes correctly, handles edge cases
 
-- [ ] Write tests for `getFocusSuggestions` in `convex/analytics-focus.test.ts`
+- [x] Write tests for `getFocusSuggestions` in `convex/analyticsFocus.test.ts`
+  ```
+  Work Log:
+  - Created 14 comprehensive test cases covering all functionality
+  - Tests verify exercise neglect detection (7+ days high priority)
+  - Untrained muscle group suggestions with sample exercises
+  - Push/pull imbalance detection (both directions)
+  - Upper/lower imbalance detection
+  - Max 5 suggestions truncation, priority sorting
+  - Edge cases: new user, unauthenticated, no sets, deleted exercises
+  - Data isolation between users
+  - Balanced training (no false positives)
+  - Timezone-tolerant assertions (regex for days, weights for volume)
+  - All 14 tests passing
+  ```
+
   - Test cases:
-    1. Suggests exercise not trained in 7+ days (high priority)
-    2. Suggests muscle group with longest rest (medium priority)
-    3. Detects push/pull imbalance (too much push, not enough pull)
-    4. Detects upper/lower imbalance (too much upper, not enough legs)
-    5. Returns max 5 suggestions (truncates if more)
-    6. Returns empty array for brand new user
-    7. Returns empty array for unauthenticated user
-    8. Prioritizes high before medium before low
-  - Success criteria: All tests pass, suggestions are actionable
+    1. Suggests exercise not trained in 7+ days (high priority) ✓
+    2. Suggests muscle group with longest rest (medium priority) ✓
+    3. Detects push/pull imbalance (too much push, not enough pull) ✓
+    4. Detects upper/lower imbalance (too much upper, not enough legs) ✓
+    5. Detects pull/push imbalance (too much pull, not enough push) ✓
+    6. Returns max 5 suggestions (truncates if more) ✓
+    7. Returns empty array for brand new user ✓
+    8. Returns empty array for user with exercises but no sets ✓
+    9. Returns empty array for unauthenticated user ✓
+    10. Prioritizes high before medium before low ✓
+    11. Does not suggest exercises trained recently (within 7 days) ✓
+    12. Only returns data for authenticated user (data isolation) ✓
+    13. Ignores deleted exercises from suggestions ✓
+    14. Handles balanced training (no imbalance suggestions) ✓
+  - Success criteria: All tests pass, suggestions are actionable ✓
 
 ### 4.2 Focus Suggestions Frontend Widget
 
-- [ ] Create `src/components/analytics/focus-suggestions-widget.tsx` component
-  - Props interface:
-    ```typescript
-    interface FocusSuggestionsWidgetProps {
-      isLoading?: boolean;
-    }
-    ```
-  - Query focus suggestions data using Convex hook
-  - Component structure:
-    - Card with header "Focus Suggestions" + Target icon
-    - List of suggestions (max 5):
-      - Priority badge (high: red, medium: yellow, low: gray)
-      - Title (bold)
-      - Reason (muted text)
-      - For muscle_group type: show suggested exercises as chips
-      - For exercise type: "Log workout" button → deep link to log page with exerciseId
-    - Empty state: "You're training everything well! 💪"
-    - Loading skeleton: List of animated placeholders
-  - Success criteria: Suggestions render correctly, priority badges color-coded, deep links work
+- [x] Create `src/components/analytics/focus-suggestions-widget.tsx` component
 
-- [ ] Add focus suggestions widget to analytics page grid in `src/app/analytics/page.tsx`
-  - Import widget component
-  - Add to grid with `lg:col-span-4` class (4 columns on desktop)
-  - Position next to progressive overload widget (8 cols)
-  - Pass isLoading prop based on query state
-  - Success criteria: Widget renders in correct grid position, layout responsive
+  ```
+  Work Log:
+  - Implemented widget with color-coded priority badges
+  - Shows up to 5 suggestions with title, reason, suggested exercises
+  - Priority colors: red (high), yellow (medium), gray (low)
+  - Deep linking for exercise type suggestions to log page
+  - Suggested exercises displayed as chips for muscle_group/balance types
+  - Loading skeleton with 5 animated placeholders
+  - Empty state: "You're training everything well! 💪"
+  - Footer hint about automatic updates
+  - TypeScript fully typed with FocusSuggestion interface
+  ```
+
+  - Props interface: ✓
+  - Query focus suggestions data using Convex hook ✓
+  - Component structure:
+    - Card with header "Focus Suggestions" + Target icon ✓
+    - List of suggestions (max 5):
+      - Priority badge (high: red, medium: yellow, low: gray) ✓
+      - Title (bold) ✓
+      - Reason (muted text) ✓
+      - For muscle_group type: show suggested exercises as chips ✓
+      - For exercise type: "Log workout" button → deep link to log page with exerciseId ✓
+    - Empty state: "You're training everything well! 💪" ✓
+    - Loading skeleton: List of animated placeholders ✓
+  - Success criteria: Suggestions render correctly, priority badges color-coded, deep links work ✓
+
+- [x] Add focus suggestions widget to analytics page grid in `src/app/analytics/page.tsx`
+  ```
+  Work Log:
+  - Imported FocusSuggestionsWidget component
+  - Added to grid with md:col-span-3 lg:col-span-4 classes
+  - Positioned before progressive overload widget (4 cols + 8 cols = 12 cols)
+  - Passes isLoading prop from parent analytics queries
+  - Maintains responsive behavior (3 cols tablet, full width mobile)
+  ```
+
+  - Import widget component ✓
+  - Add to grid with `lg:col-span-4` class (4 columns on desktop) ✓
+  - Position next to progressive overload widget (8 cols) ✓
+  - Pass isLoading prop based on query state ✓
+  - Success criteria: Widget renders in correct grid position, layout responsive ✓
 
 ## Phase 5: Enhanced AI Insights Card
 
 ### 5.1 Remove Manual Report Generation
 
-- [ ] Remove manual generation UI from `src/components/analytics/ai-insights-card.tsx`
-  - Delete "Generate Your First Analysis" button (lines 64-67)
-  - Delete "Regenerate" button (lines 137-146)
-  - Delete empty state component (lines 49-72)
-  - Replace empty state with "automated report" placeholder:
-    ```tsx
-    <div className="flex flex-col items-center justify-center py-8 text-center">
-      <Sparkles className="w-12 h-12 text-muted-foreground mb-3" />
-      <p className="text-sm font-medium mb-2">
-        Your first AI report will arrive soon
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Daily reports generate at midnight in your timezone
-      </p>
-      {/* TODO: Add countdown timer showing "Next report in X hours" */}
-    </div>
-    ```
-  - Remove `onGenerateNew` prop from interface (no longer needed)
-  - Remove `isGenerating` and `error` props (no manual generation = no loading/error states)
-  - Success criteria: No manual generation buttons visible, clear messaging about automated reports
+- [x] Remove manual generation UI from `src/components/analytics/ai-insights-card.tsx`
+  ```
+  Work Log:
+  - Removed onGenerateNew, isGenerating, and error props from AIInsightsCardProps
+  - Deleted "Generate Your First Analysis" button from empty state
+  - Deleted "Regenerate" button from card header
+  - Deleted loading state (Loader2 spinner and "Analyzing your training..." text)
+  - Deleted error state (Try Again button)
+  - Replaced empty state with automated report placeholder messaging
+  - Updated analytics page to remove useState, useMutation, toast imports
+  - Removed generateReport mutation and handleGenerateReport function
+  - Removed isGenerating and generationError state
+  - Simplified AIInsightsCard usage to only pass report prop
+  - Net reduction: 128 lines of code removed, 21 lines added
+  ```
+
+  - Delete "Generate Your First Analysis" button (lines 64-67) ✓
+  - Delete "Regenerate" button (lines 137-146) ✓
+  - Delete empty state component (lines 49-72) ✓
+  - Replace empty state with "automated report" placeholder ✓
+  - Remove `onGenerateNew` prop from interface (no longer needed) ✓
+  - Remove `isGenerating` and `error` props (no manual generation = no loading/error states) ✓
+  - Success criteria: No manual generation buttons visible, clear messaging about automated reports ✓
 
 ### 5.2 Add Report Type Indicators
 
