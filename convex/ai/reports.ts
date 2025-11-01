@@ -402,34 +402,53 @@ function calculateLongestStreak(sets: Array<{ performedAt: number }>): number {
  * Get latest AI report for authenticated user
  *
  * Returns the most recently generated report, or null if no reports exist.
- * Automatically filters by authenticated user.
+ * Automatically filters by authenticated user. Optionally filter by report type.
  *
- * @returns Most recent report or null
+ * @param reportType - Optional filter for specific report type (daily/weekly/monthly)
+ * @returns Most recent report (optionally filtered by type) or null
  *
  * @example
  * ```typescript
- * const latestReport = useQuery(api.ai.reports.getLatestReport);
- * if (latestReport) {
- *   console.log(latestReport.content); // Markdown analysis
- *   console.log(latestReport.tokenUsage.costUSD); // Report cost
- * }
+ * // Get latest report of any type
+ * const latestReport = useQuery(api.ai.reports.getLatestReport, {});
+ *
+ * // Get latest weekly report specifically
+ * const weeklyReport = useQuery(api.ai.reports.getLatestReport, {
+ *   reportType: "weekly"
+ * });
+ *
+ * // Get latest daily report
+ * const dailyReport = useQuery(api.ai.reports.getLatestReport, {
+ *   reportType: "daily"
+ * });
  * ```
  */
 export const getLatestReport = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    reportType: v.optional(
+      v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"))
+    ),
+  },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       return null;
     }
 
-    const report = await ctx.db
+    const query = ctx.db
       .query("aiReports")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-      .order("desc")
-      .first();
+      .order("desc");
 
-    return report;
+    const reports = await query.collect();
+
+    // Filter by report type if specified
+    if (args.reportType) {
+      const filtered = reports.filter((r) => r.reportType === args.reportType);
+      return filtered[0] || null;
+    }
+
+    return reports[0] || null;
   },
 });
 
