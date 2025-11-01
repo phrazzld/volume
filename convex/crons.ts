@@ -1,8 +1,9 @@
 /**
  * Scheduled Tasks (Cron Jobs)
  *
- * Defines automated background jobs that run on a schedule.
- * Currently: Weekly AI report generation for active users.
+ * Defines automated background jobs that run on a schedule:
+ * - Daily AI reports: Hourly cron with timezone-aware midnight detection
+ * - Weekly AI reports: Sunday 9 PM UTC for active users
  *
  * @module crons
  */
@@ -164,6 +165,142 @@ export const generateWeeklyReports = internalAction({
 });
 
 /**
+ * Get local hour from UTC hour for a given timezone
+ *
+ * @param utcHour - UTC hour (0-23)
+ * @param timezone - IANA timezone string (e.g., "America/New_York")
+ * @returns Local hour (0-23) in the specified timezone
+ */
+function getLocalHourFromUTC(utcHour: number, timezone: string): number {
+  const now = new Date();
+  now.setUTCHours(utcHour, 0, 0, 0);
+
+  // Use Intl.DateTimeFormat to convert to local timezone
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    hour12: false,
+  });
+
+  const localHour = parseInt(formatter.format(now));
+  return localHour;
+}
+
+/**
+ * Internal query to get eligible users for daily reports
+ *
+ * Returns list of user IDs whose local time is currently midnight (hour 0).
+ * Used by hourly cron job to identify users ready for daily report.
+ *
+ * @param currentHourUTC - Current UTC hour (0-23)
+ * @returns Array of user IDs (clerkUserId) ready for daily report
+ */
+export const getEligibleUsersForDailyReports = internalQuery({
+  args: { currentHourUTC: v.number() },
+  handler: async (ctx, args) => {
+    // Get all users with dailyReportsEnabled = true
+    const users = await ctx.db
+      .query("users")
+      .withIndex("by_daily_enabled", (q) => q.eq("dailyReportsEnabled", true))
+      .collect();
+
+    // Filter users whose local time is midnight (based on timezone)
+    const eligibleUsers = users.filter((user) => {
+      if (!user.timezone) return false;
+
+      // Calculate local hour for user's timezone
+      const localHour = getLocalHourFromUTC(args.currentHourUTC, user.timezone);
+
+      // Check if local time is midnight (hour 0)
+      return localHour === 0;
+    });
+
+    return eligibleUsers.map((u) => u.clerkUserId);
+  },
+});
+
+/**
+ * Daily AI Report Generation Action
+ *
+ * Internal action that generates daily workout analysis reports for
+ * users whose local time is currently midnight (hour 0).
+ *
+ * **Process**:
+ * 1. Get current UTC hour
+ * 2. Query users with dailyReportsEnabled where local time = midnight
+ * 3. Generate daily report for each eligible user
+ * 4. Error logging for individual failures
+ *
+ * **Timezone Awareness**:
+ * - Runs every hour on the hour (UTC)
+ * - Checks each user's timezone to determine if it's midnight locally
+ * - Distributes load across 24 hours (not all users at once)
+ *
+ * **Cost Management**:
+ * - Only generates for opted-in users (dailyReportsEnabled = true)
+ * - Deduplication prevents duplicate API calls
+ * - ~$0.001 per daily report (shorter than weekly)
+ */
+export const generateDailyReports = internalAction({
+  args: {},
+  handler: async (ctx): Promise<any> => {
+    console.log("[Cron] Starting daily AI report generation...");
+    const startTime = Date.now();
+
+    const currentHourUTC = new Date().getUTCHours();
+
+    // Get eligible users for this hour
+    const eligibleUserIds = await ctx.runQuery(
+      (internal as any).crons.getEligibleUsersForDailyReports,
+      { currentHourUTC }
+    );
+
+    console.log(
+      `[Cron] Found ${eligibleUserIds.length} users eligible for daily reports (local midnight at UTC ${currentHourUTC}:00)`
+    );
+
+    // Generate reports
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: Array<{ userId: string; error: string }> = [];
+
+    for (const userId of eligibleUserIds) {
+      try {
+        await ctx.runMutation((internal as any).ai.reports.generateReport, {
+          userId,
+          reportType: "daily",
+        });
+        successCount++;
+      } catch (error: unknown) {
+        errorCount++;
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        errors.push({ userId, error: errorMessage });
+        console.error(
+          `[Cron] Failed to generate daily report for ${userId}: ${errorMessage}`
+        );
+      }
+    }
+
+    // Summary
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[Cron] Daily report generation complete!`);
+    console.log(`[Cron] Duration: ${duration}s`);
+    console.log(`[Cron] Reports generated: ${successCount}`);
+    console.log(`[Cron] Errors: ${errorCount}`);
+
+    return {
+      success: true,
+      processed: eligibleUserIds.length,
+      succeeded: successCount,
+      failed: errorCount,
+      durationSeconds: Number(duration),
+      errors: errors.slice(0, 10),
+    };
+  },
+});
+
+/**
  * Cron Schedule Configuration
  *
  * Runs every Sunday at 9 PM UTC to trigger weekly report generation.
@@ -172,6 +309,14 @@ export const generateWeeklyReports = internalAction({
  */
 const crons = cronJobs();
 
+// Daily reports: Run every hour at minute 0
+crons.hourly(
+  "generate-daily-reports",
+  { minuteUTC: 0 },
+  (internal as any).crons.generateDailyReports
+);
+
+// Weekly reports: Run every Sunday at 9 PM UTC
 crons.weekly(
   "generate-weekly-reports",
   {
