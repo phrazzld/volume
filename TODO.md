@@ -425,6 +425,7 @@
   - Success criteria: Color coding correct, responsive grid, clear visual hierarchy
 
 - [x] Add recovery dashboard widget to analytics page grid in `src/app/analytics/page.tsx`
+
   ```
   Work Log:
   - Imported RecoveryDashboardWidget component
@@ -497,6 +498,7 @@
   - Success criteria: Query generates relevant suggestions, prioritizes correctly, handles edge cases
 
 - [x] Write tests for `getFocusSuggestions` in `convex/analyticsFocus.test.ts`
+
   ```
   Work Log:
   - Created 14 comprehensive test cases covering all functionality
@@ -561,6 +563,7 @@
   - Success criteria: Suggestions render correctly, priority badges color-coded, deep links work ✓
 
 - [x] Add focus suggestions widget to analytics page grid in `src/app/analytics/page.tsx`
+
   ```
   Work Log:
   - Imported FocusSuggestionsWidget component
@@ -581,6 +584,7 @@
 ### 5.1 Remove Manual Report Generation
 
 - [x] Remove manual generation UI from `src/components/analytics/ai-insights-card.tsx`
+
   ```
   Work Log:
   - Removed onGenerateNew, isGenerating, and error props from AIInsightsCardProps
@@ -606,34 +610,42 @@
 
 ### 5.2 Add Report Type Indicators
 
-- [ ] Add report type badge to AI insights card in `src/components/analytics/ai-insights-card.tsx`
-  - Modify AIReport interface to include `reportType: "daily" | "weekly" | "monthly"`
-  - Add badge component next to card title:
-    ```tsx
-    <div className="flex items-center gap-2">
-      <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-      <CardTitle className="text-lg">AI Coach Insights</CardTitle>
-      <span
-        className={`text-xs px-2 py-0.5 rounded-full ${getBadgeColor(report.reportType)}`}
-      >
-        {report.reportType.toUpperCase()}
-      </span>
-    </div>
-    ```
+- [x] Add report type badge to AI insights card in `src/components/analytics/ai-insights-card.tsx`
+  ```
+  Work Log:
+  - Added optional reportType field to AIReport interface (backward compatible)
+  - Implemented getReportTypeBadgeColor() helper function with switch statement
+  - Added conditional badge rendering in card header (only shows if reportType present)
+  - Badge displays report type in uppercase with color coding
+  - Dark mode support with appropriate color adjustments
+  - Colors: Daily (blue), Weekly (purple), Monthly (green)
+  ```
+
+  - Modify AIReport interface to include `reportType: "daily" | "weekly" | "monthly"` ✓
+  - Add badge component next to card title ✓
   - Badge colors:
-    - Daily: bg-blue-500/10 text-blue-700
-    - Weekly: bg-purple-500/10 text-purple-700
-    - Monthly: bg-green-500/10 text-green-700
-  - Success criteria: Badge displays correctly with proper color coding
+    - Daily: bg-blue-500/10 text-blue-700 ✓
+    - Weekly: bg-purple-500/10 text-purple-700 ✓
+    - Monthly: bg-green-500/10 text-green-700 ✓
+  - Success criteria: Badge displays correctly with proper color coding ✓
 
 ### 5.3 Update Analytics Page for New AI Insights UI
 
-- [ ] Remove AI report generation mutation and state from `src/app/analytics/page.tsx`
-  - Delete line 27-30: `generateReport` mutation
-  - Delete line 32-34: `isGenerating` and `generationError` state
-  - Delete line 51-71: `handleGenerateReport` function
-  - Update AIInsightsCard props (remove `onGenerateNew`, `isGenerating`, `error`)
-  - Success criteria: No TypeScript errors, component still renders
+- [x] Remove AI report generation mutation and state from `src/app/analytics/page.tsx`
+  ```
+  Work Log:
+  - Already completed in Phase 5.1 refactoring
+  - Removed generateReport mutation, isGenerating, and generationError state
+  - Removed handleGenerateReport function
+  - Updated AIInsightsCard to only pass report prop
+  - Removed unused imports: useState, useMutation, toast
+  ```
+
+  - Delete line 27-30: `generateReport` mutation ✓
+  - Delete line 32-34: `isGenerating` and `generationError` state ✓
+  - Delete line 51-71: `handleGenerateReport` function ✓
+  - Update AIInsightsCard props (remove `onGenerateNew`, `isGenerating`, `error`) ✓
+  - Success criteria: No TypeScript errors, component still renders ✓
 
 ## Phase 6: Schema Changes for Users & Timezone
 
