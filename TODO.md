@@ -182,6 +182,7 @@
   - Success criteria: Charts render correctly, hover shows tooltips, trends color-coded properly ✓
 
 - [x] Add progressive overload widget to analytics page grid in `src/app/analytics/page.tsx`
+
   ```
   Work Log:
   - Imported ProgressiveOverloadWidget component
@@ -201,7 +202,19 @@
 
 ### 3.1 Muscle Group Mapping Module
 
-- [~] Create `convex/lib/muscle-group-mapping.ts` with predefined exercise-to-muscle-group map
+- [x] Create `convex/lib/muscle-group-mapping.ts` with predefined exercise-to-muscle-group map
+
+  ```
+  Work Log:
+  - Created MuscleGroup type with 11 categories (Chest, Back, Shoulders, etc.)
+  - Implemented EXERCISE_MUSCLE_MAP with 50+ exercise patterns
+  - Developed intelligent matching algorithm (exact → partial → "Other")
+  - Added keyword sorting by length to prefer longer matches
+  - Included getAllMuscleGroups() utility function
+  - Covers push/pull/legs/core/isolation movements
+  - Handles real-world variations (equipment prefixes, hyphens, descriptive names)
+  ```
+
   - Define MuscleGroup enum:
     ```typescript
     export type MuscleGroup =
@@ -266,19 +279,29 @@
     - Return muscle groups or ["Other"] if no match
   - Success criteria: Function correctly maps 20+ common exercise variations, returns "Other" for unmapped
 
-- [ ] Write tests for muscle group mapping in `convex/lib/muscle-group-mapping.test.ts`
+- [x] Write tests for muscle group mapping in `convex/lib/muscle-group-mapping.test.ts`
+  ```
+  Work Log:
+  - Created 41 comprehensive test cases covering all functionality
+  - Tests organized by: exact match, case insensitive, partial match, compound movements, isolation, edge cases
+  - Validates real-world exercise names with equipment prefixes
+  - Tests getAllMuscleGroups() utility function
+  - Edge cases: whitespace, hyphens, empty strings, nonsense input
+  - All 41 tests passing, total suite: 342 tests passing
+  ```
+
   - Test cases:
-    1. Exact match: "BENCH PRESS" → ["Chest", "Triceps"]
-    2. Partial match: "BARBELL BENCH PRESS" → ["Chest", "Triceps"]
-    3. Case insensitive: "bench press" → ["Chest", "Triceps"]
-    4. Multiple matches: "DEADLIFT" → ["Back", "Hamstrings", "Glutes"]
-    5. No match: "UNKNOWN EXERCISE" → ["Other"]
-    6. Ambiguous: "ROW" → ["Back", "Biceps"] (matches BARBELL ROW, DUMBBELL ROW, etc.)
-  - Success criteria: All tests pass, edge cases handled
+    1. Exact match: "BENCH PRESS" → ["Chest", "Triceps"] ✓
+    2. Partial match: "BARBELL BENCH PRESS" → ["Chest", "Triceps"] ✓
+    3. Case insensitive: "bench press" → ["Chest", "Triceps"] ✓
+    4. Multiple matches: "DEADLIFT" → ["Back", "Hamstrings", "Glutes"] ✓
+    5. No match: "UNKNOWN EXERCISE" → ["Other"] ✓
+    6. Ambiguous: "ROW" → ["Back", "Biceps"] (matches BARBELL ROW, DUMBBELL ROW, etc.) ✓
+  - Success criteria: All tests pass, edge cases handled ✓
 
 ### 3.2 Recovery Status Backend Query
 
-- [ ] Create `convex/analytics-recovery.ts` with `getRecoveryStatus` query
+- [~] Create `convex/analyticsRecovery.ts` with `getRecoveryStatus` query
   - Function signature:
     ```typescript
     export const getRecoveryStatus = query({
