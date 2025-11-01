@@ -13,6 +13,7 @@ export interface AIReport {
   content: string;
   generatedAt: number;
   model: string;
+  reportType?: "daily" | "weekly" | "monthly"; // Optional for backward compatibility
   tokenUsage: {
     input: number;
     output: number;
@@ -22,6 +23,22 @@ export interface AIReport {
 
 interface AIInsightsCardProps {
   report: AIReport | null;
+}
+
+/**
+ * Get color classes for report type badge
+ */
+function getReportTypeBadgeColor(
+  reportType: "daily" | "weekly" | "monthly"
+): string {
+  switch (reportType) {
+    case "daily":
+      return "bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300";
+    case "weekly":
+      return "bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300";
+    case "monthly":
+      return "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300";
+  }
 }
 
 /**
@@ -71,6 +88,13 @@ export function AIInsightsCard({ report }: AIInsightsCardProps) {
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           <CardTitle className="text-lg">AI Coach Insights</CardTitle>
+          {report.reportType && (
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-medium ${getReportTypeBadgeColor(report.reportType)}`}
+            >
+              {report.reportType.toUpperCase()}
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           Generated {timeAgo} • {report.model}
