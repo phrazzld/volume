@@ -131,7 +131,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <PageLayout title="Your Analytics">
+    <PageLayout title="Your Analytics" maxWidth={false}>
       <div className="space-y-6">
         {/* Page description */}
         <p className="text-sm text-muted-foreground">
