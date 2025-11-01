@@ -8,6 +8,7 @@ import { ActivityHeatmap } from "@/components/analytics/activity-heatmap";
 import { PRCard } from "@/components/analytics/pr-card";
 import { StreakCard } from "@/components/analytics/streak-card";
 import { AIInsightsCard } from "@/components/analytics/ai-insights-card";
+import { ProgressiveOverloadWidget } from "@/components/analytics/progressive-overload-widget";
 import { Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
@@ -146,9 +147,12 @@ export default function AnalyticsPage() {
           />
         </div>
 
-        {/* Placeholder comments for future widgets */}
-        {/* Focus Suggestions: 4 cols */}
+        {/* Placeholder comment for future Focus Suggestions widget: 4 cols */}
+
         {/* Progressive Overload: 8 cols */}
+        <div className="md:col-span-6 lg:col-span-8">
+          <ProgressiveOverloadWidget isLoading={isLoading} />
+        </div>
 
         {/* Activity Heatmap: 6 cols */}
         <div className="md:col-span-3 lg:col-span-6">
