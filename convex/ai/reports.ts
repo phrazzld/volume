@@ -458,7 +458,7 @@ function getStartOfDayUTC(): number {
  */
 export const generateOnDemandReport = mutation({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<any> => {
     // Verify authentication
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -491,15 +491,14 @@ export const generateOnDemandReport = mutation({
 
     // Generate report via internal mutation
     try {
-      const reportId = await ctx.scheduler.runAfter(
-        0,
+      const reportId = await ctx.runMutation(
         (internal as any).ai.reports.generateReport,
         {
           userId,
         }
       );
 
-      console.log(`[On-Demand] Report generation scheduled: ${reportId}`);
+      console.log(`[On-Demand] Report generated: ${reportId}`);
 
       return reportId;
     } catch (error) {

@@ -42,7 +42,7 @@ export default function AnalyticsPage() {
 
   // Count days with workout activity for new user detection
   const workoutDaysCount = frequencyData
-    ? frequencyData.filter((day) => day.setCount > 0).length
+    ? frequencyData.filter((day: any) => day.setCount > 0).length
     : 0;
 
   // Show empty state for users with <7 days of data

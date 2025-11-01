@@ -137,7 +137,7 @@ describe("Exercises - Soft Delete Tests", () => {
         .query(api.sets.listSets, {});
 
       expect(sets.length).toBe(2);
-      expect(sets.every((s) => s.exerciseId === exerciseId)).toBe(true);
+      expect(sets.every((s: any) => s.exerciseId === exerciseId)).toBe(true);
     });
 
     test("createExercise defensive check: prevents restoring when active duplicate exists", async () => {
@@ -229,10 +229,12 @@ describe("Exercises - Soft Delete Tests", () => {
         .query(api.exercises.listExercises, { includeDeleted: true });
 
       expect(allExercises.length).toBe(2);
-      expect(allExercises.some((e) => e._id === exercise1)).toBe(true);
-      expect(allExercises.some((e) => e._id === exercise2)).toBe(true);
+      expect(allExercises.some((e: any) => e._id === exercise1)).toBe(true);
+      expect(allExercises.some((e: any) => e._id === exercise2)).toBe(true);
 
-      const deletedExercise = allExercises.find((e) => e._id === exercise2);
+      const deletedExercise = allExercises.find(
+        (e: any) => e._id === exercise2
+      );
       expect(deletedExercise?.deletedAt).toBeDefined();
     });
 

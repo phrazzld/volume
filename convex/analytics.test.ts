@@ -242,7 +242,7 @@ describe("Analytics Queries", () => {
       expect(frequency.length).toBeGreaterThanOrEqual(7);
 
       // Find the days with workouts
-      const workoutDays = frequency.filter((day) => day.setCount > 0);
+      const workoutDays = frequency.filter((day: any) => day.setCount > 0);
       expect(workoutDays.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -264,7 +264,7 @@ describe("Analytics Queries", () => {
       expect(frequency.length).toBeGreaterThanOrEqual(7);
 
       // Most days should have zero sets
-      const zeroDays = frequency.filter((day) => day.setCount === 0);
+      const zeroDays = frequency.filter((day: any) => day.setCount === 0);
       expect(zeroDays.length).toBeGreaterThan(0);
     });
 
@@ -287,12 +287,12 @@ describe("Analytics Queries", () => {
       expect(frequency.length).toBeGreaterThan(0);
 
       // Find workout days (should have at least one)
-      const workoutDays = frequency.filter((day) => day.setCount > 0);
+      const workoutDays = frequency.filter((day: any) => day.setCount > 0);
       expect(workoutDays.length).toBeGreaterThan(0);
 
       // Verify volume calculated correctly for at least one day
       const hasCorrectVolume = workoutDays.some(
-        (day) => day.setCount >= 1 && day.totalVolume > 0
+        (day: any) => day.setCount >= 1 && day.totalVolume > 0
       );
       expect(hasCorrectVolume).toBe(true);
     });
@@ -419,7 +419,7 @@ describe("Analytics Queries", () => {
 
       expect(prs.length).toBeGreaterThan(0);
 
-      const weightPR = prs.find((pr) => pr.prType === "weight");
+      const weightPR = prs.find((pr: any) => pr.prType === "weight");
       expect(weightPR).toBeDefined();
       expect(weightPR!.currentValue).toBe(145);
       expect(weightPR!.previousValue).toBeLessThan(145);
@@ -443,7 +443,7 @@ describe("Analytics Queries", () => {
 
       expect(prs.length).toBeGreaterThan(0);
 
-      const repsPR = prs.find((pr) => pr.prType === "reps");
+      const repsPR = prs.find((pr: any) => pr.prType === "reps");
       expect(repsPR).toBeDefined();
       expect(repsPR!.currentValue).toBe(12);
       expect(repsPR!.previousValue).toBe(8);
@@ -469,7 +469,7 @@ describe("Analytics Queries", () => {
 
       // Should detect volume PR (or reps PR - both are valid)
       const volumePR = prs.find(
-        (pr) => pr.prType === "volume" || pr.prType === "reps"
+        (pr: any) => pr.prType === "volume" || pr.prType === "reps"
       );
       expect(volumePR).toBeDefined();
     });

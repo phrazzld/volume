@@ -63,7 +63,7 @@ export const getActiveUserIds = internalQuery({
  */
 export const generateWeeklyReports = internalAction({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<any> => {
     console.log("[Cron] Starting weekly AI report generation...");
     const startTime = Date.now();
 
