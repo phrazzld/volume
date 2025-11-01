@@ -358,6 +358,7 @@
   - Success criteria: Query correctly aggregates sets by muscle groups, calculates days since, handles unmapped exercises
 
 - [x] Write tests for `getRecoveryStatus` in `convex/analyticsRecovery.test.ts`
+
   ```
   Work Log:
   - Created 17 comprehensive test cases covering all functionality
@@ -383,7 +384,21 @@
 
 ### 3.3 Recovery Dashboard Frontend Widget
 
-- [~] Create `src/components/analytics/recovery-dashboard-widget.tsx` component
+- [x] Create `src/components/analytics/recovery-dashboard-widget.tsx` component
+
+  ```
+  Work Log:
+  - Implemented color-coded muscle group cards with recovery status
+  - Responsive grid (3 cols desktop, 2 tablet, 1 mobile)
+  - Color scheme: green (fresh), yellow (recovering), orange (ready), red (overdue), gray (never trained)
+  - Each card shows: name, status badge, days since, last date, volume/frequency badges
+  - Loading skeleton with 6 animated placeholders
+  - Empty state with Heart icon and helpful text
+  - Footer legend explaining color coding
+  - Handles never-trained muscles gracefully (shows "—" instead of days)
+  - TypeScript fully typed with RecoveryData interface
+  ```
+
   - Props interface:
     ```typescript
     interface RecoveryDashboardWidgetProps {
@@ -409,7 +424,7 @@
   - Loading skeleton: Grid of animated placeholders
   - Success criteria: Color coding correct, responsive grid, clear visual hierarchy
 
-- [ ] Add recovery dashboard widget to analytics page grid in `src/app/analytics/page.tsx`
+- [~] Add recovery dashboard widget to analytics page grid in `src/app/analytics/page.tsx`
   - Import widget component
   - Add to grid with `lg:col-span-6` class (6 columns on desktop)
   - Position alongside heatmap (both 6 cols)

@@ -9,6 +9,7 @@ import { PRCard } from "@/components/analytics/pr-card";
 import { StreakCard } from "@/components/analytics/streak-card";
 import { AIInsightsCard } from "@/components/analytics/ai-insights-card";
 import { ProgressiveOverloadWidget } from "@/components/analytics/progressive-overload-widget";
+import { RecoveryDashboardWidget } from "@/components/analytics/recovery-dashboard-widget";
 import { Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 
@@ -159,7 +160,10 @@ export default function AnalyticsPage() {
           <ActivityHeatmap data={frequencyData || []} isLoading={isLoading} />
         </div>
 
-        {/* Placeholder for Recovery Dashboard: 6 cols */}
+        {/* Recovery Dashboard: 6 cols */}
+        <div className="md:col-span-3 lg:col-span-6">
+          <RecoveryDashboardWidget isLoading={isLoading} />
+        </div>
 
         {/* Streak Card: 4 cols */}
         <div className="md:col-span-2 lg:col-span-4">
