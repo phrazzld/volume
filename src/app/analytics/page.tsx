@@ -129,26 +129,36 @@ export default function AnalyticsPage() {
 
   return (
     <PageLayout title="Your Analytics" maxWidth={false}>
-      <div className="space-y-6">
-        {/* Page description */}
-        <p className="text-sm text-muted-foreground">
-          Track your progress and celebrate wins
-        </p>
+      {/* Page description */}
+      <p className="text-sm text-muted-foreground mb-6">
+        Track your progress and celebrate wins
+      </p>
 
-        {/* AI Coach Insights - Featured at top */}
-        <AIInsightsCard
-          report={latestReport}
-          onGenerateNew={handleGenerateReport}
-          isGenerating={isGenerating}
-          error={generationError}
-        />
+      {/* Dashboard Grid - 12-column responsive layout */}
+      <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-4 lg:gap-6">
+        {/* AI Insights: 12 cols full width */}
+        <div className="md:col-span-6 lg:col-span-12">
+          <AIInsightsCard
+            report={latestReport}
+            onGenerateNew={handleGenerateReport}
+            isGenerating={isGenerating}
+            error={generationError}
+          />
+        </div>
 
-        {/* Analytics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* PRCard - Top priority (most motivating) */}
-          <PRCard prs={recentPRs || []} isLoading={isLoading} />
+        {/* Placeholder comments for future widgets */}
+        {/* Focus Suggestions: 4 cols */}
+        {/* Progressive Overload: 8 cols */}
 
-          {/* StreakCard - Gamification element */}
+        {/* Activity Heatmap: 6 cols */}
+        <div className="md:col-span-3 lg:col-span-6">
+          <ActivityHeatmap data={frequencyData || []} isLoading={isLoading} />
+        </div>
+
+        {/* Placeholder for Recovery Dashboard: 6 cols */}
+
+        {/* Streak Card: 4 cols */}
+        <div className="md:col-span-2 lg:col-span-4">
           <StreakCard
             currentStreak={streakStats?.currentStreak || 0}
             longestStreak={streakStats?.longestStreak || 0}
@@ -157,8 +167,10 @@ export default function AnalyticsPage() {
           />
         </div>
 
-        {/* Full-width charts */}
-        <ActivityHeatmap data={frequencyData || []} isLoading={isLoading} />
+        {/* PR Card: 8 cols */}
+        <div className="md:col-span-4 lg:col-span-8">
+          <PRCard prs={recentPRs || []} isLoading={isLoading} />
+        </div>
       </div>
     </PageLayout>
   );
