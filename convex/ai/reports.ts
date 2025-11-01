@@ -32,65 +32,136 @@ function getWeekStartDate(date: Date = new Date()): number {
 }
 
 /**
+ * Calculate date range based on report type
+ *
+ * @param reportType - Type of report (daily/weekly/monthly)
+ * @param customStart - Optional custom start timestamp (for weekly reports)
+ * @returns Object with startDate and endDate timestamps
+ */
+function calculateDateRange(
+  reportType: "daily" | "weekly" | "monthly",
+  customStart?: number
+): { startDate: number; endDate: number } {
+  const now = new Date();
+  let startDate: number;
+  const endDate = now.getTime();
+
+  switch (reportType) {
+    case "daily":
+      // Last 24 hours
+      startDate = endDate - 24 * 60 * 60 * 1000;
+      break;
+    case "weekly":
+      // Last 7 days (or custom start for Monday-based weeks)
+      if (customStart) {
+        startDate = customStart;
+      } else {
+        startDate = endDate - 7 * 24 * 60 * 60 * 1000;
+      }
+      break;
+    case "monthly":
+      // Last calendar month (1st to last day of previous month)
+      const lastMonth = new Date(now);
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      lastMonth.setDate(1);
+      lastMonth.setHours(0, 0, 0, 0);
+      startDate = lastMonth.getTime();
+
+      // End date is last day of that month
+      const lastDayOfMonth = new Date(
+        lastMonth.getFullYear(),
+        lastMonth.getMonth() + 1,
+        0
+      );
+      lastDayOfMonth.setHours(23, 59, 59, 999);
+      return { startDate, endDate: lastDayOfMonth.getTime() };
+  }
+
+  return { startDate, endDate };
+}
+
+/**
  * Generate AI workout analysis report
  *
  * Internal mutation (not exposed to client) that orchestrates the full report
  * generation workflow. Fetches analytics data, calls OpenAI, stores result.
  *
- * **Deduplication**: If a report already exists for the given week, returns
- * existing reportId instead of generating a new one.
+ * **Deduplication**: If a report already exists for the given period and type,
+ * returns existing reportId instead of generating a new one.
+ *
+ * **Report Types**:
+ * - daily: Last 24 hours
+ * - weekly: Last 7 days (or custom weekStartDate for Monday-based weeks)
+ * - monthly: Previous calendar month
  *
  * **Week Calculation**: weekStartDate is Monday 00:00 UTC. If not provided,
  * defaults to current week.
  *
  * @param userId - User to generate report for
+ * @param reportType - Type of report (defaults to "weekly")
  * @param weekStartDate - Optional Unix timestamp for week start (Monday 00:00 UTC)
  * @returns Report ID of newly generated or existing report
  *
  * @example
  * ```typescript
- * // Generate report for current week
+ * // Generate weekly report for current week
  * const reportId = await ctx.runMutation(internal.ai.reports.generateReport, {
  *   userId: "user_123"
  * });
  *
- * // Generate report for specific week
+ * // Generate daily report
  * const reportId = await ctx.runMutation(internal.ai.reports.generateReport, {
  *   userId: "user_123",
- *   weekStartDate: 1704067200000 // Jan 1, 2024 (Monday)
+ *   reportType: "daily"
+ * });
+ *
+ * // Generate monthly report
+ * const reportId = await ctx.runMutation(internal.ai.reports.generateReport, {
+ *   userId: "user_123",
+ *   reportType: "monthly"
  * });
  * ```
  */
 export const generateReport = internalMutation({
   args: {
     userId: v.string(),
+    reportType: v.optional(
+      v.union(v.literal("daily"), v.literal("weekly"), v.literal("monthly"))
+    ),
     weekStartDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { userId } = args;
+    const reportType = args.reportType || "weekly";
     const weekStartDate = args.weekStartDate ?? getWeekStartDate();
 
     console.log(
-      `[AI Reports] Generating report for user ${userId}, week ${new Date(weekStartDate).toISOString()}`
+      `[AI Reports] Generating ${reportType} report for user ${userId}, week ${new Date(weekStartDate).toISOString()}`
     );
 
     // Check for existing report (deduplication)
     const existingReport = await ctx.db
       .query("aiReports")
-      .withIndex("by_user_week", (q) =>
-        q.eq("userId", userId).eq("weekStartDate", weekStartDate)
+      .withIndex("by_user_type_date", (q) =>
+        q
+          .eq("userId", userId)
+          .eq("reportType", reportType)
+          .eq("weekStartDate", weekStartDate)
       )
       .first();
 
     if (existingReport) {
       console.log(
-        `[AI Reports] Report already exists for this week: ${existingReport._id}`
+        `[AI Reports] ${reportType} report already exists for this period: ${existingReport._id}`
       );
       return existingReport._id;
     }
 
-    // Calculate date range for metrics (7 days ending on Sunday of week)
-    const weekEndDate = weekStartDate + 7 * 24 * 60 * 60 * 1000;
+    // Calculate date range based on report type
+    const { startDate, endDate } = calculateDateRange(
+      reportType,
+      weekStartDate
+    );
 
     // Fetch analytics metrics for the week
     // Note: These queries don't take userId as they use auth context
@@ -102,17 +173,17 @@ export const generateReport = internalMutation({
         .withIndex("by_user_performed", (q) => q.eq("userId", userId))
         .filter((q) =>
           q.and(
-            q.gte(q.field("performedAt"), weekStartDate),
-            q.lt(q.field("performedAt"), weekEndDate)
+            q.gte(q.field("performedAt"), startDate),
+            q.lt(q.field("performedAt"), endDate)
           )
         )
         .collect(),
 
-      // Recent PRs (last 7 days)
+      // Recent PRs (for the report period)
       ctx.db
         .query("sets")
         .withIndex("by_user_performed", (q) => q.eq("userId", userId))
-        .filter((q) => q.gte(q.field("performedAt"), weekStartDate))
+        .filter((q) => q.gte(q.field("performedAt"), startDate))
         .collect(),
 
       // All sets for streak calculation
@@ -219,6 +290,7 @@ export const generateReport = internalMutation({
     // Store report in database
     const reportId = await ctx.db.insert("aiReports", {
       userId,
+      reportType,
       weekStartDate,
       generatedAt: Date.now(),
       content: analysis.content,
