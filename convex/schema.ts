@@ -30,6 +30,19 @@ export default defineSchema({
     .index("by_exercise", ["exerciseId", "performedAt"])
     .index("by_user_performed", ["userId", "performedAt"]),
 
+  users: defineTable({
+    clerkUserId: v.string(),
+    timezone: v.optional(v.string()), // IANA timezone (e.g., "America/New_York")
+    dailyReportsEnabled: v.optional(v.boolean()), // Default: false (opt-in)
+    weeklyReportsEnabled: v.optional(v.boolean()), // Default: true
+    monthlyReportsEnabled: v.optional(v.boolean()), // Default: false
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_clerk_id", ["clerkUserId"])
+    .index("by_daily_enabled", ["dailyReportsEnabled"])
+    .index("by_timezone", ["timezone"]),
+
   aiReports: defineTable({
     userId: v.string(),
     weekStartDate: v.number(), // Unix timestamp for Monday 00:00
