@@ -111,27 +111,23 @@ export default function AnalyticsPage() {
           <AIInsightsCard report={latestReport} />
         </div>
 
-        {/* Focus Suggestions: 4 cols */}
+        {/* Focus Suggestions: 4 cols, Progressive Overload: 8 cols */}
         <div className="md:col-span-3 lg:col-span-4">
           <FocusSuggestionsWidget isLoading={isLoading} />
         </div>
-
-        {/* Progressive Overload: 8 cols */}
         <div className="md:col-span-3 lg:col-span-8">
           <ProgressiveOverloadWidget isLoading={isLoading} />
         </div>
 
-        {/* Activity Heatmap: 6 cols */}
+        {/* Recovery Dashboard: 6 cols, Activity Heatmap: 6 cols */}
+        <div className="md:col-span-3 lg:col-span-6">
+          <RecoveryDashboardWidget isLoading={isLoading} />
+        </div>
         <div className="md:col-span-3 lg:col-span-6">
           <ActivityHeatmap data={frequencyData || []} isLoading={isLoading} />
         </div>
 
-        {/* Recovery Dashboard: 6 cols */}
-        <div className="md:col-span-3 lg:col-span-6">
-          <RecoveryDashboardWidget isLoading={isLoading} />
-        </div>
-
-        {/* Streak Card: 4 cols */}
+        {/* Streak Card: 4 cols, PR Card: 8 cols */}
         <div className="md:col-span-2 lg:col-span-4">
           <StreakCard
             currentStreak={streakStats?.currentStreak || 0}
@@ -140,8 +136,6 @@ export default function AnalyticsPage() {
             isLoading={isLoading}
           />
         </div>
-
-        {/* PR Card: 8 cols */}
         <div className="md:col-span-4 lg:col-span-8">
           <PRCard prs={recentPRs || []} isLoading={isLoading} />
         </div>
