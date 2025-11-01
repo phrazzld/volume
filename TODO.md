@@ -611,6 +611,7 @@
 ### 5.2 Add Report Type Indicators
 
 - [x] Add report type badge to AI insights card in `src/components/analytics/ai-insights-card.tsx`
+
   ```
   Work Log:
   - Added optional reportType field to AIReport interface (backward compatible)
@@ -632,6 +633,7 @@
 ### 5.3 Update Analytics Page for New AI Insights UI
 
 - [x] Remove AI report generation mutation and state from `src/app/analytics/page.tsx`
+
   ```
   Work Log:
   - Already completed in Phase 5.1 refactoring
@@ -651,27 +653,33 @@
 
 ### 6.1 Add Users Table to Schema
 
-- [ ] Add `users` table definition to `convex/schema.ts`
-  - Insert after `sets` table definition:
-    ```typescript
-    users: defineTable({
-      clerkUserId: v.string(),
-      timezone: v.optional(v.string()), // IANA timezone (e.g., "America/New_York")
-      dailyReportsEnabled: v.optional(v.boolean()), // Default: false (opt-in)
-      weeklyReportsEnabled: v.optional(v.boolean()), // Default: true
-      monthlyReportsEnabled: v.optional(v.boolean()), // Default: false
-      createdAt: v.number(),
-      updatedAt: v.number(),
-    })
-      .index("by_clerk_id", ["clerkUserId"])
-      .index("by_daily_enabled", ["dailyReportsEnabled"])
-      .index("by_timezone", ["timezone"]),
-    ```
-  - Success criteria: Schema compiles without errors, indexes defined correctly
+- [x] Add `users` table definition to `convex/schema.ts`
+  ```
+  Work Log:
+  - Added users table after sets table in schema
+  - Defined all fields: clerkUserId, timezone, report preferences, timestamps
+  - Created three indexes: by_clerk_id (user lookup), by_daily_enabled (cron queries), by_timezone (timezone-based queries)
+  - Schema compiles successfully with TypeScript strict mode
+  - All optional fields marked appropriately for backward compatibility
+  ```
+
+  - Insert after `sets` table definition ✓
+  - Success criteria: Schema compiles without errors, indexes defined correctly ✓
 
 ### 6.2 User Management Mutations
 
-- [ ] Create `convex/users.ts` with user management functions
+- [x] Create `convex/users.ts` with user management functions
+
+  ```
+  Work Log:
+  - Implemented getOrCreateUser mutation with idempotency (returns existing user)
+  - Implemented updateUserTimezone mutation with auto-creation fallback
+  - Default preferences: weeklyReportsEnabled=true, dailyReports=false, monthlyReports=false
+  - Both mutations validate authentication (throw "Unauthorized" if not authenticated)
+  - Updates updatedAt timestamp on timezone changes
+  - Clean separation: mutation for creation, mutation for updates
+  ```
+
   - Implement `getOrCreateUser` mutation:
 
     ```typescript
@@ -740,16 +748,27 @@
     });
     ```
 
-  - Success criteria: Mutations create and update users correctly, handle edge cases
+  - Success criteria: Mutations create and update users correctly, handle edge cases ✓
 
-- [ ] Write tests for user management in `convex/users.test.ts`
+- [x] Write tests for user management in `convex/users.test.ts`
+  ```
+  Work Log:
+  - Created 8 comprehensive test cases (3 extra beyond spec)
+  - Tests cover: creation, idempotency, timezone updates, auto-creation, auth validation
+  - Added data isolation test to verify users don't interfere with each other
+  - All tests using convex-test with proper cleanup (beforeEach)
+  - All 8 tests passing, total suite: 381 tests passing
+  ```
+
   - Test cases:
-    1. `getOrCreateUser`: Creates new user with default settings
-    2. `getOrCreateUser`: Returns existing user if already exists
-    3. `updateUserTimezone`: Updates timezone for existing user
-    4. `updateUserTimezone`: Creates user if doesn't exist
-    5. Both functions throw error for unauthenticated requests
-  - Success criteria: All tests pass
+    1. `getOrCreateUser`: Creates new user with default settings ✓
+    2. `getOrCreateUser`: Creates new user with timezone ✓
+    3. `getOrCreateUser`: Returns existing user if already exists ✓
+    4. `updateUserTimezone`: Updates timezone for existing user ✓
+    5. `updateUserTimezone`: Creates user if doesn't exist ✓
+    6. Both functions throw error for unauthenticated requests ✓
+    7. Data isolation between users ✓
+  - Success criteria: All tests pass ✓
 
 ## Phase 7: Client-Side Timezone Detection
 
