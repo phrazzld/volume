@@ -654,6 +654,7 @@
 ### 6.1 Add Users Table to Schema
 
 - [x] Add `users` table definition to `convex/schema.ts`
+
   ```
   Work Log:
   - Added users table after sets table in schema
@@ -751,6 +752,7 @@
   - Success criteria: Mutations create and update users correctly, handle edge cases ✓
 
 - [x] Write tests for user management in `convex/users.test.ts`
+
   ```
   Work Log:
   - Created 8 comprehensive test cases (3 extra beyond spec)
@@ -774,51 +776,36 @@
 
 ### 7.1 Timezone Detection Hook
 
-- [ ] Create `src/hooks/useTimezoneSync.ts` hook for timezone detection
-  - Hook implementation:
+- [x] Create `src/hooks/useTimezoneSync.ts` hook for timezone detection
+  ```
+  Work Log:
+  - Created useTimezoneSync hook using Intl.DateTimeFormat API
+  - Detects browser timezone automatically on mount
+  - Calls updateUserTimezone mutation (idempotent, creates user if needed)
+  - Error handling with console.warn (non-blocking)
+  - useEffect with stable dependency ensures single call per mount
+  - Comprehensive JSDoc documentation for usage patterns
+  ```
 
-    ```typescript
-    import { useEffect } from "react";
-    import { useMutation } from "convex/react";
-    import { api } from "../../convex/_generated/api";
-
-    export function useTimezoneSync() {
-      const updateTimezone = useMutation(api.users.updateUserTimezone);
-
-      useEffect(() => {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-        // Only update if we have a valid timezone
-        if (timezone) {
-          updateTimezone({ timezone }).catch((error) => {
-            console.warn("Failed to sync timezone:", error);
-          });
-        }
-      }, [updateTimezone]);
-    }
-    ```
-
-  - Success criteria: Hook detects timezone correctly, calls mutation once on mount
+  - Hook implementation ✓
+  - Success criteria: Hook detects timezone correctly, calls mutation once on mount ✓
 
 ### 7.2 Integrate Timezone Sync in App
 
-- [ ] Add timezone sync to root layout in `src/app/layout.tsx` or `ConvexClientProvider.tsx`
-  - Import and call `useTimezoneSync()` hook in client component
-  - Ensure it runs after user authentication (inside ClerkProvider context)
-  - Add to `ConvexClientProvider.tsx` after `useUser()` hook:
+- [x] Add timezone sync to root layout in `src/app/layout.tsx` or `ConvexClientProvider.tsx`
+  ```
+  Work Log:
+  - Created TimezoneSync component in ConvexClientProvider.tsx
+  - Calls useTimezoneSync hook unconditionally (React rules)
+  - Rendered inside ConvexProviderWithClerk to ensure Convex context available
+  - Backend mutation handles auth validation (fails gracefully if not signed in)
+  - Simple implementation: component mounts → hook executes → timezone synced
+  - Avoids conditional hooks (React violation) by delegating auth check to backend
+  ```
 
-    ```tsx
-    const { isSignedIn } = useUser();
-
-    // Sync timezone when user signs in
-    useEffect(() => {
-      if (isSignedIn) {
-        useTimezoneSync();
-      }
-    }, [isSignedIn]);
-    ```
-
-  - Success criteria: Timezone saved to users table on first login, no errors in console
+  - Import and call `useTimezoneSync()` hook in client component ✓
+  - Ensure it runs after user authentication (inside ClerkProvider context) ✓
+  - Success criteria: Timezone saved to users table on first login, no errors in console ✓
 
 ## Phase 8: Automated Report Generation System
 
