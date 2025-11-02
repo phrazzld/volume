@@ -10,6 +10,237 @@ _A comprehensive map of opportunities to improve product, codebase, and developm
 
 ---
 
+## Analytics Dashboard Future Enhancements
+
+_Post-V1 improvements for analytics dashboard identified during redesign planning (2025-10-31)_
+
+---
+
+### User-Customizable Widget Layout
+
+**Effort**: 8-12h | **Value**: MEDIUM | **Priority**: LOW
+
+**Current State**: Fixed, opinionated layout (no user customization)
+
+**Enhancement**: Allow users to:
+
+- Drag-and-drop widgets to reorder
+- Show/hide specific widgets
+- Save layout preferences to user profile
+- Reset to default layout
+
+**Implementation**:
+
+- Use `react-grid-layout` or `dnd-kit` for drag-and-drop
+- Store layout preferences in users table
+- Add "Customize Layout" toggle in header
+
+**Trade-offs**:
+
+- ✅ Power users can optimize for their workflow
+- ✅ Reduces cognitive load (hide unused widgets)
+- ❌ Adds complexity to codebase (layout state management)
+- ❌ Most users won't customize (80/20 rule)
+
+**Decision**: Defer until user feedback requests it. Fixed layout is simpler and works for 90% of users.
+
+---
+
+### AI-Powered Focus Suggestions (V2)
+
+**Effort**: 6-8h | **Value**: HIGH | **Priority**: MEDIUM
+
+**Current State**: Rule-based suggestions (exercises not trained, muscle imbalances)
+
+**Enhancement**: Use AI to generate personalized suggestions based on:
+
+- Training history patterns
+- Progressive overload trends
+- Recovery status across muscle groups
+- Personal goals (if we add goal tracking)
+- Injury history (if we add injury tracking)
+
+**Implementation**:
+
+- Add new OpenAI prompt: "Analyze user's training data and suggest 3-5 focus areas"
+- Include all relevant data (recovery status, progression, frequency)
+- Cache suggestions (generate once per day with daily report)
+- Cost: ~$0.005 per suggestion generation (GPT-5 mini)
+
+**Benefits**: More sophisticated, personalized recommendations than rule-based logic
+
+**Decision**: Implement after V1 ships, once we have real usage data to validate rule-based suggestions work
+
+---
+
+### Exercise Classification by User Tagging
+
+**Effort**: 4-6h | **Value**: MEDIUM | **Priority**: LOW
+
+**Current State**: Predefined muscle group mapping (hardcoded in `muscle-group-mapping.ts`)
+
+**Enhancement**: Allow users to tag exercises with muscle groups:
+
+- "Edit Exercise" → Add muscle group tags
+- Custom muscle group names (beyond predefined 11)
+- Override default mapping for edge cases
+
+**Use Cases**:
+
+- Uncommon exercise variations not in predefined map
+- User has unique exercise names
+- Bodybuilders want granular tracking (upper chest, lower chest, etc.)
+
+**Implementation**:
+
+- Add `muscleGroups: v.array(v.string())` to exercises table
+- Update exercise creation/editing UI to include muscle group selector
+- Fallback to predefined mapping if user hasn't tagged
+
+**Trade-offs**:
+
+- ✅ Handles 100% of exercises (not just common ones)
+- ✅ User control over muscle group categorization
+- ❌ Adds friction to exercise creation (more fields to fill)
+- ❌ Most users won't use it (predefined mapping works for 90%+)
+
+**Decision**: Defer to BACKLOG. Evaluate after V1 ships based on user feedback about unmapped exercises.
+
+---
+
+### Progressive Overload Sparklines (Alternative Visualization)
+
+**Effort**: 2-3h | **Value**: LOW | **Priority**: LOW
+
+**Current State**: Mini Recharts line charts (height: 80px, interactive tooltips)
+
+**Enhancement**: Replace with inline sparklines (React Sparklines library):
+
+- Smaller footprint (30-40px height)
+- Non-interactive (pure visual indicator)
+- Faster rendering (simpler SVG)
+- More widgets visible without scrolling
+
+**Trade-offs**:
+
+- ✅ More compact, cleaner visual design
+- ✅ Faster initial render (lighter library)
+- ❌ Loss of interactivity (no hover tooltips)
+- ❌ Harder to see exact values (need separate number display)
+
+**Decision**: Keep Recharts for V1. Tooltips are valuable for power users. Revisit if performance becomes issue.
+
+---
+
+### Report History Browser
+
+**Effort**: 3-4h | **Value**: MEDIUM | **Priority**: MEDIUM
+
+**Current State**: Only latest report visible on analytics page
+
+**Enhancement**: Add "View Past Reports" link that opens modal/page with:
+
+- Paginated list of all historical reports
+- Filter by report type (daily/weekly/monthly)
+- Compare reports side-by-side
+- Export report as PDF/markdown
+
+**Implementation**:
+
+- Already have `getReportHistory` query in `convex/ai/reports.ts`
+- Create new `ReportHistoryModal` component with pagination
+- Add filter UI for report type
+- Use existing pagination logic (25 per page)
+
+**Value**: Allows users to see progress over time, compare weekly summaries
+
+**Decision**: Implement in next iteration (post-V1). Core value is current report, history is nice-to-have.
+
+---
+
+### Quarterly and Annual Reports
+
+**Effort**: 2-3h | **Value**: MEDIUM | **Priority**: LOW
+
+**Current State**: Daily, weekly, monthly reports only
+
+**Enhancement**: Add quarterly (every 3 months) and annual (end of year) reports:
+
+- Quarterly: Macro trends, quarter-over-quarter comparison
+- Annual: Year in review, personal bests, total volume stats
+
+**Implementation**:
+
+- Add `reportType: "quarterly" | "annual"` to schema
+- Add cron jobs for quarterly (1st day of Q1/Q2/Q3/Q4) and annual (Jan 1)
+- Update AI prompt to generate appropriate content for timeframe
+
+**Trade-offs**:
+
+- ✅ Long-term motivation (seeing annual progress)
+- ✅ Shareable content (year-in-review posts to social media)
+- ❌ Low frequency (users may forget they exist)
+- ❌ Minimal incremental value over monthly reports
+
+**Decision**: Defer to BACKLOG. Focus on daily/weekly/monthly for V1. Add if users request it.
+
+---
+
+### Settings Page for Report Preferences
+
+**Effort**: 6-8h | **Value**: HIGH | **Priority**: HIGH (post-V1)
+
+**Current State**: No UI to toggle daily/weekly/monthly reports (schema supports it, no frontend)
+
+**Enhancement**: Add settings page with report preferences:
+
+- Toggle daily reports on/off (with paywall indicator)
+- Toggle weekly reports on/off
+- Toggle monthly reports on/off
+- Choose report delivery time (e.g., 8am instead of midnight)
+- Opt out of AI reports entirely
+
+**Implementation**:
+
+- Create `src/app/settings/page.tsx`
+- Add form with toggle switches
+- Call `updateUserPreferences` mutation (need to create)
+- Show paywall message for premium features (daily reports)
+
+**Value**: Essential for user control, reduces unwanted notifications
+
+**Decision**: MUST implement before daily reports go live. Daily reports are opt-in, so users need UI to opt in.
+
+**Priority**: HIGH (blocking for daily reports launch)
+
+---
+
+### Muscle Group Volume Trends Chart
+
+**Effort**: 4-6h | **Value**: MEDIUM | **Priority**: LOW
+
+**Current State**: Removed "Volume by Exercise" chart (comparing deadlifts to curls doesn't make sense)
+
+**Enhancement**: Replace with "Volume by Muscle Group" chart:
+
+- Bar chart showing volume per muscle group (last 30 days)
+- Stacked bars for compound lifts (e.g., deadlift = Back + Hamstrings + Glutes)
+- Identify imbalances visually (too much push vs pull)
+- Trend over time (weekly muscle group volume)
+
+**Implementation**:
+
+- Query sets, map to muscle groups using existing mapping
+- Aggregate volume per muscle group
+- Use Recharts BarChart with stacked bars
+- Color code by muscle group family (push = red, pull = blue, legs = green)
+
+**Value**: Better than raw exercise comparison, shows training balance
+
+**Decision**: Good candidate for future iteration. Defer until V1 ships and we validate muscle group mapping works.
+
+---
+
 ## High-Value Improvements
 
 _Changes that significantly improve user experience, developer velocity, or system reliability._
@@ -17,6 +248,14 @@ _Changes that significantly improve user experience, developer velocity, or syst
 **Total Effort**: ~28h for all high-priority items
 
 ---
+
+- support exercise durations
+  - eg planks don't have reps, they have durations; dead hangs don't have reps, they have durations
+- support cardio?
+  - maybe different than exercise durations
+  - running, swimming, etc
+  - some of these have distance in addition to duration, some fit neatly into duration
+  - maybe it's overcomplicated and we are fine without including distance here, just stick with reps vs duration + weight
 
 ### 8. [Testing] Add Unit Tests for Error Handler Production/Dev Branching
 
@@ -1530,5 +1769,5 @@ Verticals → Requires proven product-market fit
 
 _This backlog is a living document. Update priorities based on real-world usage, user feedback, and measured impact._
 
-**Last Groomed**: 2025-10-12 by 7-perspective parallel audit
-**Next Groom**: Quarterly or when priorities shift significantly
+**Last Groomed**: 2025-10-31 - Analytics dashboard redesign planning
+**Next Groom**: After analytics dashboard ships (PR merge)

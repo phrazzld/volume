@@ -125,9 +125,9 @@ describe("listSets - Security Tests", () => {
 
       expect(allSets).toBeDefined();
       expect(allSets.length).toBe(2);
-      expect(allSets.every((set) => set.exerciseId === user1ExerciseId)).toBe(
-        true
-      );
+      expect(
+        allSets.every((set: any) => set.exerciseId === user1ExerciseId)
+      ).toBe(true);
     });
 
     test("should isolate users - each user only sees their own sets", async () => {
@@ -137,9 +137,9 @@ describe("listSets - Security Tests", () => {
         .query(api.sets.listSets, {});
 
       expect(user1Sets.length).toBe(2);
-      expect(user1Sets.every((set) => set.exerciseId === user1ExerciseId)).toBe(
-        true
-      );
+      expect(
+        user1Sets.every((set: any) => set.exerciseId === user1ExerciseId)
+      ).toBe(true);
 
       // User 2 sees only their sets
       const user2Sets = await t
@@ -147,9 +147,9 @@ describe("listSets - Security Tests", () => {
         .query(api.sets.listSets, {});
 
       expect(user2Sets.length).toBe(1);
-      expect(user2Sets.every((set) => set.exerciseId === user2ExerciseId)).toBe(
-        true
-      );
+      expect(
+        user2Sets.every((set: any) => set.exerciseId === user2ExerciseId)
+      ).toBe(true);
     });
   });
 
