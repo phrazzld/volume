@@ -53,7 +53,7 @@ export const updateUserTimezone = mutation({
   args: { timezone: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    if (!identity) return; // Silent return for unauthenticated users (e.g., during auth loading)
 
     const user = await ctx.db
       .query("users")

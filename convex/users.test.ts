@@ -133,12 +133,14 @@ describe("User Management", () => {
       expect(user?.weeklyReportsEnabled).toBe(true);
     });
 
-    test("throws error for unauthenticated requests", async () => {
-      await expect(
-        t.mutation(api.users.updateUserTimezone, {
-          timezone: "America/New_York",
-        })
-      ).rejects.toThrow("Unauthorized");
+    test("silently returns for unauthenticated requests", async () => {
+      // Should return early without throwing (defensive programming for auth loading state)
+      const result = await t.mutation(api.users.updateUserTimezone, {
+        timezone: "America/New_York",
+      });
+
+      // Mutation should complete without error (returns null for early return)
+      expect(result).toBeNull();
     });
   });
 
